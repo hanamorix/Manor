@@ -205,7 +205,9 @@ One graph, many views. These joins are what makes five skills feel like one prod
 
 Fields: `id`, `kind` (`week_plan | meal_plan | chore_swap | switch_checklist | …`), `rationale` (markdown), `diff` (JSON patch), `status` (`pending | approved | rejected | applied | partially_applied`), `proposed_at`, `applied_at`, `skill`, `remote_call_log_id` (nullable).
 
-Every non-trivial AI action writes one of these first. UI renders the diff in plain English. User approves all, some, or none. Approved parts apply atomically.
+**What triggers a proposal**: any AI action that would create, modify, or delete persistent data. Chat responses, summaries, and read-only answers (e.g. *"what's my Tesco spend this month?"*) do not go through proposals. One clear rule: **if the user would need to be able to undo it, it needs a proposal first.**
+
+UI renders the diff in plain English. User approves all, some, or none. Approved parts apply atomically.
 
 ### 4.6 The `remote_call_log` table
 
