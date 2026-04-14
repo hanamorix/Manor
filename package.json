@@ -1,0 +1,15 @@
+{
+  "name": "life-assistant",
+  "private": true,
+  "packageManager": "pnpm@9.12.0",
+  "scripts": {
+    "dev": "pnpm --filter life-desktop tauri dev",
+    "build": "pnpm --filter life-desktop tauri build",
+    "tsc": "pnpm --filter life-desktop tsc",
+    "fmt": "cargo fmt && pnpm -r exec prettier --write 'src/**/*.{ts,tsx,css,html}' || true",
+    "lint:rust": "cargo clippy --workspace --all-targets -- -D warnings"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}
