@@ -1,0 +1,19 @@
+[package]
+name = "life-desktop"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+description = "Life Assistant desktop shell"
+
+[build-dependencies]
+tauri-build = { version = "2", features = [] }
+
+[dependencies]
+tauri = { version = "2", features = [] }
+life-app.workspace = true
+anyhow.workspace = true
+
+[features]
+custom-protocol = ["tauri/custom-protocol"]

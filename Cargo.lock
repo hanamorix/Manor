@@ -1750,6 +1750,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "life-desktop"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "life-app",
+ "tauri",
+ "tauri-build",
+]
+
+[[package]]
 name = "litemap"
 version = "0.8.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
