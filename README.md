@@ -5,11 +5,6 @@ calendar, chores, money, meals, and home maintenance.
 
 **Status: early development, v0.1 Heartbeat in progress.**
 
-## Design
-
-See the design spec:
-[`docs/superpowers/specs/2026-04-14-life-assistant-design.md`](docs/superpowers/specs/2026-04-14-life-assistant-design.md).
-
 ## Stack
 
 - **Shell:** Tauri 2 + React + TypeScript
