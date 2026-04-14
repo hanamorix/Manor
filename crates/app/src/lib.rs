@@ -1,15 +1,32 @@
 //! Tauri command glue for Life Assistant.
-//!
-//! Keeps tauri-specific types out of `life-core`. The Tauri shell calls
-//! `register` to install all IPC commands defined in this crate.
 
+use serde::Serialize;
 use tauri::{Builder, Wry};
 
+#[derive(Debug, Serialize, PartialEq, Eq)]
+pub struct PingResponse {
+    pub message: String,
+    pub core_version: String,
+}
+
+mod commands {
+    use super::PingResponse;
+
+    /// Minimal smoke command that proves IPC works end-to-end.
+    #[tauri::command]
+    pub fn ping() -> PingResponse {
+        PingResponse {
+            message: "pong".to_string(),
+            core_version: life_core::version().to_string(),
+        }
+    }
+}
+
+pub use commands::ping;
+
 /// Registers every Tauri command this crate exposes.
-///
-/// Currently a pass-through; commands are added in later tasks.
 pub fn register(builder: Builder<Wry>) -> Builder<Wry> {
-    builder
+    builder.invoke_handler(tauri::generate_handler![commands::ping])
 }
 
 #[cfg(test)]
@@ -17,8 +34,14 @@ mod tests {
     use super::*;
 
     #[test]
+    fn ping_returns_pong_with_core_version() {
+        let resp = ping();
+        assert_eq!(resp.message, "pong");
+        assert_eq!(resp.core_version, life_core::version());
+    }
+
+    #[test]
     fn register_returns_builder() {
-        // Smoke: function is callable without panicking.
         let _builder = register(Builder::default());
     }
 }
