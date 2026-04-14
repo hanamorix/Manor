@@ -2,22 +2,28 @@
 target/
 node_modules/
 dist/
+apps/desktop/src-tauri/target/
+apps/desktop/src-tauri/gen/
 
 # Worktrees (isolated feature-branch workspaces)
 .worktrees/
 
 # OS
 .DS_Store
+Thumbs.db
 
-# Secrets (defence in depth)
-.env*
+# Secrets (defence in depth; real secrets live in macOS Keychain)
+.env
+.env.*
 *.pem
 *.p12
+*.key
 
 # Editor
 .vscode/
 .idea/
 *.swp
+*.swo
 
-# Tauri-generated schemas (regenerated on each build)
-apps/desktop/src-tauri/gen/
+# Misc
+*.log
