@@ -2,6 +2,7 @@
 resolver = "2"
 members = [
     "crates/core",
+    "crates/app",
 ]
 
 [workspace.package]
@@ -22,6 +23,7 @@ tracing = "0.1"
 tracing-subscriber = { version = "0.3", features = ["env-filter"] }
 
 life-core = { path = "crates/core" }
+life-app = { path = "crates/app" }
 
 [profile.release]
 lto = true
