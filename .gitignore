@@ -3,6 +3,9 @@ target/
 node_modules/
 dist/
 
+# Worktrees (isolated feature-branch workspaces)
+.worktrees/
+
 # OS
 .DS_Store
 
