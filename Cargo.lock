@@ -1729,37 +1729,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "life-app"
-version = "0.1.0"
-dependencies = [
- "life-core",
- "serde",
- "tauri",
-]
-
-[[package]]
-name = "life-core"
-version = "0.1.0"
-dependencies = [
- "anyhow",
- "serde",
- "serde_json",
- "thiserror 1.0.69",
- "tokio",
- "tracing",
-]
-
-[[package]]
-name = "life-desktop"
-version = "0.1.0"
-dependencies = [
- "anyhow",
- "life-app",
- "tauri",
- "tauri-build",
-]
-
-[[package]]
 name = "litemap"
 version = "0.8.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1785,6 +1754,37 @@ name = "mac"
 version = "0.1.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "c41e0c4fef86961ac6d6f8a82609f55f31b05e4fce149ac5710e439df7619ba4"
+
+[[package]]
+name = "manor-app"
+version = "0.1.0"
+dependencies = [
+ "manor-core",
+ "serde",
+ "tauri",
+]
+
+[[package]]
+name = "manor-core"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "serde",
+ "serde_json",
+ "thiserror 1.0.69",
+ "tokio",
+ "tracing",
+]
+
+[[package]]
+name = "manor-desktop"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "manor-app",
+ "tauri",
+ "tauri-build",
+]
 
 [[package]]
 name = "markup5ever"

@@ -1,4 +1,4 @@
-//! Life Assistant core library.
+//! Manor core library.
 
 /// Returns the crate version string, used by the shell for the About screen.
 pub fn version() -> &'static str {

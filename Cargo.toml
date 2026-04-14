@@ -10,9 +10,9 @@ members = [
 version = "0.1.0"
 edition = "2021"
 rust-version = "1.80"
-authors = ["Life Assistant Contributors"]
+authors = ["Manor Contributors"]
 license = "AGPL-3.0-only"
-repository = "https://github.com/hanamori/life-assistant"
+repository = "https://github.com/hanamorix/Manor"
 
 [workspace.dependencies]
 anyhow = "1"
@@ -23,8 +23,8 @@ tokio = { version = "1", features = ["rt-multi-thread", "macros", "sync"] }
 tracing = "0.1"
 tracing-subscriber = { version = "0.3", features = ["env-filter"] }
 
-life-core = { path = "crates/core" }
-life-app = { path = "crates/app" }
+manor-core = { path = "crates/core" }
+manor-app = { path = "crates/app" }
 
 [profile.release]
 lto = true

@@ -1,19 +1,19 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
-  "productName": "Life Assistant",
+  "productName": "Manor",
   "version": "0.1.0",
-  "identifier": "com.lifeassistant.desktop",
+  "identifier": "com.hanamorix.manor",
   "build": {
-    "beforeDevCommand": "pnpm --filter life-desktop dev",
+    "beforeDevCommand": "pnpm --filter manor-desktop dev",
     "devUrl": "http://localhost:1420",
-    "beforeBuildCommand": "pnpm --filter life-desktop build",
+    "beforeBuildCommand": "pnpm --filter manor-desktop build",
     "frontendDist": "../dist"
   },
   "app": {
     "windows": [
       {
         "label": "main",
-        "title": "Life Assistant",
+        "title": "Manor",
         "width": 1100,
         "height": 720,
         "minWidth": 900,

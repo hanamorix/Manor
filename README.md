@@ -1,4 +1,4 @@
-# Life Assistant
+# Manor
 
 A calm, local-first desktop app for managing a household's life admin —
 calendar, chores, money, meals, and home maintenance.
@@ -43,6 +43,6 @@ pnpm tsc
 
 ## How this is sustained
 
-Life Assistant is free, open-source, and built by a very small team.
+Manor is free, open-source, and built by a very small team.
 If the app makes your life calmer, see [FUNDING.md](FUNDING.md) for the
 ways to keep it alive.

@@ -1,14 +1,12 @@
-# Supporting Life Assistant
+# Supporting Manor
 
-Life Assistant is free, open-source under AGPL-3.0, and always will be.
+Manor is free, open-source under AGPL-3.0, and always will be.
 
 Building and maintaining it takes real time. If the app makes your life
 calmer and you can afford to contribute, here are the ways to help keep
 it alive:
 
-- **[GitHub Sponsors](https://github.com/sponsors/hanamori)** — recurring or one-off.
-- **[Ko-fi](https://ko-fi.com/hanamori)** — one-off tips, no account required.
-- **[Open Collective](https://opencollective.com/life-assistant)** — transparent project funding.
+- **[GitHub Sponsors](https://github.com/sponsors/hanamorix)** — recurring or one-off.
 
 ## Paid cloud backup (v1.0+)
 

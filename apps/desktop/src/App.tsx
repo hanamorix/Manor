@@ -19,7 +19,7 @@ export default function App() {
 
   return (
     <main style={{ padding: "2rem" }}>
-      <h1>Life Assistant</h1>
+      <h1>Manor</h1>
       {state.kind === "loading" && <p>Contacting core…</p>}
       {state.kind === "ok" && (
         <p>

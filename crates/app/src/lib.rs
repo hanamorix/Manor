@@ -1,4 +1,4 @@
-//! Tauri command glue for Life Assistant.
+//! Tauri command glue for Manor.
 
 use serde::Serialize;
 use tauri::{Builder, Wry};
@@ -17,7 +17,7 @@ mod commands {
     pub fn ping() -> PingResponse {
         PingResponse {
             message: "pong".to_string(),
-            core_version: life_core::version().to_string(),
+            core_version: manor_core::version().to_string(),
         }
     }
 }
@@ -37,7 +37,7 @@ mod tests {
     fn ping_returns_pong_with_core_version() {
         let resp = ping();
         assert_eq!(resp.message, "pong");
-        assert_eq!(resp.core_version, life_core::version());
+        assert_eq!(resp.core_version, manor_core::version());
     }
 
     #[test]

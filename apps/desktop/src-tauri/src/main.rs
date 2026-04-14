@@ -6,7 +6,7 @@
 //               for `cargo check` but will fail real bundle signing.
 fn main() {
     let builder = tauri::Builder::default();
-    life_app::register(builder)
+    manor_app::register(builder)
         .run(tauri::generate_context!())
-        .expect("error while running Life Assistant");
+        .expect("error while running Manor");
 }

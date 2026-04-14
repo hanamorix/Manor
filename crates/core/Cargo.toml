@@ -1,11 +1,11 @@
 [package]
-name = "life-core"
+name = "manor-core"
 version.workspace = true
 edition.workspace = true
 rust-version.workspace = true
 license.workspace = true
 repository.workspace = true
-description = "Life Assistant core library"
+description = "Manor core library"
 
 [dependencies]
 anyhow.workspace = true
