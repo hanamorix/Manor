@@ -1732,10 +1732,8 @@ dependencies = [
 name = "life-app"
 version = "0.1.0"
 dependencies = [
- "anyhow",
  "life-core",
  "serde",
- "serde_json",
  "tauri",
 ]
 

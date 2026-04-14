@@ -8,8 +8,6 @@ repository.workspace = true
 description = "Tauri command glue for Life Assistant; keeps tauri-specific code out of core"
 
 [dependencies]
-anyhow.workspace = true
 serde.workspace = true
-serde_json.workspace = true
 tauri = "2"
 life-core.workspace = true
