@@ -1,0 +1,17 @@
+# Build artefacts
+target/
+node_modules/
+dist/
+
+# OS
+.DS_Store
+
+# Secrets (defence in depth)
+.env*
+*.pem
+*.p12
+
+# Editor
+.vscode/
+.idea/
+*.swp
