@@ -473,13 +473,17 @@ Each release is a complete product on its own. **We do not plan v0.3 while build
 
 ## 11. Open Questions (to resolve before or during v0.1)
 
-1. **Final product name.** Candidates: Hearth, Parlour, Keeper, Manor. Decide before first public release.
+1. ~~**Final product name.** Candidates: Hearth, Parlour, Keeper, Manor. Decide before first public release.~~ **RESOLVED (2026-04-14):** Name is **Manor**. Rust crates renamed `manor-core`/`manor-app`/`manor-desktop`; frontend package `manor-desktop`; bundle identifier `com.hanamorix.manor`.
 2. **AI persona name.** Placeholder "Nell". Decide before first public release.
 3. **Weather provider for the Today header.** `wttr.in` is free, keyless, privacy-friendly — default choice.
 4. **Encryption passphrase UX.** Likely user-chosen passphrase stored in Keychain, prompted only at restore time from a fresh device.
 5. **Trash auto-empty default.** 30 days proposed — confirm during v0.1 playtesting.
 6. **Embedding engine**: `nomic-embed-text` via Ollama vs `fastembed-rs` in-process — decide during v0.1 prototyping based on cold-start and memory profile.
 7. **Interaction between "use better AI for this" one-tap and the monthly budget cap.** Does a one-tap override the cap warning, or respect it? Proposal: respect the hard-stop, override the warning.
+8. **Real app icon sourcing.** Phase 1 shipped with Python-generated placeholder RGBA PNGs (including `.icns` and `.ico` that are actually PNGs). Real icons need generating via `pnpm exec tauri icon <source>.png` before any real macOS bundle/codesign. Decision needed: who draws the source icon (Hana taste call), target resolution, and visual direction.
+9. ~~**Bundle identifier ownership.** `com.lifeassistant.desktop` is provisional. Confirm the domain `lifeassistant.com` is available / owned or pick a final identifier tied to Hana's own domain before first signed release.~~ **RESOLVED (2026-04-14):** Identifier is `com.hanamorix.manor` (reverse-DNS of repo owner + product name — no custom domain required).
+10. **macOS code-signing identity.** Apple Developer ID + notarization flow not yet set up. Required before shipping `.dmg` bundles for external distribution. Nell owns the setup.
+11. ~~**GitHub remote + CI kickoff.** Phase 1 committed `.github/workflows/ci.yml` but the repo has no git remote yet. Decide repo host/name (likely `hanamori/life-assistant`) and visibility (public for AGPL-3.0 compliance) before pushing and validating the first CI run.~~ **RESOLVED (2026-04-14):** Remote is `github.com/hanamorix/Manor`, public (AGPL-3.0). CI fires on first push.
 
 ---
 
