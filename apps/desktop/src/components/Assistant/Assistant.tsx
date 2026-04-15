@@ -23,6 +23,7 @@ export default function Assistant() {
 
   const setAvatarState = useAssistantStore((s) => s.setAvatarState);
   const enqueueBubble = useAssistantStore((s) => s.enqueueBubble);
+  const appendBubbleContent = useAssistantStore((s) => s.appendBubbleContent);
   const transientBubbles = useAssistantStore((s) => s.transientBubbles);
   const beginAssistantMessage = useAssistantStore((s) => s.beginAssistantMessage);
   const appendAssistantToken = useAssistantStore((s) => s.appendAssistantToken);
@@ -90,11 +91,21 @@ export default function Assistant() {
     let assistantText = "";
 
     const onEvent = (chunk: StreamChunk) => {
-      if (chunk.type === "Token") {
+      if (chunk.type === "Started") {
+        assistantDbId = chunk.value;
+        beginAssistantMessage(assistantDbId);
+        setAvatarState("speaking");
+        enqueueBubble({
+          id: assistantBubbleId,
+          kind: "assistant",
+          content: "",
+          messageId: assistantDbId,
+          ttlMs: 7000,
+        });
+      } else if (chunk.type === "Token") {
         if (assistantDbId === null) {
-          // First token — we don't actually have the DB id yet from the current IPC
-          // surface, so we pick a synthetic one (negative) for the client; the
-          // drawer always re-hydrates from the DB on open so real ids appear there.
+          // Defensive — Started should always fire first. If not, we still want
+          // tokens to appear, so synthesize and continue.
           assistantDbId = -Date.now();
           beginAssistantMessage(assistantDbId);
           setAvatarState("speaking");
@@ -108,6 +119,7 @@ export default function Assistant() {
         }
         assistantText += chunk.value;
         appendAssistantToken(chunk.value);
+        appendBubbleContent(assistantBubbleId, chunk.value);
       } else if (chunk.type === "Done") {
         endAssistantMessage();
         if (looksLikeDelight(assistantText)) {

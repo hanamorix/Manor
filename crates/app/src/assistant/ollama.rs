@@ -49,6 +49,9 @@ struct OllamaChunkMessage {
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
 #[serde(tag = "type", content = "value")]
 pub enum StreamChunk {
+    /// Emitted once before any tokens; carries the new assistant row id so the
+    /// frontend can mark-seen the right DB row when the bubble fades.
+    Started(i64),
     Token(String),
     Done,
     Error(ErrorCode),

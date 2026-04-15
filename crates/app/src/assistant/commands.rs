@@ -60,7 +60,13 @@ pub async fn send_message(
         });
     }
 
-    // 3. Run the Ollama stream, forwarding each chunk to both the DB and the frontend.
+    // 3. Tell the frontend the real assistant row id so it can mark-seen the right
+    //    DB row when the bubble fades.
+    on_event
+        .send(StreamChunk::Started(assistant_row_id))
+        .map_err(|e| e.to_string())?;
+
+    // 4. Run the Ollama stream, forwarding each chunk to both the DB and the frontend.
     let client = OllamaClient::new(DEFAULT_ENDPOINT, DEFAULT_MODEL);
     let (tx, mut rx) = mpsc::channel::<StreamChunk>(64);
 
@@ -77,7 +83,7 @@ pub async fn send_message(
                 message::append_content(&conn, assistant_row_id, frag)
                     .map_err(|e| e.to_string())?;
             }
-            StreamChunk::Done | StreamChunk::Error(_) => {}
+            StreamChunk::Started(_) | StreamChunk::Done | StreamChunk::Error(_) => {}
         }
         on_event.send(chunk).map_err(|e| e.to_string())?;
     }

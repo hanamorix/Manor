@@ -13,6 +13,7 @@ export interface Message {
 }
 
 export type StreamChunk =
+  | { type: "Started"; value: number }
   | { type: "Token"; value: string }
   | { type: "Done" }
   | { type: "Error"; value: "OllamaUnreachable" | "ModelMissing" | "Interrupted" | "Unknown" };

@@ -2,7 +2,7 @@ import { useEffect, useRef } from "react";
 import { useAssistantStore } from "../../lib/assistant/state";
 import type { TransientBubble } from "../../lib/assistant/state";
 import { createTtlTimer, TtlTimer } from "../../lib/assistant/bubble-ttl";
-import { markSeen } from "../../lib/assistant/ipc";
+import { getUnreadCount, markSeen } from "../../lib/assistant/ipc";
 
 function bubbleColors(kind: TransientBubble["kind"]): {
   background: string;
@@ -37,10 +37,19 @@ function bubbleColors(kind: TransientBubble["kind"]): {
   }
 }
 
+async function markBubbleSeenIfAssistant(b: TransientBubble, refreshUnread: (n: number) => void) {
+  if (b.kind === "assistant" && b.messageId !== null && b.messageId > 0) {
+    await markSeen([b.messageId]);
+    const n = await getUnreadCount();
+    refreshUnread(n);
+  }
+}
+
 export default function BubbleLayer() {
   const bubbles = useAssistantStore((s) => s.transientBubbles);
   const dismissBubble = useAssistantStore((s) => s.dismissBubble);
   const setDrawerOpen = useAssistantStore((s) => s.setDrawerOpen);
+  const setUnreadCount = useAssistantStore((s) => s.setUnreadCount);
   const drawerOpen = useAssistantStore((s) => s.drawerOpen);
 
   if (drawerOpen) return null;
@@ -63,11 +72,15 @@ export default function BubbleLayer() {
         <Bubble
           key={b.id}
           bubble={b}
-          onDismiss={() => dismissBubble(b.id)}
-          onClick={() => {
-            if (b.kind === "assistant" && b.messageId !== null) {
-              void markSeen([b.messageId]);
-            }
+          onDismiss={async () => {
+            // Natural fade marks assistant messages as seen too — looking at the
+            // bubble for its TTL counts as "saw it". Click-to-open also marks via
+            // the onClick path below.
+            await markBubbleSeenIfAssistant(b, setUnreadCount);
+            dismissBubble(b.id);
+          }}
+          onClick={async () => {
+            await markBubbleSeenIfAssistant(b, setUnreadCount);
             setDrawerOpen(true);
           }}
         />
@@ -84,13 +97,19 @@ interface BubbleProps {
 
 function Bubble({ bubble, onDismiss, onClick }: BubbleProps) {
   const timerRef = useRef<TtlTimer | null>(null);
+  // Always-current refs so the timer effect doesn't restart on every parent
+  // re-render — content updates would otherwise reset the TTL countdown.
+  const onDismissRef = useRef(onDismiss);
+  onDismissRef.current = onDismiss;
 
   useEffect(() => {
-    const timer = createTtlTimer(bubble.ttlMs, onDismiss);
+    const timer = createTtlTimer(bubble.ttlMs, () => {
+      void onDismissRef.current();
+    });
     timerRef.current = timer;
     timer.start();
     return () => timer.cancel();
-  }, [bubble.ttlMs, onDismiss]);
+  }, [bubble.id, bubble.ttlMs]);
 
   const c = bubbleColors(bubble.kind);
 
