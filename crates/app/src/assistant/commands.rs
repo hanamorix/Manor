@@ -71,8 +71,9 @@ pub async fn send_message(
     let (tx, mut rx) = mpsc::channel::<StreamChunk>(64);
 
     // Spawn the HTTP call on a background task.
+    // TODO(Task 6): full rewrite — pass tools, handle ChatOutcome, emit Done here.
     let chat_task = tokio::spawn(async move {
-        client.chat(&chat_msgs, tx).await;
+        let _outcome = client.chat(&chat_msgs, &[], &tx).await;
     });
 
     while let Some(chunk) = rx.recv().await {
@@ -83,7 +84,10 @@ pub async fn send_message(
                 message::append_content(&conn, assistant_row_id, frag)
                     .map_err(|e| e.to_string())?;
             }
-            StreamChunk::Started(_) | StreamChunk::Done | StreamChunk::Error(_) => {}
+            StreamChunk::Started(_)
+            | StreamChunk::Proposal(_)
+            | StreamChunk::Done
+            | StreamChunk::Error(_) => {}
         }
         on_event.send(chunk).map_err(|e| e.to_string())?;
     }
