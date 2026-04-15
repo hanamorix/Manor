@@ -69,7 +69,7 @@ export default function Assistant() {
       kind: "user",
       content,
       messageId: null,
-      ttlMs: 3000,
+      ttlMs: 6000,
     });
     // We don't know the DB id yet, but addUserMessage takes a full Message shape.
     // Use a negative temporary id that won't collide with real ids; the drawer
@@ -100,7 +100,7 @@ export default function Assistant() {
           kind: "assistant",
           content: "",
           messageId: assistantDbId,
-          ttlMs: 7000,
+          ttlMs: 12000,
         });
       } else if (chunk.type === "Token") {
         if (assistantDbId === null) {
@@ -114,7 +114,7 @@ export default function Assistant() {
             kind: "assistant",
             content: "",
             messageId: assistantDbId,
-            ttlMs: 7000,
+            ttlMs: 12000,
           });
         }
         assistantText += chunk.value;
@@ -144,7 +144,7 @@ export default function Assistant() {
           kind: "error",
           content: errorMessage,
           messageId: null,
-          ttlMs: 7000,
+          ttlMs: 12000,
         });
       }
     };

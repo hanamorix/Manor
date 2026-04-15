@@ -14,17 +14,18 @@ function bubbleColors(kind: TransientBubble["kind"]): {
   switch (kind) {
     case "user":
       return {
-        background: "var(--imessage-blue)",
+        // Subtle iMessage-style vertical gradient on the blue
+        background: "linear-gradient(180deg, #2683FE 0%, #0866EF 100%)",
         color: "white",
         alignSelf: "flex-end",
-        borderRadius: "var(--radius-lg) var(--radius-lg) 4px var(--radius-lg)",
+        borderRadius: "18px 18px 4px 18px",
       };
     case "assistant":
       return {
-        background: "var(--imessage-green)",
+        background: "linear-gradient(180deg, #4ED365 0%, #2BB94A 100%)",
         color: "white",
         alignSelf: "flex-start",
-        borderRadius: "var(--radius-lg) var(--radius-lg) var(--radius-lg) 4px",
+        borderRadius: "18px 18px 18px 4px",
       };
     case "error":
       return {
@@ -62,9 +63,9 @@ export default function BubbleLayer() {
         right: 16,
         display: "flex",
         flexDirection: "column",
-        gap: 6,
+        gap: 4,
         alignItems: "flex-end",
-        maxWidth: 320,
+        maxWidth: 460,
         pointerEvents: "none",
       }}
     >
@@ -118,7 +119,7 @@ function Bubble({ bubble, onDismiss, onClick }: BubbleProps) {
       role="button"
       tabIndex={0}
       onMouseEnter={() => timerRef.current?.pause()}
-      onMouseLeave={() => timerRef.current?.resumeWith(3000)}
+      onMouseLeave={() => timerRef.current?.resumeWith(5000)}
       onClick={onClick}
       style={{
         background: c.background,
@@ -126,9 +127,12 @@ function Bubble({ bubble, onDismiss, onClick }: BubbleProps) {
         alignSelf: c.alignSelf,
         borderRadius: c.borderRadius,
         border: c.border,
-        padding: "8px 12px",
-        fontSize: 14,
-        maxWidth: 280,
+        padding: "10px 14px",
+        fontSize: 15,
+        lineHeight: 1.35,
+        maxWidth: 420,
+        whiteSpace: "pre-wrap",
+        wordBreak: "break-word",
         boxShadow: "var(--shadow-md)",
         pointerEvents: "auto",
         cursor: "pointer",
