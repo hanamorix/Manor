@@ -17,6 +17,7 @@ tracing.workspace = true
 rusqlite.workspace = true
 refinery.workspace = true
 chrono.workspace = true
+chrono-tz.workspace = true
 
 [dev-dependencies]
 tempfile.workspace = true

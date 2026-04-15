@@ -27,6 +27,12 @@ refinery = { version = "0.8", features = ["rusqlite"] }
 reqwest = { version = "0.12", default-features = false, features = ["json", "stream", "rustls-tls"] }
 futures-util = "0.3"
 chrono = { version = "0.4", default-features = false, features = ["clock", "serde"] }
+chrono-tz = { version = "0.9", default-features = false, features = ["std"] }
+ical = "0.11"
+rrule = "0.13"
+keyring = "3"
+quick-xml = "0.36"
+base64 = "0.22"
 
 # dev-dependencies
 wiremock = "0.6"
