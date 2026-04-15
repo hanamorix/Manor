@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import SettingsCog from "../Settings/SettingsCog";
 
 const cardStyle: React.CSSProperties = {
   background: "var(--paper)",
@@ -41,15 +42,18 @@ export default function HeaderCard() {
         <h1 style={{ margin: 0, fontSize: 22, fontWeight: 700 }}>Today</h1>
         <div style={{ fontSize: 13, color: "rgba(0,0,0,0.55)" }}>{dateLabel}</div>
       </div>
-      <div
-        style={{
-          fontFamily: "ui-monospace, SFMono-Regular, Menlo, monospace",
-          fontSize: 12,
-          color: "rgba(0,0,0,0.55)",
-        }}
-        aria-label="current local time"
-      >
-        {time} {tz}
+      <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+        <div
+          style={{
+            fontFamily: "ui-monospace, SFMono-Regular, Menlo, monospace",
+            fontSize: 12,
+            color: "rgba(0,0,0,0.55)",
+          }}
+          aria-label="current local time"
+        >
+          {time} {tz}
+        </div>
+        <SettingsCog />
       </div>
     </div>
   );
