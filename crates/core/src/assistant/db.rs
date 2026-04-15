@@ -12,6 +12,7 @@ embed_migrations!("migrations");
 /// Returns an open connection ready for data-access functions to use.
 pub fn init(path: &Path) -> Result<Connection> {
     let mut conn = Connection::open(path)?;
+    conn.execute_batch("PRAGMA foreign_keys = ON;")?;
     migrations::runner().run(&mut conn)?;
     Ok(conn)
 }
