@@ -2867,3 +2867,8 @@ Phase 2 is one coherent subsystem (Assistant shell substrate). No feature skills
 
 **Step 2 — `Some(c) = conn.query_row(...).ok()` pattern:**
 The plan's code used `if let Some(c) = ...query_row(...).ok() { ... }`. Clippy's `clippy::match-result-ok` lint (a default warning, turned into error by CI's `-D warnings` flag) flags this as redundant. Fixed by matching the `Result` directly: `if let Ok(c) = conn.query_row(...) { ... }`. Semantics identical; one fewer lint violation. No test changes.
+
+## Plan deviation — Task 6 (`crates/app/Cargo.toml` missing rusqlite)
+
+**Step 3 — `Db` struct holds `rusqlite::Connection`:**
+The plan's Task 1 listed `rusqlite.workspace = true` only under `crates/core` dependencies. But Task 6's `commands.rs` exposes `pub struct Db(pub Mutex<Connection>)` where `Connection` is `rusqlite::Connection`, so `manor-app` needs direct `rusqlite` access too. Added `rusqlite.workspace = true` to `crates/app/Cargo.toml` dependencies. Task 1's plan would have anticipated this had it modelled the full dep graph through Task 6.
