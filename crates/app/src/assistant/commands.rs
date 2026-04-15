@@ -1,8 +1,7 @@
 //! Tauri commands exposed to the frontend Assistant + Today view.
 
 use crate::assistant::ollama::{
-    ChatMessage, ChatRole, OllamaClient, OllamaToolCall, StreamChunk, DEFAULT_ENDPOINT,
-    DEFAULT_MODEL,
+    ChatMessage, ChatRole, OllamaClient, StreamChunk, DEFAULT_ENDPOINT, DEFAULT_MODEL,
 };
 use crate::assistant::prompts::SYSTEM_PROMPT;
 use crate::assistant::tools;
