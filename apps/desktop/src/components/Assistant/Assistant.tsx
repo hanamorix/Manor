@@ -69,7 +69,7 @@ export default function Assistant() {
       kind: "user",
       content,
       messageId: null,
-      ttlMs: 6000,
+      ttlMs: 10000,
     });
     // We don't know the DB id yet, but addUserMessage takes a full Message shape.
     // Use a negative temporary id that won't collide with real ids; the drawer
