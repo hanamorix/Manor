@@ -1,5 +1,6 @@
 import { useEffect, useRef } from "react";
 import Avatar from "./Avatar";
+import BubbleLayer from "./BubbleLayer";
 import InputPill from "./InputPill";
 import UnreadBadge from "./UnreadBadge";
 import ConversationDrawer from "./ConversationDrawer";
@@ -152,6 +153,7 @@ export default function Assistant() {
   return (
     <>
       <ConversationDrawer onSubmit={handleSubmit} />
+      <BubbleLayer />
 
       <div
         style={{
