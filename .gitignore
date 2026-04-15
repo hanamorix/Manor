@@ -8,6 +8,9 @@ apps/desktop/src-tauri/gen/
 # Worktrees (isolated feature-branch workspaces)
 .worktrees/
 
+# Superpowers brainstorm / visual-companion session state
+.superpowers/
+
 # OS
 .DS_Store
 Thumbs.db

@@ -9,5 +9,18 @@ description = "Tauri command glue for Manor; keeps tauri-specific code out of co
 
 [dependencies]
 serde.workspace = true
+serde_json.workspace = true
 tauri = "2"
 manor-core.workspace = true
+reqwest.workspace = true
+tokio.workspace = true
+futures-util.workspace = true
+anyhow.workspace = true
+rusqlite.workspace = true
+thiserror.workspace = true
+tracing.workspace = true
+
+[dev-dependencies]
+wiremock.workspace = true
+tokio-test.workspace = true
+tempfile.workspace = true

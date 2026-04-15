@@ -1,5 +1,7 @@
 //! Manor core library.
 
+pub mod assistant;
+
 /// Returns the crate version string, used by the shell for the About screen.
 pub fn version() -> &'static str {
     env!("CARGO_PKG_VERSION")
