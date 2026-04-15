@@ -47,6 +47,15 @@ pub fn register(builder: Builder<Wry>) -> Builder<Wry> {
             assistant::commands::list_messages,
             assistant::commands::get_unread_count,
             assistant::commands::mark_seen,
+            assistant::commands::list_tasks,
+            assistant::commands::add_task,
+            assistant::commands::complete_task,
+            assistant::commands::undo_complete_task,
+            assistant::commands::update_task,
+            assistant::commands::delete_task,
+            assistant::commands::list_proposals,
+            assistant::commands::approve_proposal,
+            assistant::commands::reject_proposal,
         ])
 }
 
