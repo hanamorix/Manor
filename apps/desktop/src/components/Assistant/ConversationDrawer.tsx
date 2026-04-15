@@ -57,7 +57,7 @@ export default function ConversationDrawer({ onSubmit }: ConversationDrawerProps
     if (slash?.type === "task") {
       void addTask(slash.title).then((task) => {
         useTodayStore.getState().upsertTask(task);
-        // TODO(Task 14): showToast here too
+        useTodayStore.getState().showToast(`Added: ${slash.title}`);
       });
       setValue("");
       return;

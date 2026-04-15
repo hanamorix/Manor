@@ -4,6 +4,7 @@ import type { Task, Proposal } from "./ipc";
 interface TodayStore {
   tasks: Task[];
   pendingProposals: Proposal[];
+  toast: { message: string; expiresAt: number } | null;
 
   setTasks: (t: Task[]) => void;
   upsertTask: (t: Task) => void;
@@ -11,11 +12,15 @@ interface TodayStore {
 
   setPendingProposals: (p: Proposal[]) => void;
   removeProposal: (id: number) => void;
+
+  showToast: (message: string) => void;
+  clearToast: () => void;
 }
 
 export const useTodayStore = create<TodayStore>((set) => ({
   tasks: [],
   pendingProposals: [],
+  toast: null,
 
   setTasks: (t) => set({ tasks: t }),
 
@@ -35,4 +40,9 @@ export const useTodayStore = create<TodayStore>((set) => ({
 
   removeProposal: (id) =>
     set((st) => ({ pendingProposals: st.pendingProposals.filter((x) => x.id !== id) })),
+
+  showToast: (message) =>
+    set({ toast: { message, expiresAt: Date.now() + 2000 } }),
+
+  clearToast: () => set({ toast: null }),
 }));

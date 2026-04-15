@@ -71,7 +71,7 @@ export default function Assistant() {
       try {
         const task = await addTask(slash.title);
         useTodayStore.getState().upsertTask(task);
-        // TODO(Task 14): replace with useTodayStore.getState().showToast(`Added: ${slash.title}`)
+        useTodayStore.getState().showToast(`Added: ${slash.title}`);
         return;
       } catch (e) {
         setAvatarState("confused");
