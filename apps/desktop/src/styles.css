@@ -69,3 +69,8 @@ body {
     transform: translateY(0);
   }
 }
+
+@keyframes settingsIn {
+  from { opacity: 0; transform: scale(0.97); }
+  to   { opacity: 1; transform: scale(1); }
+}
