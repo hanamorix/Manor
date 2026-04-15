@@ -1,0 +1,103 @@
+import { useState } from "react";
+import { addCalendarAccount } from "../../lib/settings/ipc";
+import { useSettingsStore } from "../../lib/settings/state";
+
+interface AddAccountFormProps { onClose: () => void; }
+
+export default function AddAccountForm({ onClose }: AddAccountFormProps) {
+  const upsertAccount = useSettingsStore((s) => s.upsertAccount);
+
+  const [serverUrl, setServerUrl] = useState("https://caldav.icloud.com");
+  const [username, setUsername] = useState("");
+  const [password, setPassword] = useState("");
+  const [error, setError] = useState<string | null>(null);
+  const [busy, setBusy] = useState(false);
+
+  const canSubmit = serverUrl.trim() && username.trim() && password.trim() && !busy;
+
+  const onConnect = async () => {
+    setBusy(true);
+    setError(null);
+    try {
+      const account = await addCalendarAccount(serverUrl.trim(), username.trim(), password);
+      upsertAccount(account);
+      onClose();
+    } catch (e) {
+      setError(String(e));
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const labelStyle: React.CSSProperties = {
+    display: "block", fontSize: 11, fontWeight: 700,
+    textTransform: "uppercase", letterSpacing: 0.6,
+    color: "rgba(0,0,0,0.55)", marginBottom: 4, marginTop: 10,
+  };
+
+  const inputStyle: React.CSSProperties = {
+    width: "100%", padding: "6px 10px",
+    border: "1px solid var(--hairline)", borderRadius: 6,
+    fontSize: 13, fontFamily: "inherit", outline: "none",
+  };
+
+  return (
+    <div
+      style={{
+        padding: 12,
+        background: "rgba(0,0,0,0.02)",
+        border: "1px dashed var(--hairline)",
+        borderRadius: 8,
+        marginTop: 8,
+      }}
+    >
+      <label style={labelStyle}>Server URL</label>
+      <input
+        type="text" value={serverUrl}
+        onChange={(e) => setServerUrl(e.target.value)}
+        placeholder="https://caldav.icloud.com"
+        style={inputStyle}
+      />
+      <label style={labelStyle}>Username</label>
+      <input
+        type="text" value={username}
+        onChange={(e) => setUsername(e.target.value)}
+        placeholder="your-apple-id@icloud.com"
+        style={inputStyle}
+      />
+      <label style={labelStyle}>
+        App-specific password
+        <span title="For iCloud: appleid.apple.com → Sign-In and Security → App-Specific Passwords" style={{ marginLeft: 6, color: "rgba(0,0,0,0.4)", cursor: "help" }}>?</span>
+      </label>
+      <input
+        type="password" value={password}
+        onChange={(e) => setPassword(e.target.value)}
+        style={inputStyle}
+      />
+
+      {error && (
+        <div style={{ marginTop: 8, color: "var(--imessage-red)", fontSize: 12 }}>
+          Connection failed: {error}
+        </div>
+      )}
+
+      <div style={{ marginTop: 12, display: "flex", gap: 8, justifyContent: "flex-end" }}>
+        <button onClick={onClose} style={{
+          padding: "6px 12px", borderRadius: 6, fontSize: 12, fontWeight: 600,
+          border: "1px solid var(--hairline)", background: "white", cursor: "pointer",
+        }}>Cancel</button>
+        <button
+          onClick={onConnect}
+          disabled={!canSubmit}
+          style={{
+            padding: "6px 12px", borderRadius: 6, fontSize: 12, fontWeight: 700,
+            border: "none", background: canSubmit ? "var(--imessage-blue)" : "rgba(0,0,0,0.15)",
+            color: "white", cursor: canSubmit ? "pointer" : "default",
+          }}
+        >
+          {busy ? "Connecting…" : "Connect"}
+        </button>
+      </div>
+    </div>
+  );
+}
