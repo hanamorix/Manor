@@ -7,6 +7,9 @@ import ConversationDrawer from "./ConversationDrawer";
 import { useAssistantStore } from "../../lib/assistant/state";
 import { sendMessage, getUnreadCount, listMessages } from "../../lib/assistant/ipc";
 import type { StreamChunk } from "../../lib/assistant/ipc";
+import { parseSlash } from "../../lib/today/slash";
+import { addTask, listTasks, listProposals } from "../../lib/today/ipc";
+import { useTodayStore } from "../../lib/today/state";
 
 function newBubbleId() {
   return Math.random().toString(36).slice(2, 10);
@@ -32,6 +35,9 @@ export default function Assistant() {
   const setUnreadCount = useAssistantStore((s) => s.setUnreadCount);
   const setDrawerOpen = useAssistantStore((s) => s.setDrawerOpen);
   const hydrateMessages = useAssistantStore((s) => s.hydrateMessages);
+
+  const setTodayTasks = useTodayStore((s) => s.setTasks);
+  const setPendingProposals = useTodayStore((s) => s.setPendingProposals);
 
   // Initial load: hydrate recent messages + unread count.
   useEffect(() => {
@@ -60,6 +66,27 @@ export default function Assistant() {
   }, []);
 
   const handleSubmit = async (content: string) => {
+    const slash = parseSlash(content);
+    if (slash?.type === "task") {
+      try {
+        const task = await addTask(slash.title);
+        useTodayStore.getState().upsertTask(task);
+        // TODO(Task 14): replace with useTodayStore.getState().showToast(`Added: ${slash.title}`)
+        return;
+      } catch (e) {
+        setAvatarState("confused");
+        enqueueBubble({
+          id: newBubbleId(),
+          kind: "error",
+          content: `Couldn't add task: ${String(e)}`,
+          messageId: null,
+          ttlMs: 7000,
+        });
+        return;
+      }
+    }
+    // `unknown` slashes fall through to send_message as a normal chat turn.
+
     setAvatarState("listening");
 
     // Optimistic: add a blue user bubble + a provisional message to the scrollback.
@@ -120,6 +147,9 @@ export default function Assistant() {
         assistantText += chunk.value;
         appendAssistantToken(chunk.value);
         appendBubbleContent(assistantBubbleId, chunk.value);
+      } else if (chunk.type === "Proposal") {
+        void listProposals("pending").then(setPendingProposals);
+        void listTasks().then(setTodayTasks);
       } else if (chunk.type === "Done") {
         endAssistantMessage();
         if (looksLikeDelight(assistantText)) {
