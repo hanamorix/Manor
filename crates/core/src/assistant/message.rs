@@ -56,7 +56,10 @@ impl Message {
                 rusqlite::Error::FromSqlConversionFailure(
                     0,
                     rusqlite::types::Type::Text,
-                    Box::new(std::io::Error::new(std::io::ErrorKind::InvalidData, e.to_string())),
+                    Box::new(std::io::Error::new(
+                        std::io::ErrorKind::InvalidData,
+                        e.to_string(),
+                    )),
                 )
             })?,
             content: row.get("content")?,
@@ -69,12 +72,7 @@ impl Message {
 
 /// Insert a new message. Returns the new row id.
 /// User messages are always inserted with `seen=true`; assistant/system messages with `seen=false`.
-pub fn insert(
-    conn: &Connection,
-    conversation_id: i64,
-    role: Role,
-    content: &str,
-) -> Result<i64> {
+pub fn insert(conn: &Connection, conversation_id: i64, role: Role, content: &str) -> Result<i64> {
     let now_ms = Utc::now().timestamp_millis();
     let seen = matches!(role, Role::User) as i64;
     conn.execute(
@@ -121,7 +119,10 @@ pub fn mark_seen(conn: &Connection, ids: &[i64]) -> Result<()> {
     if ids.is_empty() {
         return Ok(());
     }
-    let placeholders = std::iter::repeat("?").take(ids.len()).collect::<Vec<_>>().join(",");
+    let placeholders = std::iter::repeat("?")
+        .take(ids.len())
+        .collect::<Vec<_>>()
+        .join(",");
     let sql = format!("UPDATE message SET seen = 1 WHERE id IN ({placeholders})");
     let params_owned: Vec<&dyn rusqlite::ToSql> =
         ids.iter().map(|id| id as &dyn rusqlite::ToSql).collect();

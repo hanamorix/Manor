@@ -1959,6 +1959,7 @@ dependencies = [
  "futures-util",
  "manor-core",
  "reqwest 0.12.28",
+ "rusqlite",
  "serde",
  "serde_json",
  "tauri",

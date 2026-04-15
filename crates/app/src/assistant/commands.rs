@@ -1,6 +1,8 @@
 //! Tauri commands exposed to the frontend Assistant.
 
-use crate::assistant::ollama::{ChatMessage, ChatRole, OllamaClient, StreamChunk, DEFAULT_ENDPOINT, DEFAULT_MODEL};
+use crate::assistant::ollama::{
+    ChatMessage, ChatRole, OllamaClient, StreamChunk, DEFAULT_ENDPOINT, DEFAULT_MODEL,
+};
 use crate::assistant::prompts::SYSTEM_PROMPT;
 use manor_core::assistant::{conversation, db, message, message::Role};
 use rusqlite::Connection;
