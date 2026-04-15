@@ -22,12 +22,9 @@ export interface Proposal {
 
 export interface Event {
   id: number;
-  calendar_account_id: number;
-  external_id: string;
   title: string;
   start_at: number;
   end_at: number;
-  created_at: number;
 }
 
 export async function listTasks(): Promise<Task[]> {

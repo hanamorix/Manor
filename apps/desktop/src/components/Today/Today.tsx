@@ -1,6 +1,6 @@
 import { useEffect } from "react";
 import { useTodayStore } from "../../lib/today/state";
-import { listTasks } from "../../lib/today/ipc";
+import { listTasks, listEventsToday } from "../../lib/today/ipc";
 import { AVATAR_FOOTPRINT_PX } from "../../lib/layout";
 import HeaderCard from "./HeaderCard";
 import EventsCard from "./EventsCard";
@@ -10,10 +10,12 @@ import Toast from "./Toast";
 
 export default function Today() {
   const setTasks = useTodayStore((s) => s.setTasks);
+  const setEvents = useTodayStore((s) => s.setEvents);
 
   useEffect(() => {
     void listTasks().then(setTasks);
-  }, [setTasks]);
+    void listEventsToday().then(setEvents);
+  }, [setTasks, setEvents]);
 
   return (
     <>
