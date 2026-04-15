@@ -20,6 +20,16 @@ export interface Proposal {
   skill: string;
 }
 
+export interface Event {
+  id: number;
+  calendar_account_id: number;
+  external_id: string;
+  title: string;
+  start_at: number;
+  end_at: number;
+  created_at: number;
+}
+
 export async function listTasks(): Promise<Task[]> {
   return invoke<Task[]>("list_tasks");
 }
@@ -54,4 +64,8 @@ export async function approveProposal(id: number): Promise<Task[]> {
 
 export async function rejectProposal(id: number): Promise<void> {
   return invoke<void>("reject_proposal", { id });
+}
+
+export async function listEventsToday(): Promise<Event[]> {
+  return invoke<Event[]>("list_events_today");
 }

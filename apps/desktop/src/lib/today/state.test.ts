@@ -79,4 +79,10 @@ describe("useTodayStore", () => {
     useTodayStore.getState().removeProposal(1);
     expect(useTodayStore.getState().pendingProposals).toEqual([p2]);
   });
+
+  it("setEvents replaces the array", () => {
+    const e = { id: 1, calendar_account_id: 1, external_id: "u1", title: "Test", start_at: 1, end_at: 2, created_at: 3 };
+    useTodayStore.getState().setEvents([e]);
+    expect(useTodayStore.getState().events).toEqual([e]);
+  });
 });
