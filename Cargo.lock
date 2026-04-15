@@ -1956,6 +1956,7 @@ name = "manor-app"
 version = "0.1.0"
 dependencies = [
  "anyhow",
+ "chrono",
  "futures-util",
  "manor-core",
  "reqwest 0.12.28",

@@ -1,0 +1,148 @@
+import { useEffect } from "react";
+import { useTodayStore } from "../../lib/today/state";
+import {
+  approveProposal,
+  rejectProposal,
+  listProposals,
+  type Proposal,
+} from "../../lib/today/ipc";
+
+interface DiffSummary {
+  title: string;
+  due_date?: string;
+}
+
+function summarise(proposal: Proposal): string {
+  if (proposal.kind === "add_task") {
+    try {
+      const parsed = JSON.parse(proposal.diff) as DiffSummary;
+      const dateSuffix = parsed.due_date ? ` (due ${parsed.due_date})` : "";
+      return `Add task: ${parsed.title}${dateSuffix}`;
+    } catch {
+      return "Add task";
+    }
+  }
+  return proposal.kind;
+}
+
+function rationaleLine(proposal: Proposal): string {
+  const r = proposal.rationale.trim();
+  if (r.length === 0) return "Manor proposed this from your message";
+  const truncated = r.length > 120 ? `${r.slice(0, 117)}...` : r;
+  return `Manor: "${truncated}"`;
+}
+
+export default function ProposalBanner() {
+  const pending = useTodayStore((s) => s.pendingProposals);
+  const setPendingProposals = useTodayStore((s) => s.setPendingProposals);
+  const setTasks = useTodayStore((s) => s.setTasks);
+  const removeProposal = useTodayStore((s) => s.removeProposal);
+
+  useEffect(() => {
+    void listProposals("pending").then(setPendingProposals);
+  }, [setPendingProposals]);
+
+  if (pending.length === 0) return null;
+
+  const handleApprove = async (id: number) => {
+    removeProposal(id);
+    try {
+      const refreshedTasks = await approveProposal(id);
+      setTasks(refreshedTasks);
+    } catch {
+      void listProposals("pending").then(setPendingProposals);
+    }
+  };
+
+  const handleReject = async (id: number) => {
+    removeProposal(id);
+    try {
+      await rejectProposal(id);
+    } catch {
+      void listProposals("pending").then(setPendingProposals);
+    }
+  };
+
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+      {pending.map((p) => (
+        <div
+          key={p.id}
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: 10,
+            background: "linear-gradient(180deg, #FFF3D6, #FFE4A8)",
+            border: "1px solid #FFC15C",
+            borderRadius: "var(--radius-md)",
+            padding: "10px 14px",
+            animation: "bannerIn 200ms ease-out",
+          }}
+        >
+          <span
+            style={{
+              background: "#FF8800",
+              color: "white",
+              fontSize: 10,
+              fontWeight: 700,
+              padding: "2px 8px",
+              borderRadius: 999,
+              letterSpacing: 0.6,
+              flexShrink: 0,
+            }}
+          >
+            PROPOSAL
+          </span>
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <div style={{ fontWeight: 700, fontSize: 13, color: "#3a2818" }}>
+              {summarise(p)}
+            </div>
+            <div
+              style={{
+                fontSize: 11,
+                color: "rgba(58, 40, 24, 0.7)",
+                whiteSpace: "nowrap",
+                overflow: "hidden",
+                textOverflow: "ellipsis",
+              }}
+            >
+              {rationaleLine(p)}
+            </div>
+          </div>
+          <button
+            onClick={() => void handleApprove(p.id)}
+            aria-label="approve"
+            style={{
+              padding: "4px 10px",
+              borderRadius: 999,
+              fontSize: 12,
+              fontWeight: 700,
+              border: "none",
+              background: "var(--imessage-green)",
+              color: "white",
+              cursor: "pointer",
+            }}
+          >
+            ✓
+          </button>
+          <button
+            onClick={() => void handleReject(p.id)}
+            aria-label="reject"
+            style={{
+              padding: "4px 10px",
+              borderRadius: 999,
+              fontSize: 12,
+              fontWeight: 700,
+              border: "none",
+              background: "rgba(255,255,255,0.7)",
+              color: "rgba(0,0,0,0.6)",
+              cursor: "pointer",
+            }}
+          >
+            ✗
+          </button>
+        </div>
+      ))}
+    </div>
+  );
+}

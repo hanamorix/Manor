@@ -1,6 +1,9 @@
 import { useEffect, useState, useRef, KeyboardEvent } from "react";
 import { useAssistantStore } from "../../lib/assistant/state";
 import { listMessages, markSeen, getUnreadCount } from "../../lib/assistant/ipc";
+import { parseSlash } from "../../lib/today/slash";
+import { addTask } from "../../lib/today/ipc";
+import { useTodayStore } from "../../lib/today/state";
 
 interface ConversationDrawerProps {
   onSubmit: (content: string) => void;
@@ -50,6 +53,15 @@ export default function ConversationDrawer({ onSubmit }: ConversationDrawerProps
   const submit = () => {
     const t = value.trim();
     if (t.length === 0) return;
+    const slash = parseSlash(t);
+    if (slash?.type === "task") {
+      void addTask(slash.title).then((task) => {
+        useTodayStore.getState().upsertTask(task);
+        useTodayStore.getState().showToast(`Added: ${slash.title}`);
+      });
+      setValue("");
+      return;
+    }
     onSubmit(t);
     setValue("");
   };
