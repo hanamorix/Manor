@@ -1,6 +1,7 @@
 //! Tauri command glue for Manor.
 
 pub mod assistant;
+pub mod sync;
 
 use serde::Serialize;
 use tauri::{Builder, Manager, Wry};
