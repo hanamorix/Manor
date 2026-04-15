@@ -23,6 +23,7 @@ export default function Assistant() {
 
   const setAvatarState = useAssistantStore((s) => s.setAvatarState);
   const enqueueBubble = useAssistantStore((s) => s.enqueueBubble);
+  const transientBubbles = useAssistantStore((s) => s.transientBubbles);
   const beginAssistantMessage = useAssistantStore((s) => s.beginAssistantMessage);
   const appendAssistantToken = useAssistantStore((s) => s.appendAssistantToken);
   const endAssistantMessage = useAssistantStore((s) => s.endAssistantMessage);
@@ -168,12 +169,14 @@ export default function Assistant() {
         }}
       >
         <UnreadBadgeWithAnchor />
-        <InputPill
-          ref={pillRef}
-          onSubmit={handleSubmit}
-          onFocus={() => setAvatarState("listening")}
-          onBlur={() => setAvatarState("idle")}
-        />
+        {transientBubbles.length === 0 && (
+          <InputPill
+            ref={pillRef}
+            onSubmit={handleSubmit}
+            onFocus={() => setAvatarState("listening")}
+            onBlur={() => setAvatarState("idle")}
+          />
+        )}
         <Avatar onClick={() => setDrawerOpen(true)} />
       </div>
     </>
