@@ -2862,3 +2862,8 @@ Phase 2 is one coherent subsystem (Assistant shell substrate). No feature skills
 ## Plan deviations (to be appended by implementers, as per Phase 1 convention)
 
 *(None yet. Implementers should append each deviation with reasoning.)*
+
+## Plan deviation — Task 3 (`conversation.rs` clippy)
+
+**Step 2 — `Some(c) = conn.query_row(...).ok()` pattern:**
+The plan's code used `if let Some(c) = ...query_row(...).ok() { ... }`. Clippy's `clippy::match-result-ok` lint (a default warning, turned into error by CI's `-D warnings` flag) flags this as redundant. Fixed by matching the `Result` directly: `if let Ok(c) = conn.query_row(...) { ... }`. Semantics identical; one fewer lint violation. No test changes.

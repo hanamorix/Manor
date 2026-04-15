@@ -24,14 +24,11 @@ impl Conversation {
 
 /// Return the default conversation, creating it (id=1) on first call.
 pub fn get_or_create_default(conn: &Connection) -> Result<Conversation> {
-    if let Some(c) = conn
-        .query_row(
-            "SELECT id, created_at, title FROM conversation WHERE id = 1",
-            [],
-            Conversation::from_row,
-        )
-        .ok()
-    {
+    if let Ok(c) = conn.query_row(
+        "SELECT id, created_at, title FROM conversation WHERE id = 1",
+        [],
+        Conversation::from_row,
+    ) {
         return Ok(c);
     }
 
