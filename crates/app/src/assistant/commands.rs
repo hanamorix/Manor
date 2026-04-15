@@ -5,26 +5,38 @@ use crate::assistant::ollama::{
 };
 use crate::assistant::prompts::SYSTEM_PROMPT;
 use crate::assistant::tools;
+use crate::sync::engine::{SyncResult, SyncState};
+use crate::sync::keychain;
 use chrono::Local;
 use manor_core::assistant::{
-    conversation, db, message,
+    calendar_account::{self, CalendarAccount},
+    conversation, db,
+    event::{self, Event},
+    message,
     message::Role,
     proposal::{self, AddTaskArgs, NewProposal, Proposal},
     task::{self, Task},
 };
 use rusqlite::Connection;
 use std::path::PathBuf;
-use std::sync::Mutex;
+use std::sync::{Arc, Mutex};
 use tauri::ipc::Channel;
 use tauri::State;
 use tokio::sync::mpsc;
 
-pub struct Db(pub Mutex<Connection>);
+/// DB state — wrapped in `Arc<Mutex<_>>` so it can be cloned into spawned tasks
+/// without holding the guard across `.await` points.
+pub struct Db(pub Arc<Mutex<Connection>>);
 
 impl Db {
     pub fn open(path: PathBuf) -> anyhow::Result<Self> {
         let conn = db::init(&path)?;
-        Ok(Self(Mutex::new(conn)))
+        Ok(Self(Arc::new(Mutex::new(conn))))
+    }
+
+    /// Clone the inner `Arc` so a spawned task can hold its own handle to the mutex.
+    pub fn clone_arc(&self) -> Arc<Mutex<Connection>> {
+        self.0.clone()
     }
 }
 
@@ -32,6 +44,34 @@ const CONTEXT_WINDOW: u32 = 20;
 
 fn today_local_iso() -> String {
     Local::now().date_naive().format("%Y-%m-%d").to_string()
+}
+
+fn today_utc_bounds() -> (i64, i64) {
+    let now = Local::now();
+    let start_local = now
+        .date_naive()
+        .and_hms_opt(0, 0, 0)
+        .unwrap()
+        .and_local_timezone(Local)
+        .unwrap();
+    let end_local = start_local + chrono::Duration::days(1);
+    (
+        start_local.with_timezone(&chrono::Utc).timestamp(),
+        end_local.with_timezone(&chrono::Utc).timestamp(),
+    )
+}
+
+fn display_name_for_url(url: &str) -> String {
+    if url.contains("caldav.icloud.com") {
+        "iCloud".into()
+    } else if url.contains("fastmail") {
+        "Fastmail".into()
+    } else {
+        reqwest::Url::parse(url)
+            .ok()
+            .and_then(|u| u.host_str().map(|s| s.to_string()))
+            .unwrap_or_else(|| url.to_string())
+    }
 }
 
 #[tauri::command]
@@ -259,4 +299,142 @@ pub fn approve_proposal(state: State<'_, Db>, id: i64) -> Result<Vec<Task>, Stri
 pub fn reject_proposal(state: State<'_, Db>, id: i64) -> Result<(), String> {
     let conn = state.0.lock().map_err(|e| e.to_string())?;
     proposal::reject(&conn, id).map_err(|e| e.to_string())
+}
+
+// === Calendar Accounts ===
+
+#[tauri::command]
+pub fn list_calendar_accounts(state: State<'_, Db>) -> Result<Vec<CalendarAccount>, String> {
+    let conn = state.0.lock().map_err(|e| e.to_string())?;
+    calendar_account::list(&conn).map_err(|e| e.to_string())
+}
+
+#[tauri::command]
+pub async fn add_calendar_account(
+    db: State<'_, Db>,
+    sync_state: State<'_, Arc<SyncState>>,
+    server_url: String,
+    username: String,
+    password: String,
+) -> Result<CalendarAccount, String> {
+    let display_name = display_name_for_url(&server_url);
+    let account = {
+        let conn = db.0.lock().map_err(|e| e.to_string())?;
+        let id = calendar_account::insert(&conn, &display_name, &server_url, &username)
+            .map_err(|e| e.to_string())?;
+        keychain::set_password(id, &password).map_err(|e| format!("keychain: {e}"))?;
+        calendar_account::get(&conn, id)
+            .map_err(|e| e.to_string())?
+            .ok_or_else(|| "just-inserted row not found".to_string())?
+    };
+
+    // Kick off first sync in a blocking thread — lock is acquired inside the sync thread,
+    // never held across an await boundary.
+    let account_id = account.id;
+    let db_arc = db.clone_arc();
+    let sync_state_arc = sync_state.inner().clone();
+    let handle = tokio::runtime::Handle::current();
+    tauri::async_runtime::spawn_blocking(move || {
+        let mut conn = db_arc.lock().unwrap();
+        let result = handle.block_on(crate::sync::engine::sync_account(
+            &mut conn,
+            &sync_state_arc,
+            account_id,
+            &password,
+            chrono_tz::UTC,
+        ));
+        drop(conn);
+        result
+    });
+
+    Ok(account)
+}
+
+#[tauri::command]
+pub fn remove_calendar_account(db: State<'_, Db>, id: i64) -> Result<(), String> {
+    let conn = db.0.lock().map_err(|e| e.to_string())?;
+    calendar_account::delete(&conn, id).map_err(|e| e.to_string())?;
+    let _ = keychain::delete_password(id);
+    Ok(())
+}
+
+#[tauri::command]
+pub async fn sync_account(
+    db: State<'_, Db>,
+    sync_state: State<'_, Arc<SyncState>>,
+    id: i64,
+) -> Result<SyncResult, String> {
+    let password = keychain::get_password(id).map_err(|e| format!("keychain: {e}"))?;
+    let db_arc = db.clone_arc();
+    let sync_state_arc = sync_state.inner().clone();
+
+    // Run sync inside spawn_blocking: lock is held in the sync thread, never across .await.
+    let handle = tokio::runtime::Handle::current();
+    let result = tauri::async_runtime::spawn_blocking(move || {
+        let mut conn = db_arc.lock().unwrap();
+        handle.block_on(crate::sync::engine::sync_account(
+            &mut conn,
+            &sync_state_arc,
+            id,
+            &password,
+            chrono_tz::UTC,
+        ))
+    })
+    .await
+    .map_err(|e| e.to_string())?;
+
+    Ok(result)
+}
+
+#[tauri::command]
+pub async fn sync_all_accounts(
+    db: State<'_, Db>,
+    sync_state: State<'_, Arc<SyncState>>,
+) -> Result<Vec<SyncResult>, String> {
+    // Collect account ids under a brief lock — no awaiting while holding the guard.
+    let ids: Vec<i64> = {
+        let conn = db.0.lock().map_err(|e| e.to_string())?;
+        calendar_account::list(&conn)
+            .map_err(|e| e.to_string())?
+            .into_iter()
+            .map(|a| a.id)
+            .collect()
+    };
+
+    let mut results = Vec::with_capacity(ids.len());
+    for id in ids {
+        let Ok(password) = keychain::get_password(id) else {
+            continue;
+        };
+        let db_arc = db.clone_arc();
+        let sync_state_arc = sync_state.inner().clone();
+
+        // Each account synced via spawn_blocking: lock held in sync thread, not across .await.
+        let handle = tokio::runtime::Handle::current();
+        let result = tauri::async_runtime::spawn_blocking(move || {
+            let mut conn = db_arc.lock().unwrap();
+            handle.block_on(crate::sync::engine::sync_account(
+                &mut conn,
+                &sync_state_arc,
+                id,
+                &password,
+                chrono_tz::UTC,
+            ))
+        })
+        .await
+        .map_err(|e| e.to_string())?;
+
+        results.push(result);
+    }
+
+    Ok(results)
+}
+
+// === Events ===
+
+#[tauri::command]
+pub fn list_events_today(state: State<'_, Db>) -> Result<Vec<Event>, String> {
+    let (start, end) = today_utc_bounds();
+    let conn = state.0.lock().map_err(|e| e.to_string())?;
+    event::list_today(&conn, start, end).map_err(|e| e.to_string())
 }

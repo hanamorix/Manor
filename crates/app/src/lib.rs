@@ -4,7 +4,10 @@ pub mod assistant;
 pub mod sync;
 
 use serde::Serialize;
+use std::sync::Arc;
 use tauri::{Builder, Manager, Wry};
+
+use crate::sync::engine::SyncState;
 
 #[derive(Debug, Serialize, PartialEq, Eq)]
 pub struct PingResponse {
@@ -40,6 +43,48 @@ pub fn register(builder: Builder<Wry>) -> Builder<Wry> {
             let db_path = data_dir.join("manor.db");
             let db = assistant::commands::Db::open(db_path)?;
             app.manage(db);
+
+            // Register SyncState as Arc so it can be cheaply cloned into spawned tasks.
+            let sync_state: Arc<SyncState> = Arc::new(SyncState::new());
+            app.manage(sync_state.clone());
+
+            // Kick off background app-start sync of all existing accounts.
+            let sync_state_for_start = sync_state.clone();
+            let db_arc = app.state::<assistant::commands::Db>().inner().clone_arc();
+            tauri::async_runtime::spawn(async move {
+                let ids: Vec<i64> = {
+                    let conn = db_arc.lock().unwrap();
+                    manor_core::assistant::calendar_account::list(&conn)
+                        .unwrap_or_default()
+                        .into_iter()
+                        .map(|a| a.id)
+                        .collect()
+                };
+                for id in ids {
+                    let Ok(password) = crate::sync::keychain::get_password(id) else {
+                        continue;
+                    };
+                    let db_arc2 = db_arc.clone();
+                    let sync_state2 = sync_state_for_start.clone();
+                    // Lock is acquired inside the blocking thread, never held across .await.
+                    let handle = tokio::runtime::Handle::current();
+                    let result = tauri::async_runtime::spawn_blocking(move || {
+                        let mut conn = db_arc2.lock().unwrap();
+                        handle.block_on(crate::sync::engine::sync_account(
+                            &mut conn,
+                            &sync_state2,
+                            id,
+                            &password,
+                            chrono_tz::UTC,
+                        ))
+                    })
+                    .await;
+                    if let Err(e) = result {
+                        tracing::warn!("app-start sync for account {id} failed: {e}");
+                    }
+                }
+            });
+
             Ok(())
         })
         .invoke_handler(tauri::generate_handler![
@@ -57,6 +102,12 @@ pub fn register(builder: Builder<Wry>) -> Builder<Wry> {
             assistant::commands::list_proposals,
             assistant::commands::approve_proposal,
             assistant::commands::reject_proposal,
+            assistant::commands::list_calendar_accounts,
+            assistant::commands::add_calendar_account,
+            assistant::commands::remove_calendar_account,
+            assistant::commands::sync_account,
+            assistant::commands::sync_all_accounts,
+            assistant::commands::list_events_today,
         ])
 }
 
