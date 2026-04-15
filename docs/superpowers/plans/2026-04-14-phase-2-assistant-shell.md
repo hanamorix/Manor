@@ -2877,3 +2877,8 @@ The plan's Task 1 listed `rusqlite.workspace = true` only under `crates/core` de
 
 **Step 1 — PNG imports need a type declaration:**
 Importing `.png` files in TypeScript requires an ambient module declaration or a Vite env typings file. The plan didn't spell this out. Added `apps/desktop/src/vite-env.d.ts` with a `/// <reference types="vite/client" />` directive to provide typings for static asset imports. Standard Vite + TypeScript practice.
+
+## Plan deviation — Task 14 (`BubbleLayer` not rendered)
+
+**Step 1 — `Assistant.tsx` JSX missed `<BubbleLayer />`:**
+The plan's `Assistant.tsx` imports `BubbleLayer` but never renders it in the JSX. The implementer correctly removed the unused import (TS6133 under `noUnusedLocals`). Caught during the controller's spot-check: without `<BubbleLayer />` mounted, no ephemeral bubbles ever appear on screen, even though the BubbleLayer component, zustand store wiring, and TTL timer machinery all work independently. Fixed by re-adding the import and mounting `<BubbleLayer />` between `<ConversationDrawer />` and the corner-stack `<div>`. BubbleLayer is `position: fixed` so its placement in the JSX tree doesn't affect layout.
