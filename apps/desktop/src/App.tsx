@@ -1,35 +1,20 @@
-import { useEffect, useState } from "react";
-import { ping, type PingResponse } from "./lib/ipc";
-
-type State =
-  | { kind: "loading" }
-  | { kind: "ok"; resp: PingResponse }
-  | { kind: "error"; message: string };
+import Assistant from "./components/Assistant/Assistant";
 
 export default function App() {
-  const [state, setState] = useState<State>({ kind: "loading" });
-
-  useEffect(() => {
-    ping()
-      .then((resp) => setState({ kind: "ok", resp }))
-      .catch((e: unknown) =>
-        setState({ kind: "error", message: String(e) }),
-      );
-  }, []);
-
   return (
-    <main style={{ padding: "2rem" }}>
-      <h1>Manor</h1>
-      {state.kind === "loading" && <p>Contacting core…</p>}
-      {state.kind === "ok" && (
-        <p>
-          Core says <strong>{state.resp.message}</strong> (core version{" "}
-          {state.resp.core_version}).
-        </p>
-      )}
-      {state.kind === "error" && (
-        <p style={{ color: "#b91c1c" }}>Error: {state.message}</p>
-      )}
+    <main
+      style={{
+        minHeight: "100vh",
+        padding: "2rem",
+        position: "relative",
+      }}
+    >
+      <h1 style={{ fontWeight: 700, fontSize: 28 }}>Manor</h1>
+      <p style={{ color: "rgba(0,0,0,0.6)" }}>
+        Phase 2: she's here. Future views (Today, Chores, Meals) land in later phases.
+      </p>
+
+      <Assistant />
     </main>
   );
 }
