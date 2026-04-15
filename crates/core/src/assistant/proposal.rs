@@ -56,7 +56,24 @@ pub struct Proposal {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct AddTaskArgs {
     pub title: String,
+    /// Optional due date. qwen2.5 occasionally emits structured objects here
+    /// instead of a plain string (e.g. `{year, month, day}`). We accept any
+    /// JSON shape and coerce non-strings to `None` — the caller defaults to
+    /// today when `None`, which is the right v0.1 behaviour anyway.
+    #[serde(default, deserialize_with = "deserialize_due_date")]
     pub due_date: Option<String>,
+}
+
+fn deserialize_due_date<'de, D>(d: D) -> Result<Option<String>, D::Error>
+where
+    D: serde::Deserializer<'de>,
+{
+    let v = serde_json::Value::deserialize(d)?;
+    match v {
+        serde_json::Value::String(s) => Ok(Some(s)),
+        serde_json::Value::Null => Ok(None),
+        _ => Ok(None),
+    }
 }
 
 /// Insert a new proposal. Returns the new row id.
@@ -284,5 +301,19 @@ mod tests {
         .unwrap();
         let tasks = approve_add_task(&mut conn, pid, "2026-04-15").unwrap();
         assert_eq!(tasks[0].due_date.as_deref(), Some("2026-04-30"));
+    }
+
+    #[test]
+    fn add_task_args_coerces_non_string_due_date_to_none() {
+        // qwen2.5 sometimes emits due_date as a structured object instead of
+        // a string. We accept the arguments and drop the weird due_date rather
+        // than failing the whole deserialize.
+        let weird = serde_json::json!({
+            "title": "Book a dentist appointment",
+            "due_date": { "year": 2026, "month": 4, "day": 20 }
+        });
+        let parsed: AddTaskArgs = serde_json::from_value(weird).unwrap();
+        assert_eq!(parsed.title, "Book a dentist appointment");
+        assert_eq!(parsed.due_date, None);
     }
 }
