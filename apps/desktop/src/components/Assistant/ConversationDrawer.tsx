@@ -1,6 +1,5 @@
 import { useEffect, useState, useRef, KeyboardEvent } from "react";
 import { useAssistantStore } from "../../lib/assistant/state";
-import { expressionFor } from "../../lib/assistant/expressions";
 import { listMessages, markSeen, getUnreadCount } from "../../lib/assistant/ipc";
 
 interface ConversationDrawerProps {
@@ -11,7 +10,6 @@ export default function ConversationDrawer({ onSubmit }: ConversationDrawerProps
   const drawerOpen = useAssistantStore((s) => s.drawerOpen);
   const setDrawerOpen = useAssistantStore((s) => s.setDrawerOpen);
   const messages = useAssistantStore((s) => s.messages);
-  const avatarState = useAssistantStore((s) => s.avatarState);
   const hydrateMessages = useAssistantStore((s) => s.hydrateMessages);
   const setUnreadCount = useAssistantStore((s) => s.setUnreadCount);
 
@@ -100,14 +98,7 @@ export default function ConversationDrawer({ onSubmit }: ConversationDrawerProps
             borderBottom: "1px solid var(--hairline)",
           }}
         >
-          <img
-            src={expressionFor(avatarState)}
-            alt="Manor"
-            width={32}
-            height={32}
-            style={{ transform: "scaleX(-1)", borderRadius: "var(--radius-md)" }}
-          />
-          <strong style={{ flex: 1, fontSize: 15 }}>Manor</strong>
+          <strong style={{ flex: 1, fontSize: 15 }}>Full Conversation</strong>
           <button
             onClick={() => setDrawerOpen(false)}
             aria-label="Close"
