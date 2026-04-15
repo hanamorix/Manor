@@ -2872,3 +2872,8 @@ The plan's code used `if let Some(c) = ...query_row(...).ok() { ... }`. Clippy's
 
 **Step 3 — `Db` struct holds `rusqlite::Connection`:**
 The plan's Task 1 listed `rusqlite.workspace = true` only under `crates/core` dependencies. But Task 6's `commands.rs` exposes `pub struct Db(pub Mutex<Connection>)` where `Connection` is `rusqlite::Connection`, so `manor-app` needs direct `rusqlite` access too. Added `rusqlite.workspace = true` to `crates/app/Cargo.toml` dependencies. Task 1's plan would have anticipated this had it modelled the full dep graph through Task 6.
+
+## Plan deviation — Task 9 (`vite-env.d.ts`)
+
+**Step 1 — PNG imports need a type declaration:**
+Importing `.png` files in TypeScript requires an ambient module declaration or a Vite env typings file. The plan didn't spell this out. Added `apps/desktop/src/vite-env.d.ts` with a `/// <reference types="vite/client" />` directive to provide typings for static asset imports. Standard Vite + TypeScript practice.
