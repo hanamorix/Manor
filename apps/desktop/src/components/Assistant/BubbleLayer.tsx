@@ -1,4 +1,4 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useAssistantStore } from "../../lib/assistant/state";
 import type { TransientBubble } from "../../lib/assistant/state";
 import { createTtlTimer, TtlTimer } from "../../lib/assistant/bubble-ttl";
@@ -96,8 +96,13 @@ interface BubbleProps {
   onClick: () => void;
 }
 
+const MAX_BUBBLE_LINES = 6;
+
 function Bubble({ bubble, onDismiss, onClick }: BubbleProps) {
   const timerRef = useRef<TtlTimer | null>(null);
+  const contentRef = useRef<HTMLDivElement>(null);
+  const [overflowing, setOverflowing] = useState(false);
+
   // Always-current refs so the timer effect doesn't restart on every parent
   // re-render — content updates would otherwise reset the TTL countdown.
   const onDismissRef = useRef(onDismiss);
@@ -111,6 +116,13 @@ function Bubble({ bubble, onDismiss, onClick }: BubbleProps) {
     timer.start();
     return () => timer.cancel();
   }, [bubble.id, bubble.ttlMs]);
+
+  // Re-measure overflow on every content update (covers streaming).
+  useEffect(() => {
+    const el = contentRef.current;
+    if (!el) return;
+    setOverflowing(el.scrollHeight > el.clientHeight + 1);
+  }, [bubble.content]);
 
   const c = bubbleColors(bubble.kind);
 
@@ -139,7 +151,30 @@ function Bubble({ bubble, onDismiss, onClick }: BubbleProps) {
         animation: "bubbleIn 200ms ease-out",
       }}
     >
-      {bubble.content}
+      <div
+        ref={contentRef}
+        style={{
+          display: "-webkit-box",
+          WebkitLineClamp: MAX_BUBBLE_LINES,
+          WebkitBoxOrient: "vertical",
+          overflow: "hidden",
+        }}
+      >
+        {bubble.content}
+      </div>
+      {overflowing && (
+        <div
+          style={{
+            marginTop: 6,
+            fontSize: 12,
+            fontWeight: 700,
+            opacity: 0.85,
+            letterSpacing: 0.2,
+          }}
+        >
+          See more →
+        </div>
+      )}
     </div>
   );
 }
