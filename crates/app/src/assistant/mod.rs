@@ -3,3 +3,4 @@
 pub mod commands;
 pub mod ollama;
 pub mod prompts;
+pub mod tools;
