@@ -65,15 +65,42 @@ export default function AddAccountForm({ onClose }: AddAccountFormProps) {
         placeholder="your-apple-id@icloud.com"
         style={inputStyle}
       />
-      <label style={labelStyle}>
-        App-specific password
-        <span title="For iCloud: appleid.apple.com → Sign-In and Security → App-Specific Passwords" style={{ marginLeft: 6, color: "rgba(0,0,0,0.4)", cursor: "help" }}>?</span>
-      </label>
+      <label style={labelStyle}>App-specific password</label>
       <input
         type="password" value={password}
         onChange={(e) => setPassword(e.target.value)}
         style={inputStyle}
       />
+      <p style={{ marginTop: 6, marginBottom: 0, fontSize: 11, color: "rgba(0,0,0,0.5)", lineHeight: 1.4 }}>
+        {serverUrl.includes("caldav.icloud.com") ? (
+          <>
+            iCloud needs an app-specific password — generate one at{" "}
+            <a
+              href="https://appleid.apple.com/account/manage"
+              target="_blank"
+              rel="noreferrer"
+              style={{ color: "var(--imessage-blue)", textDecoration: "none", fontWeight: 600 }}
+            >
+              appleid.apple.com
+            </a>
+            {" "}→ Sign-In and Security → App-Specific Passwords.
+          </>
+        ) : serverUrl.includes("fastmail") ? (
+          <>
+            Fastmail needs an app password — generate one at{" "}
+            <a
+              href="https://www.fastmail.com/settings/security/devicekeys"
+              target="_blank"
+              rel="noreferrer"
+              style={{ color: "var(--imessage-blue)", textDecoration: "none", fontWeight: 600 }}
+            >
+              fastmail.com → Settings → Privacy &amp; Security → App passwords
+            </a>.
+          </>
+        ) : (
+          <>Use the password your CalDAV server expects (often an app-specific password, not your main login).</>
+        )}
+      </p>
 
       {error && (
         <div style={{ marginTop: 8, color: "var(--imessage-red)", fontSize: 12 }}>
