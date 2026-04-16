@@ -2,6 +2,7 @@ import { useWizardStore } from "../../lib/wizard/state";
 import StepDataDir from "./StepDataDir";
 import StepOllama from "./StepOllama";
 import StepCalendar from "./StepCalendar";
+import StepSample from "./StepSample";
 
 const TITLES = ["Data directory", "Local brain", "Your calendar", "Sample data"];
 
@@ -40,13 +41,9 @@ export default function Wizard() {
           {step === 1 && <StepDataDir />}
           {step === 2 && <StepOllama />}
           {step === 3 && <StepCalendar />}
-          {step === 4 && <StepPlaceholder label="Step 4 — filling in Task 6" />}
+          {step === 4 && <StepSample />}
         </div>
       </div>
     </div>
   );
-}
-
-function StepPlaceholder({ label }: { label: string }) {
-  return <div style={{ padding: 16, color: "#888" }}>{label}</div>;
 }

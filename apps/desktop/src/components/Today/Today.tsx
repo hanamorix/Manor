@@ -12,6 +12,7 @@ import TimeBlocksCard from "./TimeBlocksCard";
 import ChoresCard from "./ChoresCard";
 import TasksCard from "./TasksCard";
 import ProposalBanner from "./ProposalBanner";
+import SampleDataBanner from "./SampleDataBanner";
 import Toast from "./Toast";
 
 export default function Today() {
@@ -40,6 +41,7 @@ export default function Today() {
         }}
       >
         <ProposalBanner />
+        <SampleDataBanner />
         <HeaderCard />
         <EventsCard />
         <TimeBlocksCard />

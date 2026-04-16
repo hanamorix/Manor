@@ -356,6 +356,14 @@ pub fn data_dir_path(app: AppHandle) -> Result<String, String> {
     Ok(dir.to_string_lossy().into_owned())
 }
 
+// ── Tags (reverse lookup) ─────────────────────────────────────────────────────
+
+#[tauri::command]
+pub fn entities_with_tag(state: State<'_, Db>, tag_id: i64) -> Result<Vec<(String, i64)>, String> {
+    let conn = state.0.lock().map_err(|e| e.to_string())?;
+    tag::entities_with_tag(&conn, tag_id).map_err(|e| e.to_string())
+}
+
 // ── Ollama status ─────────────────────────────────────────────────────────────
 
 #[derive(serde::Serialize)]

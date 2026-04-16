@@ -192,6 +192,7 @@ pub fn register(builder: Builder<Wry>) -> Builder<Wry> {
             foundation::commands::tag_link,
             foundation::commands::tag_unlink,
             foundation::commands::tag_for_entity,
+            foundation::commands::entities_with_tag,
             foundation::commands::note_insert,
             foundation::commands::note_update,
             foundation::commands::note_delete,
