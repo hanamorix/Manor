@@ -32,6 +32,7 @@ export default function Assistant() {
   const appendAssistantToken = useAssistantStore((s) => s.appendAssistantToken);
   const endAssistantMessage = useAssistantStore((s) => s.endAssistantMessage);
   const addUserMessage = useAssistantStore((s) => s.addUserMessage);
+  const setBubbleTtl = useAssistantStore((s) => s.setBubbleTtl);
   const setUnreadCount = useAssistantStore((s) => s.setUnreadCount);
   const setDrawerOpen = useAssistantStore((s) => s.setDrawerOpen);
   const hydrateMessages = useAssistantStore((s) => s.hydrateMessages);
@@ -127,7 +128,7 @@ export default function Assistant() {
           kind: "assistant",
           content: "",
           messageId: assistantDbId,
-          ttlMs: 12000,
+          ttlMs: 120000,
         });
       } else if (chunk.type === "Token") {
         if (assistantDbId === null) {
@@ -152,6 +153,12 @@ export default function Assistant() {
         void listTasks().then(setTodayTasks);
       } else if (chunk.type === "Done") {
         endAssistantMessage();
+        // Reset bubble TTL to 8s now that all content has arrived — the
+        // bubble was created with a long holding TTL (120s) to survive the
+        // batch-replay architecture where tokens arrive all at once after
+        // full generation. Changing ttlMs triggers BubbleLayer's useEffect
+        // which restarts the countdown from zero.
+        setBubbleTtl(assistantBubbleId, 8000);
         if (looksLikeDelight(assistantText)) {
           setAvatarState("idle"); // will pass through laughing in a future refinement
         } else {

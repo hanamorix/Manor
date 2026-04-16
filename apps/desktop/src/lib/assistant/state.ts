@@ -26,6 +26,7 @@ interface AssistantStore {
 
   enqueueBubble: (b: TransientBubble) => void;
   appendBubbleContent: (id: string, fragment: string) => void;
+  setBubbleTtl: (id: string, ttlMs: number) => void;
   dismissBubble: (id: string) => void;
 
   setUnreadCount: (n: number) => void;
@@ -85,6 +86,13 @@ export const useAssistantStore = create<AssistantStore>((set) => ({
     set((st) => ({
       transientBubbles: st.transientBubbles.map((b) =>
         b.id === id ? { ...b, content: b.content + fragment } : b,
+      ),
+    })),
+
+  setBubbleTtl: (id, ttlMs) =>
+    set((st) => ({
+      transientBubbles: st.transientBubbles.map((b) =>
+        b.id === id ? { ...b, ttlMs } : b,
       ),
     })),
 
