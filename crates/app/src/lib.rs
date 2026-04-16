@@ -209,6 +209,11 @@ pub fn register(builder: Builder<Wry>) -> Builder<Wry> {
             safety::trash_commands::trash_restore,
             safety::trash_commands::trash_permanent_delete,
             safety::trash_commands::trash_empty_all,
+            safety::snapshot_commands::backup_set_passphrase,
+            safety::snapshot_commands::backup_has_passphrase,
+            safety::snapshot_commands::backup_create_now,
+            safety::snapshot_commands::backup_list,
+            safety::snapshot_commands::backup_restore,
         ])
 }
 
