@@ -30,7 +30,19 @@ mod tests {
         let conn = init(&path).expect("init should succeed");
 
         // Migrations ran — the three tables should exist.
-        for table in ["conversation", "message", "proposal"] {
+        for table in [
+            "conversation",
+            "message",
+            "proposal",
+            "task",
+            "calendar_account",
+            "event",
+            "person",
+            "chore",
+            "chore_completion",
+            "rotation",
+            "time_block",
+        ] {
             let exists: i64 = conn
                 .query_row(
                     "SELECT COUNT(*) FROM sqlite_master WHERE type='table' AND name=?1",
