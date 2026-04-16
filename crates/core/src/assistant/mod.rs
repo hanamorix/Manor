@@ -8,3 +8,4 @@ pub mod event;
 pub mod message;
 pub mod proposal;
 pub mod task;
+pub mod time_block;
