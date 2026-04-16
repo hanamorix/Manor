@@ -342,3 +342,48 @@ pub fn attachment_permanent_delete(
     let conn = state.0.lock().map_err(|e| e.to_string())?;
     attachment::permanent_delete(&conn, &root, id).map_err(|e| e.to_string())
 }
+
+// ── App metadata ──────────────────────────────────────────────────────────────
+
+#[tauri::command]
+pub fn app_version() -> String {
+    env!("CARGO_PKG_VERSION").to_string()
+}
+
+#[tauri::command]
+pub fn data_dir_path(app: AppHandle) -> Result<String, String> {
+    let dir = app.path().app_data_dir().map_err(|e| e.to_string())?;
+    Ok(dir.to_string_lossy().into_owned())
+}
+
+// ── Ollama status ─────────────────────────────────────────────────────────────
+
+#[derive(serde::Serialize)]
+pub struct OllamaStatus {
+    pub reachable: bool,
+    pub models: Vec<String>,
+}
+
+#[tauri::command]
+pub async fn ollama_status() -> Result<OllamaStatus, String> {
+    let client = reqwest::Client::builder()
+        .timeout(std::time::Duration::from_secs(3))
+        .build()
+        .map_err(|e| e.to_string())?;
+    let resp = match client.get("http://127.0.0.1:11434/api/tags").send().await {
+        Ok(r) => r,
+        Err(_) => return Ok(OllamaStatus { reachable: false, models: vec![] }),
+    };
+    if !resp.status().is_success() {
+        return Ok(OllamaStatus { reachable: false, models: vec![] });
+    }
+    #[derive(serde::Deserialize)]
+    struct TagsResp { models: Vec<TagEntry> }
+    #[derive(serde::Deserialize)]
+    struct TagEntry { name: String }
+    let body: TagsResp = resp.json().await.map_err(|e| e.to_string())?;
+    Ok(OllamaStatus {
+        reachable: true,
+        models: body.models.into_iter().map(|m| m.name).collect(),
+    })
+}
