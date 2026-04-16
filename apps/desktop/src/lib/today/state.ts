@@ -11,6 +11,8 @@ interface TodayStore {
   setEvents: (e: Event[]) => void;
   upsertTask: (t: Task) => void;
   removeTask: (id: number) => void;
+  upsertEvent: (e: Event) => void;
+  removeEvent: (id: number) => void;
 
   setPendingProposals: (p: Proposal[]) => void;
   removeProposal: (id: number) => void;
@@ -28,6 +30,19 @@ export const useTodayStore = create<TodayStore>((set) => ({
   setTasks: (t) => set({ tasks: t }),
 
   setEvents: (e) => set({ events: e }),
+
+  upsertEvent: (e) =>
+    set((s) => {
+      const idx = s.events.findIndex((x) => x.id === e.id);
+      if (idx >= 0) {
+        const next = [...s.events];
+        next[idx] = e;
+        return { events: next };
+      }
+      return { events: [...s.events, e].sort((a, b) => a.start_at - b.start_at) };
+    }),
+
+  removeEvent: (id) => set((s) => ({ events: s.events.filter((e) => e.id !== id) })),
 
   upsertTask: (t) =>
     set((st) => {

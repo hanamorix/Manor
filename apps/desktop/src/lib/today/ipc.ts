@@ -28,6 +28,14 @@ export interface Event {
   start_at: number;
   end_at: number;
   created_at: number;
+  event_url: string | null;
+  etag: string | null;
+  description: string | null;
+  location: string | null;
+  all_day: boolean;
+  is_recurring_occurrence: boolean;
+  parent_event_url: string | null;
+  occurrence_dtstart: string | null;
 }
 
 export async function listTasks(): Promise<Task[]> {
@@ -68,4 +76,43 @@ export async function rejectProposal(id: number): Promise<void> {
 
 export async function listEventsToday(): Promise<Event[]> {
   return invoke<Event[]>("list_events_today");
+}
+
+export interface CreateEventArgs {
+  account_id: number;
+  calendar_url: string;
+  title: string;
+  start_at: number;
+  end_at: number;
+  description?: string;
+  location?: string;
+  all_day: boolean;
+}
+
+export interface UpdateEventArgs {
+  event_id: number;
+  title: string;
+  start_at: number;
+  end_at: number;
+  description?: string;
+  location?: string;
+  all_day: boolean;
+  edit_occurrence_only: boolean;
+}
+
+export interface DeleteEventArgs {
+  event_id: number;
+  delete_occurrence_only: boolean;
+}
+
+export async function createEvent(args: CreateEventArgs): Promise<void> {
+  return invoke("create_event", { args });
+}
+
+export async function updateEvent(args: UpdateEventArgs): Promise<void> {
+  return invoke("update_event", { args });
+}
+
+export async function deleteEvent(args: DeleteEventArgs): Promise<void> {
+  return invoke("delete_event", { args });
 }

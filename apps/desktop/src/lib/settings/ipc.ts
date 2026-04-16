@@ -8,6 +8,7 @@ export interface CalendarAccount {
   last_synced_at: number | null;
   last_error: string | null;
   created_at: number;
+  default_calendar_url: string | null;
 }
 
 export interface SyncResult {
@@ -39,4 +40,19 @@ export async function syncAccount(id: number): Promise<SyncResult> {
 
 export async function syncAllAccounts(): Promise<SyncResult[]> {
   return invoke<SyncResult[]>("sync_all_accounts");
+}
+
+export interface CalendarInfo {
+  id: number;
+  calendar_account_id: number;
+  url: string;
+  display_name: string | null;
+}
+
+export async function listCalendars(accountId: number): Promise<CalendarInfo[]> {
+  return invoke("list_calendars", { accountId });
+}
+
+export async function setDefaultCalendar(accountId: number, url: string): Promise<void> {
+  return invoke("set_default_calendar", { accountId, url });
 }

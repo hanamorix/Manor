@@ -1,11 +1,12 @@
 import { create } from "zustand";
-import type { CalendarAccount } from "./ipc";
+import type { CalendarAccount, CalendarInfo } from "./ipc";
 
 interface SettingsStore {
   modalOpen: boolean;
   activeTab: "calendars" | "ai" | "about";
   accounts: CalendarAccount[];
   syncingAccountIds: Set<number>;
+  accountCalendars: Map<number, CalendarInfo[]>;
 
   setModalOpen: (open: boolean) => void;
   setActiveTab: (t: SettingsStore["activeTab"]) => void;
@@ -14,6 +15,7 @@ interface SettingsStore {
   removeAccount: (id: number) => void;
   markSyncing: (id: number) => void;
   markSynced: (id: number) => void;
+  setCalendars: (accountId: number, calendars: CalendarInfo[]) => void;
 }
 
 export const useSettingsStore = create<SettingsStore>((set) => ({
@@ -21,6 +23,7 @@ export const useSettingsStore = create<SettingsStore>((set) => ({
   activeTab: "calendars",
   accounts: [],
   syncingAccountIds: new Set<number>(),
+  accountCalendars: new Map<number, CalendarInfo[]>(),
 
   setModalOpen: (open) => set({ modalOpen: open }),
   setActiveTab: (t) => set({ activeTab: t }),
@@ -49,5 +52,12 @@ export const useSettingsStore = create<SettingsStore>((set) => ({
       const next = new Set(st.syncingAccountIds);
       next.delete(id);
       return { syncingAccountIds: next };
+    }),
+
+  setCalendars: (accountId, calendars) =>
+    set((s) => {
+      const next = new Map(s.accountCalendars);
+      next.set(accountId, calendars);
+      return { accountCalendars: next };
     }),
 }));
