@@ -60,12 +60,12 @@ const tabStyle = (active: boolean): React.CSSProperties => ({
   fontSize: 13,
   fontWeight: 600,
   cursor: "pointer",
-  borderBottom: active ? "2px solid var(--imessage-blue)" : "2px solid transparent",
   color: active ? "var(--imessage-blue)" : "rgba(20,20,30,0.55)",
   background: "transparent",
   border: "none",
   borderBottomStyle: "solid",
   borderBottomWidth: 2,
+  borderBottomColor: active ? "var(--imessage-blue)" : "transparent",
 });
 
 const btnPrimary: React.CSSProperties = {
@@ -123,10 +123,11 @@ export default function ChoreDrawer({ chore, onClose }: Props) {
   const [history, setHistory] = useState<ChoreCompletion[]>([]);
 
   useEffect(() => {
+    setHistory([]);
     if (tab === "history" && chore) {
       void listChoreCompletions(chore.id, 20).then(setHistory);
     }
-  }, [tab, chore]);
+  }, [tab, chore?.id]);
 
   async function onSave() {
     const trimmed = title.trim();

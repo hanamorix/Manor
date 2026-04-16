@@ -70,12 +70,12 @@ function daysUntil(ms: number): number {
   return Math.round((ms - Date.now()) / 86_400_000);
 }
 
-function formatDueBadge(days: number): string {
+function formatDueBadge(days: number, nextDueMs: number): string {
   if (days < 0) return `${-days}d overdue`;
   if (days === 0) return "Due today";
   if (days === 1) return "Tomorrow";
   if (days < 7) return `In ${days}d`;
-  return new Date(Date.now() + days * 86_400_000).toLocaleDateString(undefined, { month: "short", day: "numeric" });
+  return new Date(nextDueMs).toLocaleDateString(undefined, { month: "short", day: "numeric" });
 }
 
 export default function ChoresView() {
@@ -127,7 +127,7 @@ export default function ChoresView() {
                 <li key={c.id} style={rowStyle} onClick={() => setEditing(c)}>
                   <span style={{ fontSize: 18 }}>{c.emoji}</span>
                   <span style={{ flex: 1, fontSize: 14 }}>{c.title}</span>
-                  <span style={dueBadge(days)}>{formatDueBadge(days)}</span>
+                  <span style={dueBadge(days)}>{formatDueBadge(days, c.next_due)}</span>
                 </li>
               );
             })}

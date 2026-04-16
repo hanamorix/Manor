@@ -33,7 +33,10 @@ export const useChoresStore = create<ChoresStore>((set) => ({
         next[idx] = c;
         return next;
       };
-      return { allChores: updateList(st.allChores) };
+      return {
+        allChores: updateList(st.allChores),
+        choresDueToday: updateList(st.choresDueToday),
+      };
     }),
 
   removeChore: (id) =>
