@@ -2,6 +2,7 @@
 
 pub mod assistant;
 pub mod ledger;
+pub mod person;
 pub mod setting;
 
 /// Returns the crate version string, used by the shell for the About screen.
