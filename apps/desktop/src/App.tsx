@@ -12,13 +12,13 @@ const shellStyle: React.CSSProperties = {
   display: "flex",
   height: "100vh",
   width: "100vw",
-  overflow: "hidden",
 };
 
 const mainStyle: React.CSSProperties = {
   flex: 1,
   overflow: "auto",
   position: "relative",
+  zIndex: 0,
 };
 
 export default function App() {

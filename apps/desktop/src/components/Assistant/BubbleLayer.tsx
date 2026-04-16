@@ -67,6 +67,7 @@ export default function BubbleLayer() {
         alignItems: "flex-end",
         maxWidth: 460,
         pointerEvents: "none",
+        zIndex: 500,
       }}
     >
       {bubbles.map((b) => (
