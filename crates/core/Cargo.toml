@@ -18,6 +18,7 @@ rusqlite.workspace = true
 refinery.workspace = true
 chrono.workspace = true
 chrono-tz.workspace = true
+rrule.workspace = true
 
 [dev-dependencies]
 tempfile.workspace = true
