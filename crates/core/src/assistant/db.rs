@@ -29,7 +29,7 @@ mod tests {
 
         let conn = init(&path).expect("init should succeed");
 
-        // Migrations ran — the three tables should exist.
+        // Migrations ran — all expected tables should exist.
         for table in [
             "conversation",
             "message",

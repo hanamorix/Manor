@@ -32,7 +32,7 @@ CREATE INDEX idx_chore_completion_person ON chore_completion(completed_by) WHERE
 CREATE TABLE rotation (
     id          INTEGER PRIMARY KEY,
     chore_id    INTEGER NOT NULL REFERENCES chore(id) ON DELETE CASCADE,
-    person_id   INTEGER NOT NULL REFERENCES person(id),
+    person_id   INTEGER NOT NULL REFERENCES person(id) ON DELETE CASCADE,
     position    INTEGER NOT NULL,
     current     INTEGER NOT NULL DEFAULT 0,
     created_at  INTEGER NOT NULL
