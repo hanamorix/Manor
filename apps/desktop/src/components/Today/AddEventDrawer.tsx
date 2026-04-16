@@ -14,10 +14,6 @@ function toDateInputValue(ts: number): string {
   return new Date(ts * 1000).toISOString().slice(0, 10);
 }
 
-function toTimeInputValue(ts: number): string {
-  return new Date(ts * 1000).toISOString().slice(11, 16);
-}
-
 function combineDateTime(date: string, time: string): number {
   return Math.floor(new Date(`${date}T${time}:00`).getTime() / 1000);
 }

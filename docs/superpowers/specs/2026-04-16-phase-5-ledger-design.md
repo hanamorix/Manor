@@ -1,5 +1,11 @@
 # v0.3 Ledger — Design Spec
 
+## Decision Log
+
+**2026-04-16:** Phase 5c implementation chose to give `contract` its own table rather than fold contracts into `recurring` with `kind='contract'` as originally designed here. Rationale: contracts have enough unique attributes (`term_start`, `term_end`, `exit_fee_pence`, `renewal_alert_days`, `provider`, `kind`) that a dedicated table keeps queries simpler and the schema honest. The `recurring_payment_id` foreign key on `contract` preserves the "subscription-like" relationship. See `specs/2026-04-16-phase-5c-ledger-completions-design.md` §1.3.
+
+---
+
 ## Goal
 
 Add a Ledger view to Manor: read-only bank sync (GoCardless for EU/UK, Plaid for US) plus manual transaction entry, per-category budgets, and Ollama-powered budget proposals. 30-day token lifetime with proactive re-auth nudges via the existing avatar bubble system.

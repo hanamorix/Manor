@@ -10,6 +10,7 @@ const sampleAccount = (overrides: Partial<CalendarAccount> = {}): CalendarAccoun
   last_synced_at: null,
   last_error: null,
   created_at: Date.now(),
+  default_calendar_url: null,
   ...overrides,
 });
 
