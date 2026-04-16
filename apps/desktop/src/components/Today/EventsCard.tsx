@@ -1,4 +1,10 @@
+import { useState } from "react";
 import { useTodayStore } from "../../lib/today/state";
+import { useSettingsStore } from "../../lib/settings/state";
+import { listEventsToday } from "../../lib/today/ipc";
+import type { Event } from "../../lib/today/ipc";
+import AddEventDrawer from "./AddEventDrawer";
+import EditEventDrawer from "./EditEventDrawer";
 
 const cardStyle: React.CSSProperties = {
   background: "var(--paper)",
@@ -11,7 +17,7 @@ const cardStyle: React.CSSProperties = {
 const sectionHeader: React.CSSProperties = {
   fontSize: 11, textTransform: "uppercase", letterSpacing: 0.6,
   color: "rgba(0,0,0,0.55)", fontWeight: 700,
-  margin: 0, marginBottom: 8,
+  margin: 0,
 };
 
 function formatTime(unixSeconds: number): string {
@@ -21,10 +27,44 @@ function formatTime(unixSeconds: number): string {
 
 export default function EventsCard() {
   const events = useTodayStore((s) => s.events);
+  const setEvents = useTodayStore((s) => s.setEvents);
+  const accounts = useSettingsStore((s) => s.accounts);
+
+  const [showAdd, setShowAdd] = useState(false);
+  const [editingEvent, setEditingEvent] = useState<Event | null>(null);
+
+  const firstAccount = accounts[0] ?? null;
+  const canAdd = firstAccount !== null && firstAccount.default_calendar_url !== null;
+
+  async function reloadEvents() {
+    const fresh = await listEventsToday();
+    setEvents(fresh);
+  }
 
   return (
     <div style={cardStyle}>
-      <p style={sectionHeader}>Events</p>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
+        <p style={sectionHeader}>Events</p>
+        {canAdd && (
+          <button
+            onClick={() => setShowAdd(true)}
+            style={{
+              background: "none",
+              border: "none",
+              fontSize: 18,
+              lineHeight: 1,
+              cursor: "pointer",
+              color: "var(--imessage-blue)",
+              padding: "0 2px",
+              fontWeight: 300,
+            }}
+            title="Add event"
+          >
+            +
+          </button>
+        )}
+      </div>
+
       {events.length === 0 ? (
         <p style={{ fontStyle: "italic", color: "rgba(0,0,0,0.5)", margin: 0, fontSize: 13 }}>
           No events today.
@@ -32,7 +72,11 @@ export default function EventsCard() {
       ) : (
         <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
           {events.map((e) => (
-            <div key={e.id} style={{ display: "flex", gap: 10, padding: "4px 0", fontSize: 13 }}>
+            <div
+              key={e.id}
+              onClick={() => setEditingEvent(e)}
+              style={{ display: "flex", gap: 10, padding: "4px 0", fontSize: 13, cursor: "pointer" }}
+            >
               <span style={{ fontWeight: 700, minWidth: 48, color: "var(--imessage-blue)" }}>
                 {formatTime(e.start_at)}
               </span>
@@ -40,6 +84,30 @@ export default function EventsCard() {
             </div>
           ))}
         </div>
+      )}
+
+      {showAdd && firstAccount && firstAccount.default_calendar_url && (
+        <AddEventDrawer
+          accountId={firstAccount.id}
+          defaultCalendarUrl={firstAccount.default_calendar_url}
+          calendars={[]}
+          onClose={() => setShowAdd(false)}
+          onSaved={async () => {
+            setShowAdd(false);
+            await reloadEvents();
+          }}
+        />
+      )}
+
+      {editingEvent && (
+        <EditEventDrawer
+          event={editingEvent}
+          onClose={() => setEditingEvent(null)}
+          onSaved={async () => {
+            setEditingEvent(null);
+            await reloadEvents();
+          }}
+        />
       )}
     </div>
   );
