@@ -63,10 +63,11 @@ pub fn insert(
 }
 
 pub fn update(conn: &Connection, id: i64, name: &str, emoji: &str) -> Result<Category> {
-    conn.execute(
+    let rows = conn.execute(
         "UPDATE category SET name = ?1, emoji = ?2 WHERE id = ?3",
         params![name, emoji, id],
     )?;
+    anyhow::ensure!(rows > 0, "category id={} not found", id);
     get(conn, id)
 }
 
