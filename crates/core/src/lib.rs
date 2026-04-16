@@ -7,6 +7,7 @@ pub mod ledger;
 pub mod note;
 pub mod person;
 pub mod setting;
+pub mod snapshot;
 pub mod tag;
 pub mod trash;
 

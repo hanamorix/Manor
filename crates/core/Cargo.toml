@@ -21,6 +21,9 @@ chrono-tz.workspace = true
 rrule.workspace = true
 uuid.workspace = true
 sha2.workspace = true
+age.workspace = true
+tar.workspace = true
+flate2.workspace = true
 
 [dev-dependencies]
 tempfile.workspace = true
