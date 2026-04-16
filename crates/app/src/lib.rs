@@ -4,6 +4,7 @@ pub mod assistant;
 pub mod foundation;
 pub mod ledger;
 pub mod rhythm;
+pub mod safety;
 pub mod sync;
 
 use serde::Serialize;
@@ -178,6 +179,10 @@ pub fn register(builder: Builder<Wry>) -> Builder<Wry> {
             foundation::commands::person_restore,
             foundation::commands::attachment_restore,
             foundation::commands::attachment_permanent_delete,
+            safety::trash_commands::trash_list,
+            safety::trash_commands::trash_restore,
+            safety::trash_commands::trash_permanent_delete,
+            safety::trash_commands::trash_empty_all,
         ])
 }
 
