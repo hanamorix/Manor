@@ -78,11 +78,9 @@ const DAYS = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"
 
 function weekStartMs(): number {
   const now = new Date();
-  const day = (now.getDay() + 6) % 7; // 0 = Monday
-  const monday = new Date(now);
-  monday.setDate(now.getDate() - day);
-  monday.setHours(0, 0, 0, 0);
-  return monday.getTime();
+  const utcDay = (now.getUTCDay() + 6) % 7; // 0 = Monday
+  const utcMidnight = Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate());
+  return utcMidnight - utcDay * 86_400_000;
 }
 
 function rruleToEnglish(rrule: string): string {
@@ -139,7 +137,7 @@ export default function TimeBlocksView() {
             return (
               <div key={day}>
                 <div style={dayHeading}>{day}</div>
-                {bs.sort((a, b) => a.start_time.localeCompare(b.start_time)).map((b) => (
+                {[...bs].sort((a, b) => a.start_time.localeCompare(b.start_time)).map((b) => (
                   <div key={b.id} style={rowStyle(b.kind)} onClick={() => setEditing(b)}>
                     <strong style={{ color: KIND_COLOR[b.kind], fontWeight: 700, fontSize: 10, textTransform: "uppercase", letterSpacing: 0.5, minWidth: 50 }}>
                       {KIND_LABEL[b.kind]}

@@ -100,35 +100,43 @@ export default function BlockDrawer({ block, onClose }: Props) {
 
   async function onSave() {
     if (!title.trim()) return;
-    if (block) {
-      const updated = await updateTimeBlock({
-        id: block.id,
-        title: title.trim(),
-        kind,
-        dateMs: fromISODate(dateStr),
-        startTime,
-        endTime,
-      });
-      upsertBlock(updated);
-    } else {
-      const result = await createTimeBlock({
-        title: title.trim(),
-        kind,
-        dateMs: fromISODate(dateStr),
-        startTime,
-        endTime,
-      });
-      upsertBlock(result.block);
-      if (result.suggestion) setPatternSuggestion(result.suggestion);
+    try {
+      if (block) {
+        const updated = await updateTimeBlock({
+          id: block.id,
+          title: title.trim(),
+          kind,
+          dateMs: fromISODate(dateStr),
+          startTime,
+          endTime,
+        });
+        upsertBlock(updated);
+      } else {
+        const result = await createTimeBlock({
+          title: title.trim(),
+          kind,
+          dateMs: fromISODate(dateStr),
+          startTime,
+          endTime,
+        });
+        upsertBlock(result.block);
+        if (result.suggestion) setPatternSuggestion(result.suggestion);
+      }
+      onClose();
+    } catch (err) {
+      console.error("Failed to save block:", err);
     }
-    onClose();
   }
 
   async function onDelete() {
     if (!block) return;
-    await deleteTimeBlock(block.id);
-    removeBlock(block.id);
-    onClose();
+    try {
+      await deleteTimeBlock(block.id);
+      removeBlock(block.id);
+      onClose();
+    } catch (err) {
+      console.error("Failed to delete block:", err);
+    }
   }
 
   return (

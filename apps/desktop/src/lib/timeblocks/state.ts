@@ -38,6 +38,7 @@ export const useTimeBlocksStore = create<TimeBlocksStore>((set) => ({
       return {
         todayBlocks: updateList(st.todayBlocks),
         weekBlocks: updateList(st.weekBlocks),
+        recurringBlocks: updateList(st.recurringBlocks),
       };
     }),
 
