@@ -1,6 +1,7 @@
 import { useWizardStore } from "../../lib/wizard/state";
 import StepDataDir from "./StepDataDir";
 import StepOllama from "./StepOllama";
+import StepCalendar from "./StepCalendar";
 
 const TITLES = ["Data directory", "Local brain", "Your calendar", "Sample data"];
 
@@ -38,7 +39,7 @@ export default function Wizard() {
         }}>
           {step === 1 && <StepDataDir />}
           {step === 2 && <StepOllama />}
-          {step === 3 && <StepPlaceholder label="Step 3 — filling in Task 5" />}
+          {step === 3 && <StepCalendar />}
           {step === 4 && <StepPlaceholder label="Step 4 — filling in Task 6" />}
         </div>
       </div>
