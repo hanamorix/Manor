@@ -9,6 +9,7 @@ import { sendMessage, getUnreadCount, listMessages } from "../../lib/assistant/i
 import type { StreamChunk } from "../../lib/assistant/ipc";
 import { parseSlash } from "../../lib/today/slash";
 import { addTask, listTasks, listProposals } from "../../lib/today/ipc";
+import { addTransaction } from "../../lib/ledger/ipc";
 import { useTodayStore } from "../../lib/today/state";
 
 function newBubbleId() {
@@ -80,6 +81,36 @@ export default function Assistant() {
           id: newBubbleId(),
           kind: "error",
           content: `Couldn't add task: ${String(e)}`,
+          messageId: null,
+          ttlMs: 7000,
+        });
+        return;
+      }
+    }
+    if (slash?.type === "spent") {
+      try {
+        const now = new Date();
+        now.setHours(0, 0, 0, 0);
+        await addTransaction({
+          amountPence: slash.amountPence,
+          currency: "GBP",
+          description: slash.description,
+          date: Math.floor(now.getTime() / 1000),
+        });
+        enqueueBubble({
+          id: newBubbleId(),
+          kind: "assistant",
+          content: `Added: ${slash.description} (£${(Math.abs(slash.amountPence) / 100).toFixed(2)})`,
+          messageId: null,
+          ttlMs: 6000,
+        });
+        return;
+      } catch (e) {
+        setAvatarState("confused");
+        enqueueBubble({
+          id: newBubbleId(),
+          kind: "error",
+          content: `Couldn't add transaction: ${String(e)}`,
           messageId: null,
           ttlMs: 7000,
         });
