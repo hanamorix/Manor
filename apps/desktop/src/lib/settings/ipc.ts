@@ -56,3 +56,7 @@ export async function listCalendars(accountId: number): Promise<CalendarInfo[]> 
 export async function setDefaultCalendar(accountId: number, url: string): Promise<void> {
   return invoke("set_default_calendar", { accountId, url });
 }
+
+export async function dataDirPath(): Promise<string> {
+  return invoke<string>("data_dir_path");
+}
