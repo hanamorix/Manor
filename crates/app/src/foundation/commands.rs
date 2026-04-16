@@ -372,15 +372,27 @@ pub async fn ollama_status() -> Result<OllamaStatus, String> {
         .map_err(|e| e.to_string())?;
     let resp = match client.get("http://127.0.0.1:11434/api/tags").send().await {
         Ok(r) => r,
-        Err(_) => return Ok(OllamaStatus { reachable: false, models: vec![] }),
+        Err(_) => {
+            return Ok(OllamaStatus {
+                reachable: false,
+                models: vec![],
+            })
+        }
     };
     if !resp.status().is_success() {
-        return Ok(OllamaStatus { reachable: false, models: vec![] });
+        return Ok(OllamaStatus {
+            reachable: false,
+            models: vec![],
+        });
     }
     #[derive(serde::Deserialize)]
-    struct TagsResp { models: Vec<TagEntry> }
+    struct TagsResp {
+        models: Vec<TagEntry>,
+    }
     #[derive(serde::Deserialize)]
-    struct TagEntry { name: String }
+    struct TagEntry {
+        name: String,
+    }
     let body: TagsResp = resp.json().await.map_err(|e| e.to_string())?;
     Ok(OllamaStatus {
         reachable: true,
