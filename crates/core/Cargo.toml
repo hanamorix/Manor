@@ -19,6 +19,8 @@ refinery.workspace = true
 chrono.workspace = true
 chrono-tz.workspace = true
 rrule.workspace = true
+uuid.workspace = true
+sha2.workspace = true
 
 [dev-dependencies]
 tempfile.workspace = true
