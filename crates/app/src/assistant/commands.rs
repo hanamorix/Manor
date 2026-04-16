@@ -9,6 +9,7 @@ use crate::sync::engine::{SyncResult, SyncState};
 use crate::sync::keychain;
 use chrono::Local;
 use manor_core::assistant::{
+    calendar::{self, Calendar},
     calendar_account::{self, CalendarAccount},
     conversation, db,
     event::{self, Event},
@@ -59,6 +60,18 @@ fn today_utc_bounds() -> (i64, i64) {
         start_local.with_timezone(&chrono::Utc).timestamp(),
         end_local.with_timezone(&chrono::Utc).timestamp(),
     )
+}
+
+fn new_uid() -> String {
+    use std::sync::atomic::{AtomicU64, Ordering};
+    use std::time::{SystemTime, UNIX_EPOCH};
+    static COUNTER: AtomicU64 = AtomicU64::new(0);
+    let ts = SystemTime::now()
+        .duration_since(UNIX_EPOCH)
+        .unwrap_or_default()
+        .as_nanos();
+    let seq = COUNTER.fetch_add(1, Ordering::Relaxed);
+    format!("manor-{ts:x}-{seq:x}")
 }
 
 fn display_name_for_url(url: &str) -> String {
@@ -442,4 +455,293 @@ pub fn list_events_today(state: State<'_, Db>) -> Result<Vec<Event>, String> {
     let (start, end) = today_utc_bounds();
     let conn = state.0.lock().map_err(|e| e.to_string())?;
     event::list_today(&conn, start, end).map_err(|e| e.to_string())
+}
+
+// === Calendar list + default ===
+
+#[tauri::command]
+pub fn list_calendars(
+    db: State<'_, Db>,
+    account_id: i64,
+) -> Result<Vec<Calendar>, String> {
+    let conn = db.0.lock().map_err(|e| e.to_string())?;
+    calendar::list(&conn, account_id).map_err(|e| e.to_string())
+}
+
+#[tauri::command]
+pub fn set_default_calendar(
+    db: State<'_, Db>,
+    account_id: i64,
+    url: String,
+) -> Result<(), String> {
+    let conn = db.0.lock().map_err(|e| e.to_string())?;
+    calendar_account::set_default_calendar(&conn, account_id, &url)
+        .map_err(|e| e.to_string())
+}
+
+// === Event write commands ===
+
+#[derive(serde::Deserialize)]
+pub struct CreateEventArgs {
+    pub account_id: i64,
+    pub calendar_url: String,
+    pub title: String,
+    pub start_at: i64,
+    pub end_at: i64,
+    pub description: Option<String>,
+    pub location: Option<String>,
+    pub all_day: bool,
+}
+
+#[tauri::command]
+pub async fn create_event(
+    db: State<'_, Db>,
+    sync_state: State<'_, Arc<SyncState>>,
+    args: CreateEventArgs,
+) -> Result<(), String> {
+    let password = {
+        crate::sync::keychain::get_password(args.account_id)
+            .map_err(|e| format!("keychain: {e}"))?
+    };
+
+    let uid = new_uid();
+    let ical = crate::sync::ical_write::generate_vcalendar(
+        &uid,
+        &args.title,
+        args.start_at,
+        args.end_at,
+        args.description.as_deref(),
+        args.location.as_deref(),
+        args.all_day,
+    );
+
+    // Build event URL: calendar_url + uid + ".ics"
+    let url = format!("{}/{}.ics", args.calendar_url.trim_end_matches('/'), uid);
+
+    let account_id = args.account_id;
+    let db_arc = db.clone_arc();
+    let sync_state_arc = sync_state.inner().clone();
+
+    let handle = tokio::runtime::Handle::current();
+    tauri::async_runtime::spawn_blocking(move || {
+        let account = {
+            let conn = db_arc.lock().unwrap();
+            calendar_account::get(&conn, account_id)
+                .ok()
+                .flatten()
+        }
+        .ok_or_else(|| "account not found".to_string())?;
+
+        let client = crate::sync::caldav::CalDavClient::new(&account.username, &password);
+        handle.block_on(client.put_event(&url, &ical, None))
+            .map_err(|e| e.to_string())?;
+
+        // Re-sync account to pick up the new event
+        let mut conn = db_arc.lock().unwrap();
+        handle.block_on(crate::sync::engine::sync_account(
+            &mut conn,
+            &sync_state_arc,
+            account_id,
+            &password,
+            chrono_tz::UTC,
+        ));
+        Ok::<(), String>(())
+    })
+    .await
+    .map_err(|e| e.to_string())?
+}
+
+#[derive(serde::Deserialize)]
+pub struct UpdateEventArgs {
+    pub event_id: i64,
+    pub title: String,
+    pub start_at: i64,
+    pub end_at: i64,
+    pub description: Option<String>,
+    pub location: Option<String>,
+    pub all_day: bool,
+    /// For recurring occurrences only — edit this occurrence only.
+    pub edit_occurrence_only: bool,
+}
+
+#[tauri::command]
+pub async fn update_event(
+    db: State<'_, Db>,
+    sync_state: State<'_, Arc<SyncState>>,
+    args: UpdateEventArgs,
+) -> Result<(), String> {
+    // Load the event and account under a brief lock.
+    let (account_id, event_url, is_recurring, parent_url, occurrence_dtstart, password) = {
+        let conn = db.0.lock().map_err(|e| e.to_string())?;
+        let events = event::list_today(&conn, 0, i64::MAX).map_err(|e| e.to_string())?;
+        let ev = events.iter().find(|e| e.id == args.event_id)
+            .ok_or_else(|| "event not found".to_string())?
+            .clone();
+        let pw = crate::sync::keychain::get_password(ev.calendar_account_id)
+            .map_err(|e| format!("keychain: {e}"))?;
+        (
+            ev.calendar_account_id,
+            ev.event_url.clone().ok_or("event has no URL (manual event?)")?,
+            ev.is_recurring_occurrence,
+            ev.parent_event_url.clone(),
+            ev.occurrence_dtstart.clone(),
+            pw,
+        )
+    };
+
+    let db_arc = db.clone_arc();
+    let sync_state_arc = sync_state.inner().clone();
+    let handle = tokio::runtime::Handle::current();
+
+    tauri::async_runtime::spawn_blocking(move || {
+        let account = {
+            let conn = db_arc.lock().unwrap();
+            calendar_account::get(&conn, account_id).ok().flatten()
+        }
+        .ok_or_else(|| "account not found".to_string())?;
+
+        let client = crate::sync::caldav::CalDavClient::new(&account.username, &password);
+
+        if is_recurring && args.edit_occurrence_only {
+            // Fetch parent .ics, add RECURRENCE-ID override, PUT back
+            let parent = parent_url.ok_or("recurring event has no parent_event_url")?;
+            let rec_id = occurrence_dtstart.ok_or("occurrence has no dtstart")?;
+            let (parent_ical, parent_etag) = handle
+                .block_on(client.fetch_ical(&parent))
+                .map_err(|e| e.to_string())?;
+            let patched = crate::sync::ical_write::add_recurrence_override(
+                &parent_ical,
+                &rec_id,
+                &args.title,
+                args.start_at,
+                args.end_at,
+                args.description.as_deref(),
+                args.location.as_deref(),
+            );
+            handle
+                .block_on(client.put_event(&parent, &patched, Some(&parent_etag)))
+                .map_err(|e| e.to_string())?;
+        } else {
+            // Fetch the event's .ics, regenerate with new fields, PUT back
+            let (old_ical, etag) = handle
+                .block_on(client.fetch_ical(&event_url))
+                .map_err(|e| e.to_string())?;
+            // Extract UID from old ical
+            let uid = old_ical
+                .lines()
+                .find(|l| l.trim_start_matches(' ').starts_with("UID:"))
+                .map(|l| l.trim_start_matches(' ').trim_start_matches("UID:").trim().to_string())
+                .unwrap_or_else(new_uid);
+            let new_ical = crate::sync::ical_write::generate_vcalendar(
+                &uid,
+                &args.title,
+                args.start_at,
+                args.end_at,
+                args.description.as_deref(),
+                args.location.as_deref(),
+                args.all_day,
+            );
+            handle
+                .block_on(client.put_event(&event_url, &new_ical, Some(&etag)))
+                .map_err(|e| e.to_string())?;
+        }
+
+        // Re-sync
+        let mut conn = db_arc.lock().unwrap();
+        handle.block_on(crate::sync::engine::sync_account(
+            &mut conn,
+            &sync_state_arc,
+            account_id,
+            &password,
+            chrono_tz::UTC,
+        ));
+        Ok::<(), String>(())
+    })
+    .await
+    .map_err(|e| e.to_string())?
+}
+
+#[derive(serde::Deserialize)]
+pub struct DeleteEventArgs {
+    pub event_id: i64,
+    /// For recurring occurrences — delete this occurrence only (adds EXDATE to parent).
+    pub delete_occurrence_only: bool,
+}
+
+#[tauri::command]
+pub async fn delete_event(
+    db: State<'_, Db>,
+    sync_state: State<'_, Arc<SyncState>>,
+    args: DeleteEventArgs,
+) -> Result<(), String> {
+    let (account_id, event_url, is_recurring, parent_url, occurrence_dtstart, password) = {
+        let conn = db.0.lock().map_err(|e| e.to_string())?;
+        let events = event::list_today(&conn, 0, i64::MAX).map_err(|e| e.to_string())?;
+        let ev = events.iter().find(|e| e.id == args.event_id)
+            .ok_or_else(|| "event not found".to_string())?
+            .clone();
+        let pw = crate::sync::keychain::get_password(ev.calendar_account_id)
+            .map_err(|e| format!("keychain: {e}"))?;
+        (
+            ev.calendar_account_id,
+            ev.event_url.clone().ok_or("event has no URL (manual event?)")?,
+            ev.is_recurring_occurrence,
+            ev.parent_event_url.clone(),
+            ev.occurrence_dtstart.clone(),
+            pw,
+        )
+    };
+
+    let db_arc = db.clone_arc();
+    let sync_state_arc = sync_state.inner().clone();
+    let handle = tokio::runtime::Handle::current();
+    let event_id = args.event_id;
+
+    tauri::async_runtime::spawn_blocking(move || {
+        let account = {
+            let conn = db_arc.lock().unwrap();
+            calendar_account::get(&conn, account_id).ok().flatten()
+        }
+        .ok_or_else(|| "account not found".to_string())?;
+
+        // Optimistically soft-delete in DB so the UI updates immediately.
+        {
+            let conn = db_arc.lock().unwrap();
+            event::soft_delete(&conn, event_id).map_err(|e| e.to_string())?;
+        }
+
+        let client = crate::sync::caldav::CalDavClient::new(&account.username, &password);
+
+        if is_recurring && args.delete_occurrence_only {
+            let parent = parent_url.ok_or("recurring event has no parent_event_url")?;
+            let occ = occurrence_dtstart.ok_or("occurrence has no dtstart")?;
+            let (parent_ical, etag) = handle
+                .block_on(client.fetch_ical(&parent))
+                .map_err(|e| e.to_string())?;
+            let patched = crate::sync::ical_write::add_exdate(&parent_ical, &occ);
+            handle
+                .block_on(client.put_event(&parent, &patched, Some(&etag)))
+                .map_err(|e| e.to_string())?;
+        } else {
+            let (_, etag) = handle
+                .block_on(client.fetch_ical(&event_url))
+                .map_err(|e| e.to_string())?;
+            handle
+                .block_on(client.delete_event(&event_url, &etag))
+                .map_err(|e| e.to_string())?;
+        }
+
+        // Re-sync to reconcile
+        let mut conn = db_arc.lock().unwrap();
+        handle.block_on(crate::sync::engine::sync_account(
+            &mut conn,
+            &sync_state_arc,
+            account_id,
+            &password,
+            chrono_tz::UTC,
+        ));
+        Ok::<(), String>(())
+    })
+    .await
+    .map_err(|e| e.to_string())?
 }
