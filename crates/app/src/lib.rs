@@ -1,6 +1,7 @@
 //! Tauri command glue for Manor.
 
 pub mod assistant;
+pub mod rhythm;
 pub mod sync;
 
 use serde::Serialize;
@@ -108,6 +109,26 @@ pub fn register(builder: Builder<Wry>) -> Builder<Wry> {
             assistant::commands::sync_account,
             assistant::commands::sync_all_accounts,
             assistant::commands::list_events_today,
+            rhythm::commands::list_chores_due_today,
+            rhythm::commands::list_all_chores,
+            rhythm::commands::create_chore,
+            rhythm::commands::update_chore,
+            rhythm::commands::delete_chore,
+            rhythm::commands::complete_chore,
+            rhythm::commands::skip_chore,
+            rhythm::commands::list_chore_completions,
+            rhythm::commands::list_chore_rotation,
+            rhythm::commands::check_chore_fairness,
+            rhythm::commands::list_blocks_today,
+            rhythm::commands::list_blocks_for_week,
+            rhythm::commands::list_recurring_blocks,
+            rhythm::commands::create_time_block,
+            rhythm::commands::update_time_block,
+            rhythm::commands::delete_time_block,
+            rhythm::commands::promote_to_pattern,
+            rhythm::commands::dismiss_pattern_nudge,
+            rhythm::commands::check_time_block_pattern,
+            rhythm::commands::add_person,
         ])
 }
 
