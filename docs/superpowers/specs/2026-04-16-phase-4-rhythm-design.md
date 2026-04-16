@@ -1,6 +1,6 @@
 # Manor v0.2 Rhythm — Design Spec
 
-- **Status**: Draft — pending user review
+- **Status**: Approved
 - **Date**: 2026-04-16
 - **Authors**: Hana (product owner / editor), Nell (lead architect / engineer)
 - **Phase**: 4 (v0.2 Rhythm)
