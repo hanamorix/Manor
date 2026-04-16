@@ -48,6 +48,7 @@ export default function BudgetSheet({ categories, budgets, onClose, onChanged }:
         }
       }
       await onChanged();
+      onClose();
     } catch (e) {
       console.error("BudgetSheet save error:", e);
       setSaving(false);
