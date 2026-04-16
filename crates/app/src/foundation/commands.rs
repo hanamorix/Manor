@@ -290,3 +290,55 @@ pub fn attachment_delete(state: State<'_, Db>, id: i64) -> Result<(), String> {
     let conn = state.0.lock().map_err(|e| e.to_string())?;
     attachment::delete(&conn, id).map_err(|e| e.to_string())
 }
+
+// ── Settings (listing) ────────────────────────────────────────────────────────
+
+#[tauri::command]
+pub fn setting_list_prefixed(
+    state: State<'_, Db>,
+    prefix: String,
+) -> Result<Vec<(String, String)>, String> {
+    let conn = state.0.lock().map_err(|e| e.to_string())?;
+    setting::list_prefixed(&conn, &prefix).map_err(|e| e.to_string())
+}
+
+// ── Notes (orphans + restore) ─────────────────────────────────────────────────
+
+#[tauri::command]
+pub fn note_list_orphans(state: State<'_, Db>) -> Result<Vec<note::Note>, String> {
+    let conn = state.0.lock().map_err(|e| e.to_string())?;
+    note::list_orphans(&conn).map_err(|e| e.to_string())
+}
+
+#[tauri::command]
+pub fn note_restore(state: State<'_, Db>, id: i64) -> Result<note::Note, String> {
+    let conn = state.0.lock().map_err(|e| e.to_string())?;
+    note::restore(&conn, id).map_err(|e| e.to_string())
+}
+
+// ── Person (restore) ──────────────────────────────────────────────────────────
+
+#[tauri::command]
+pub fn person_restore(state: State<'_, Db>, id: i64) -> Result<person::Person, String> {
+    let conn = state.0.lock().map_err(|e| e.to_string())?;
+    person::restore(&conn, id).map_err(|e| e.to_string())
+}
+
+// ── Attachment (restore + permanent delete) ───────────────────────────────────
+
+#[tauri::command]
+pub fn attachment_restore(state: State<'_, Db>, id: i64) -> Result<attachment::Attachment, String> {
+    let conn = state.0.lock().map_err(|e| e.to_string())?;
+    attachment::restore(&conn, id).map_err(|e| e.to_string())
+}
+
+#[tauri::command]
+pub fn attachment_permanent_delete(
+    app: AppHandle,
+    state: State<'_, Db>,
+    id: i64,
+) -> Result<(), String> {
+    let root = attachments_root(&app)?;
+    let conn = state.0.lock().map_err(|e| e.to_string())?;
+    attachment::permanent_delete(&conn, &root, id).map_err(|e| e.to_string())
+}

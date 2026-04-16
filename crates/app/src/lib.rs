@@ -172,6 +172,12 @@ pub fn register(builder: Builder<Wry>) -> Builder<Wry> {
             foundation::commands::attachment_get_bytes,
             foundation::commands::attachment_list_for,
             foundation::commands::attachment_delete,
+            foundation::commands::setting_list_prefixed,
+            foundation::commands::note_list_orphans,
+            foundation::commands::note_restore,
+            foundation::commands::person_restore,
+            foundation::commands::attachment_restore,
+            foundation::commands::attachment_permanent_delete,
         ])
 }
 
