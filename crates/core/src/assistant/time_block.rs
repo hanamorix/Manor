@@ -266,7 +266,9 @@ mod tests {
     }
 
     fn day_ms(y: i32, m: u32, d: u32) -> i64 {
-        Utc.with_ymd_and_hms(y, m, d, 0, 0, 0).unwrap().timestamp_millis()
+        Utc.with_ymd_and_hms(y, m, d, 0, 0, 0)
+            .unwrap()
+            .timestamp_millis()
     }
 
     #[test]
@@ -313,9 +315,33 @@ mod tests {
     fn check_pattern_fires_when_three_same_weekday_matches() {
         let (_d, conn) = fresh_conn();
         // Three consecutive Tuesdays
-        insert(&conn, "Focus", "focus", day_ms(2026, 3, 31), "09:00", "11:00").unwrap();
-        insert(&conn, "Focus", "focus", day_ms(2026, 4, 7), "09:00", "11:00").unwrap();
-        let trigger = insert(&conn, "Focus", "focus", day_ms(2026, 4, 14), "09:00", "11:00").unwrap();
+        insert(
+            &conn,
+            "Focus",
+            "focus",
+            day_ms(2026, 3, 31),
+            "09:00",
+            "11:00",
+        )
+        .unwrap();
+        insert(
+            &conn,
+            "Focus",
+            "focus",
+            day_ms(2026, 4, 7),
+            "09:00",
+            "11:00",
+        )
+        .unwrap();
+        let trigger = insert(
+            &conn,
+            "Focus",
+            "focus",
+            day_ms(2026, 4, 14),
+            "09:00",
+            "11:00",
+        )
+        .unwrap();
 
         let now = day_ms(2026, 4, 14) + 3_600_000;
         let sugg = check_pattern(&conn, trigger, now).unwrap();
@@ -327,9 +353,33 @@ mod tests {
     #[test]
     fn check_pattern_suppresses_when_dismissed_recently() {
         let (_d, conn) = fresh_conn();
-        insert(&conn, "Focus", "focus", day_ms(2026, 3, 31), "09:00", "11:00").unwrap();
-        insert(&conn, "Focus", "focus", day_ms(2026, 4, 7), "09:00", "11:00").unwrap();
-        let trigger = insert(&conn, "Focus", "focus", day_ms(2026, 4, 14), "09:00", "11:00").unwrap();
+        insert(
+            &conn,
+            "Focus",
+            "focus",
+            day_ms(2026, 3, 31),
+            "09:00",
+            "11:00",
+        )
+        .unwrap();
+        insert(
+            &conn,
+            "Focus",
+            "focus",
+            day_ms(2026, 4, 7),
+            "09:00",
+            "11:00",
+        )
+        .unwrap();
+        let trigger = insert(
+            &conn,
+            "Focus",
+            "focus",
+            day_ms(2026, 4, 14),
+            "09:00",
+            "11:00",
+        )
+        .unwrap();
         dismiss_pattern_nudge(&conn, trigger).unwrap();
 
         let now = day_ms(2026, 4, 14) + 3_600_000;
@@ -339,9 +389,33 @@ mod tests {
     #[test]
     fn check_pattern_no_match_when_weekdays_differ() {
         let (_d, conn) = fresh_conn();
-        insert(&conn, "Focus", "focus", day_ms(2026, 3, 31), "09:00", "11:00").unwrap(); // Tue
-        insert(&conn, "Focus", "focus", day_ms(2026, 4, 1), "09:00", "11:00").unwrap(); // Wed
-        let trigger = insert(&conn, "Focus", "focus", day_ms(2026, 4, 14), "09:00", "11:00").unwrap();
+        insert(
+            &conn,
+            "Focus",
+            "focus",
+            day_ms(2026, 3, 31),
+            "09:00",
+            "11:00",
+        )
+        .unwrap(); // Tue
+        insert(
+            &conn,
+            "Focus",
+            "focus",
+            day_ms(2026, 4, 1),
+            "09:00",
+            "11:00",
+        )
+        .unwrap(); // Wed
+        let trigger = insert(
+            &conn,
+            "Focus",
+            "focus",
+            day_ms(2026, 4, 14),
+            "09:00",
+            "11:00",
+        )
+        .unwrap();
 
         let now = day_ms(2026, 4, 14) + 3_600_000;
         // Only trigger (Tue) + 3/31 (Tue) = 2, < 3.
@@ -351,8 +425,24 @@ mod tests {
     #[test]
     fn list_recurring_only_patterns() {
         let (_d, conn) = fresh_conn();
-        let a = insert(&conn, "One-off", "focus", day_ms(2026, 4, 15), "09:00", "11:00").unwrap();
-        let b = insert(&conn, "Weekly", "focus", day_ms(2026, 4, 15), "14:00", "15:00").unwrap();
+        let a = insert(
+            &conn,
+            "One-off",
+            "focus",
+            day_ms(2026, 4, 15),
+            "09:00",
+            "11:00",
+        )
+        .unwrap();
+        let b = insert(
+            &conn,
+            "Weekly",
+            "focus",
+            day_ms(2026, 4, 15),
+            "14:00",
+            "15:00",
+        )
+        .unwrap();
         promote_to_pattern(&conn, b, "FREQ=WEEKLY;BYDAY=TU").unwrap();
 
         let patterns = list_recurring(&conn).unwrap();

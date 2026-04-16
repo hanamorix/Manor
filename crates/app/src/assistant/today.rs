@@ -49,7 +49,11 @@ pub fn compose_today_context(now: DateTime<Local>, conn: &Connection) -> Result<
             } else {
                 "Full"
             };
-            format!("{shape} day: {} and {}.", count_events(n), count_open_tasks(m))
+            format!(
+                "{shape} day: {} and {}.",
+                count_events(n),
+                count_open_tasks(m)
+            )
         }
     };
     out.push_str(&preamble);
@@ -181,8 +185,14 @@ mod tests {
             result.contains("Nothing scheduled and your task list is clear."),
             "preamble wrong: {result}"
         );
-        assert!(!result.contains("Events:"), "events section should be absent: {result}");
-        assert!(!result.contains("Tasks (open):"), "tasks section should be absent: {result}");
+        assert!(
+            !result.contains("Events:"),
+            "events section should be absent: {result}"
+        );
+        assert!(
+            !result.contains("Tasks (open):"),
+            "tasks section should be absent: {result}"
+        );
     }
 
     // ── test 2: tasks only ─────────────────────────────────────────────────
@@ -200,10 +210,22 @@ mod tests {
             result.contains("No events today, but 2 tasks on your list."),
             "preamble wrong: {result}"
         );
-        assert!(!result.contains("Events:"), "events section should be absent: {result}");
-        assert!(result.contains("Tasks (open):"), "tasks section missing: {result}");
-        assert!(result.contains("- Reply to Miriam"), "task 1 missing: {result}");
-        assert!(result.contains("- Pick up prescription"), "task 2 missing: {result}");
+        assert!(
+            !result.contains("Events:"),
+            "events section should be absent: {result}"
+        );
+        assert!(
+            result.contains("Tasks (open):"),
+            "tasks section missing: {result}"
+        );
+        assert!(
+            result.contains("- Reply to Miriam"),
+            "task 1 missing: {result}"
+        );
+        assert!(
+            result.contains("- Pick up prescription"),
+            "task 2 missing: {result}"
+        );
     }
 
     // ── test 3: events only ────────────────────────────────────────────────
@@ -223,9 +245,18 @@ mod tests {
             result.contains("1 event today, no open tasks."),
             "preamble wrong: {result}"
         );
-        assert!(result.contains("Events:"), "events section missing: {result}");
-        assert!(result.contains("- 12:30 — Lunch with Sam"), "event entry missing: {result}");
-        assert!(!result.contains("Tasks (open):"), "tasks section should be absent: {result}");
+        assert!(
+            result.contains("Events:"),
+            "events section missing: {result}"
+        );
+        assert!(
+            result.contains("- 12:30 — Lunch with Sam"),
+            "event entry missing: {result}"
+        );
+        assert!(
+            !result.contains("Tasks (open):"),
+            "tasks section should be absent: {result}"
+        );
     }
 
     // ── test 4: past events get done marker, future don't ──────────────────
@@ -325,7 +356,10 @@ mod tests {
             seed_n_tasks(&conn, 5);
             let now = local_dt("2026-04-15", 9, 0);
             let result = compose_today_context(now, &conn).unwrap();
-            assert!(result.contains("Moderate day:"), "expected Moderate: {result}");
+            assert!(
+                result.contains("Moderate day:"),
+                "expected Moderate: {result}"
+            );
         }
 
         // full: 5 events + 10 tasks
@@ -348,10 +382,7 @@ mod tests {
         let now = local_dt("2026-04-15", 14, 32);
         let result = compose_today_context(now, &conn).unwrap();
 
-        assert!(
-            result.contains("Now: 14:32"),
-            "header time wrong: {result}"
-        );
+        assert!(result.contains("Now: 14:32"), "header time wrong: {result}");
         let tz = now.format("%Z").to_string();
         assert!(
             !tz.is_empty(),
@@ -373,7 +404,13 @@ mod tests {
         // Yesterday 23:59 start, ends exactly at today midnight — should NOT appear
         let yesterday_start = local_ts("2026-04-14", 23, 59);
         let yesterday_end = local_ts("2026-04-15", 0, 0);
-        seed_event(&conn, acct, "Late yesterday", yesterday_start, yesterday_end);
+        seed_event(
+            &conn,
+            acct,
+            "Late yesterday",
+            yesterday_start,
+            yesterday_end,
+        );
 
         // Today 00:00 exactly — should appear
         let today_start = local_ts("2026-04-15", 0, 0);
