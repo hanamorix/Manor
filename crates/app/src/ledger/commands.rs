@@ -1,14 +1,8 @@
 //! Tauri commands for Ledger — categories, transactions, budgets.
 
 use crate::assistant::commands::Db;
-use chrono::{Datelike, Local};
 use manor_core::ledger::{budget, category, transaction};
 use tauri::State;
-
-fn current_year_month() -> (i32, u32) {
-    let now = Local::now();
-    (now.year(), now.month())
-}
 
 // ── Categories ────────────────────────────────────────────────────────────────
 
