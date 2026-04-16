@@ -90,3 +90,38 @@ pub fn backup_restore(
         .map_err(|e| e.to_string())?;
     Ok(staging.to_string_lossy().into_owned())
 }
+
+// ── launchd scheduling ────────────────────────────────────────────────────────
+
+use crate::safety::launchd;
+
+#[derive(serde::Deserialize)]
+pub struct ScheduleArgs {
+    pub program_path: String,
+    pub out_dir: String,
+    pub weekday: u8,
+    pub hour: u8,
+    pub minute: u8,
+}
+
+#[tauri::command]
+pub fn backup_schedule_install(args: ScheduleArgs) -> Result<(), String> {
+    launchd::install(
+        &PathBuf::from(&args.program_path),
+        &PathBuf::from(&args.out_dir),
+        args.weekday,
+        args.hour,
+        args.minute,
+    )
+    .map_err(|e| e.to_string())
+}
+
+#[tauri::command]
+pub fn backup_schedule_uninstall() -> Result<(), String> {
+    launchd::uninstall().map_err(|e| e.to_string())
+}
+
+#[tauri::command]
+pub fn backup_schedule_is_installed() -> Result<bool, String> {
+    launchd::is_installed().map_err(|e| e.to_string())
+}
