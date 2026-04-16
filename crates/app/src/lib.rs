@@ -6,6 +6,7 @@ pub mod ledger;
 pub mod rhythm;
 pub mod safety;
 pub mod sync;
+pub mod weather;
 
 use serde::Serialize;
 use std::sync::Arc;
@@ -221,6 +222,7 @@ pub fn register(builder: Builder<Wry>) -> Builder<Wry> {
             safety::snapshot_commands::backup_schedule_install,
             safety::snapshot_commands::backup_schedule_uninstall,
             safety::snapshot_commands::backup_schedule_is_installed,
+            weather::commands::weather_current,
         ])
 }
 
