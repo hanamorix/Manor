@@ -1,6 +1,7 @@
 //! Tauri command glue for Manor.
 
 pub mod assistant;
+pub mod ledger;
 pub mod rhythm;
 pub mod sync;
 
@@ -129,6 +130,17 @@ pub fn register(builder: Builder<Wry>) -> Builder<Wry> {
             rhythm::commands::dismiss_pattern_nudge,
             rhythm::commands::check_time_block_pattern,
             rhythm::commands::add_person,
+            ledger::commands::ledger_list_categories,
+            ledger::commands::ledger_upsert_category,
+            ledger::commands::ledger_delete_category,
+            ledger::commands::ledger_add_transaction,
+            ledger::commands::ledger_update_transaction,
+            ledger::commands::ledger_delete_transaction,
+            ledger::commands::ledger_list_transactions,
+            ledger::commands::ledger_list_budgets,
+            ledger::commands::ledger_upsert_budget,
+            ledger::commands::ledger_delete_budget,
+            ledger::commands::ledger_monthly_summary,
         ])
 }
 
