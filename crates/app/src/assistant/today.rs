@@ -184,4 +184,47 @@ mod tests {
         assert!(!result.contains("Events:"), "events section should be absent: {result}");
         assert!(!result.contains("Tasks (open):"), "tasks section should be absent: {result}");
     }
+
+    // ── test 2: tasks only ─────────────────────────────────────────────────
+
+    #[test]
+    fn tasks_only_preamble_and_section() {
+        let (_d, conn) = fresh_conn();
+        seed_task(&conn, "Reply to Miriam", Some("2026-04-15"));
+        seed_task(&conn, "Pick up prescription", None);
+
+        let now = local_dt("2026-04-15", 9, 0);
+        let result = compose_today_context(now, &conn).unwrap();
+
+        assert!(
+            result.contains("No events today, but 2 tasks on your list."),
+            "preamble wrong: {result}"
+        );
+        assert!(!result.contains("Events:"), "events section should be absent: {result}");
+        assert!(result.contains("Tasks (open):"), "tasks section missing: {result}");
+        assert!(result.contains("- Reply to Miriam"), "task 1 missing: {result}");
+        assert!(result.contains("- Pick up prescription"), "task 2 missing: {result}");
+    }
+
+    // ── test 3: events only ────────────────────────────────────────────────
+
+    #[test]
+    fn events_only_preamble_and_section() {
+        let (_d, conn) = fresh_conn();
+        let acct = seed_account(&conn);
+        let start = local_ts("2026-04-15", 12, 30);
+        let end = local_ts("2026-04-15", 13, 30);
+        seed_event(&conn, acct, "Lunch with Sam", start, end);
+
+        let now = local_dt("2026-04-15", 9, 0);
+        let result = compose_today_context(now, &conn).unwrap();
+
+        assert!(
+            result.contains("1 event today, no open tasks."),
+            "preamble wrong: {result}"
+        );
+        assert!(result.contains("Events:"), "events section missing: {result}");
+        assert!(result.contains("- 12:30 — Lunch with Sam"), "event entry missing: {result}");
+        assert!(!result.contains("Tasks (open):"), "tasks section should be absent: {result}");
+    }
 }
