@@ -3,6 +3,7 @@
 pub mod assistant;
 pub mod household;
 pub mod ledger;
+pub mod note;
 pub mod person;
 pub mod setting;
 pub mod tag;
