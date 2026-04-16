@@ -1,5 +1,6 @@
 //! Assistant substrate: SQLite persistence for conversations, messages, proposals, tasks, calendar accounts, and events.
 
+pub mod calendar;
 pub mod calendar_account;
 pub mod chore;
 pub mod conversation;

@@ -15,6 +15,7 @@ pub struct CalendarAccount {
     pub last_synced_at: Option<i64>,
     pub last_error: Option<String>,
     pub created_at: i64,
+    pub default_calendar_url: Option<String>,
 }
 
 impl CalendarAccount {
@@ -27,6 +28,7 @@ impl CalendarAccount {
             last_synced_at: row.get("last_synced_at")?,
             last_error: row.get("last_error")?,
             created_at: row.get("created_at")?,
+            default_calendar_url: row.get("default_calendar_url")?,
         })
     }
 }
@@ -48,7 +50,7 @@ pub fn insert(
 
 pub fn list(conn: &Connection) -> Result<Vec<CalendarAccount>> {
     let mut stmt = conn.prepare(
-        "SELECT id, display_name, server_url, username, last_synced_at, last_error, created_at
+        "SELECT id, display_name, server_url, username, last_synced_at, last_error, created_at, default_calendar_url
          FROM calendar_account
          ORDER BY created_at",
     )?;
@@ -61,7 +63,7 @@ pub fn list(conn: &Connection) -> Result<Vec<CalendarAccount>> {
 pub fn get(conn: &Connection, id: i64) -> Result<Option<CalendarAccount>> {
     let row = conn
         .query_row(
-            "SELECT id, display_name, server_url, username, last_synced_at, last_error, created_at
+            "SELECT id, display_name, server_url, username, last_synced_at, last_error, created_at, default_calendar_url
              FROM calendar_account WHERE id = ?1",
             [id],
             CalendarAccount::from_row,
@@ -79,6 +81,14 @@ pub fn update_sync_state(
     conn.execute(
         "UPDATE calendar_account SET last_synced_at = ?1, last_error = ?2 WHERE id = ?3",
         params![last_synced_at, last_error, id],
+    )?;
+    Ok(())
+}
+
+pub fn set_default_calendar(conn: &Connection, id: i64, url: &str) -> Result<()> {
+    conn.execute(
+        "UPDATE calendar_account SET default_calendar_url = ?1 WHERE id = ?2",
+        params![url, id],
     )?;
     Ok(())
 }
@@ -133,6 +143,18 @@ mod tests {
         let row = get(&conn, id).unwrap().unwrap();
         assert_eq!(row.last_synced_at, None);
         assert_eq!(row.last_error.as_deref(), Some("bad credentials"));
+    }
+
+    #[test]
+    fn set_default_calendar_persists_url() {
+        let (_d, conn) = fresh_conn();
+        let id = insert(&conn, "iCloud", "https://caldav.icloud.com", "a@b.c").unwrap();
+        set_default_calendar(&conn, id, "https://caldav.icloud.com/12345/calendars/home/").unwrap();
+        let row = get(&conn, id).unwrap().unwrap();
+        assert_eq!(
+            row.default_calendar_url.as_deref(),
+            Some("https://caldav.icloud.com/12345/calendars/home/")
+        );
     }
 
     #[test]
