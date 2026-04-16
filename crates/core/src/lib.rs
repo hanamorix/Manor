@@ -2,6 +2,7 @@
 
 pub mod assistant;
 pub mod attachment;
+pub mod embedding;
 pub mod household;
 pub mod ledger;
 pub mod note;
