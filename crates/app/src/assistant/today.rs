@@ -227,4 +227,63 @@ mod tests {
         assert!(result.contains("- 12:30 — Lunch with Sam"), "event entry missing: {result}");
         assert!(!result.contains("Tasks (open):"), "tasks section should be absent: {result}");
     }
+
+    // ── test 4: past events get done marker, future don't ──────────────────
+
+    #[test]
+    fn past_events_get_done_marker_future_do_not() {
+        let (_d, conn) = fresh_conn();
+        let acct = seed_account(&conn);
+
+        // Past event: ended at 11:00, now is 14:32
+        let past_start = local_ts("2026-04-15", 10, 0);
+        let past_end = local_ts("2026-04-15", 11, 0);
+        seed_event(&conn, acct, "Boiler service", past_start, past_end);
+
+        // Future event: starts at 16:00, now is 14:32
+        let future_start = local_ts("2026-04-15", 16, 0);
+        let future_end = local_ts("2026-04-15", 17, 0);
+        seed_event(&conn, acct, "Dentist", future_start, future_end);
+
+        let now = local_dt("2026-04-15", 14, 32);
+        let result = compose_today_context(now, &conn).unwrap();
+
+        assert!(
+            result.contains("- 10:00 — Boiler service (done)"),
+            "past event should have (done): {result}"
+        );
+        assert!(
+            result.contains("- 16:00 — Dentist\n"),
+            "future event should not have (done): {result}"
+        );
+    }
+
+    // ── test 5: due-today suffix + future-due tasks appear without suffix ───
+
+    #[test]
+    fn due_today_tasks_get_suffix_others_do_not() {
+        let (_d, conn) = fresh_conn();
+        // due today
+        seed_task(&conn, "Reply to Miriam", Some("2026-04-15"));
+        // no due date
+        seed_task(&conn, "Pick up prescription", None);
+        // due in the future — still open, still appears (list_open returns ALL open tasks)
+        seed_task(&conn, "Tax return", Some("2026-05-01"));
+
+        let now = local_dt("2026-04-15", 9, 0);
+        let result = compose_today_context(now, &conn).unwrap();
+
+        assert!(
+            result.contains("- Reply to Miriam — due today"),
+            "today task missing suffix: {result}"
+        );
+        assert!(
+            result.contains("- Pick up prescription\n"),
+            "no-due task should have no suffix: {result}"
+        );
+        assert!(
+            result.contains("- Tax return\n"),
+            "future-due task should appear without suffix: {result}"
+        );
+    }
 }
