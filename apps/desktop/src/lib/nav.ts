@@ -1,6 +1,6 @@
 import { create } from "zustand";
 
-export type View = "today" | "chores" | "timeblocks";
+export type View = "today" | "chores" | "timeblocks" | "ledger";
 
 interface NavStore {
   view: View;

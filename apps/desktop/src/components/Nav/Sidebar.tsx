@@ -74,6 +74,7 @@ export default function Sidebar() {
       <NavIcon view="today" icon="🏠" title="Today" />
       <NavIcon view="chores" icon="🧹" title="Chores" />
       <NavIcon view="timeblocks" icon="⏱" title="Time Blocks" />
+      <NavIcon view="ledger" icon="💰" title="Ledger" />
       <div style={{ flex: 1 }} />
     </nav>
   );

@@ -5,6 +5,7 @@ import SettingsModal from "./components/Settings/SettingsModal";
 import Sidebar from "./components/Nav/Sidebar";
 import ChoresView from "./components/Chores/ChoresView";
 import TimeBlocksView from "./components/TimeBlocks/TimeBlocksView";
+import LedgerView from "./components/Ledger/LedgerView";
 import { useSettingsStore } from "./lib/settings/state";
 import { useNavStore } from "./lib/nav";
 
@@ -45,6 +46,7 @@ export default function App() {
           {view === "today" && <Today />}
           {view === "chores" && <ChoresView />}
           {view === "timeblocks" && <TimeBlocksView />}
+          {view === "ledger" && <LedgerView />}
         </div>
       </div>
       <Assistant />
