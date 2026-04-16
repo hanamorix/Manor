@@ -96,10 +96,15 @@ pub async fn send_message(
         .send(StreamChunk::Started(assistant_row_id))
         .map_err(|e| e.to_string())?;
 
-    // 3. Build chat-message history (system prompt + recent turns).
+    // 3. Build chat-message history (system prompt + today context + recent turns).
+    let today_block = {
+        let conn = state.0.lock().map_err(|e| e.to_string())?;
+        crate::assistant::today::compose_today_context(Local::now(), &conn)
+            .map_err(|e| e.to_string())?
+    };
     let mut chat_msgs: Vec<ChatMessage> = vec![ChatMessage {
         role: ChatRole::System,
-        content: SYSTEM_PROMPT.into(),
+        content: format!("{SYSTEM_PROMPT}\n\n{today_block}"),
     }];
     for m in history {
         if m.content.is_empty() {
