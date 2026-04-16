@@ -2,6 +2,10 @@ import { useEffect, useRef } from "react";
 import { useSettingsStore } from "../../lib/settings/state";
 import Tabs from "./Tabs";
 import CalendarsTab from "./CalendarsTab";
+import DataBackupTab from "./DataBackupTab";
+import AiTab from "./AiTab";
+import HouseholdTab from "./HouseholdTab";
+import AboutTab from "./AboutTab";
 
 export default function SettingsModal() {
   const modalOpen = useSettingsStore((s) => s.modalOpen);
@@ -77,7 +81,11 @@ export default function SettingsModal() {
         </header>
         <Tabs />
         <div style={{ flex: 1, overflowY: "auto" }}>
+          {activeTab === "data" && <DataBackupTab />}
+          {activeTab === "ai" && <AiTab />}
           {activeTab === "calendars" && <CalendarsTab />}
+          {activeTab === "household" && <HouseholdTab />}
+          {activeTab === "about" && <AboutTab />}
         </div>
       </div>
     </>

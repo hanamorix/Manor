@@ -1,11 +1,16 @@
 import { useSettingsStore } from "../../lib/settings/state";
 
-type Tab = { id: "calendars" | "ai" | "about"; label: string; disabled: boolean };
+type Tab = {
+  id: "data" | "ai" | "calendars" | "household" | "about";
+  label: string;
+};
 
 const TABS: Tab[] = [
-  { id: "calendars", label: "Calendars", disabled: false },
-  { id: "ai", label: "AI (soon)", disabled: true },
-  { id: "about", label: "About (soon)", disabled: true },
+  { id: "data",      label: "Data & Backup" },
+  { id: "ai",        label: "AI" },
+  { id: "calendars", label: "Calendars" },
+  { id: "household", label: "Household" },
+  { id: "about",     label: "About" },
 ];
 
 export default function Tabs() {
@@ -19,8 +24,7 @@ export default function Tabs() {
         return (
           <button
             key={t.id}
-            onClick={() => !t.disabled && setActiveTab(t.id)}
-            disabled={t.disabled}
+            onClick={() => setActiveTab(t.id)}
             style={{
               padding: "10px 14px",
               fontSize: 13,
@@ -28,9 +32,8 @@ export default function Tabs() {
               background: "transparent",
               border: "none",
               borderBottom: active ? "2px solid var(--imessage-blue)" : "2px solid transparent",
-              color: t.disabled ? "rgba(0,0,0,0.3)" : "var(--ink)",
-              fontStyle: t.disabled ? "italic" : "normal",
-              cursor: t.disabled ? "default" : "pointer",
+              color: "var(--ink)",
+              cursor: "pointer",
               fontFamily: "inherit",
             }}
           >

@@ -3,7 +3,7 @@ import type { CalendarAccount, CalendarInfo } from "./ipc";
 
 interface SettingsStore {
   modalOpen: boolean;
-  activeTab: "calendars" | "ai" | "about";
+  activeTab: "data" | "ai" | "calendars" | "household" | "about";
   accounts: CalendarAccount[];
   syncingAccountIds: Set<number>;
   accountCalendars: Map<number, CalendarInfo[]>;
@@ -20,7 +20,7 @@ interface SettingsStore {
 
 export const useSettingsStore = create<SettingsStore>((set) => ({
   modalOpen: false,
-  activeTab: "calendars",
+  activeTab: "data",
   accounts: [],
   syncingAccountIds: new Set<number>(),
   accountCalendars: new Map<number, CalendarInfo[]>(),
