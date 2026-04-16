@@ -160,6 +160,14 @@ mod tests {
                 title: title.to_string(),
                 start_at: start,
                 end_at: end,
+                event_url: None,
+                etag: None,
+                description: None,
+                location: None,
+                all_day: false,
+                is_recurring_occurrence: false,
+                parent_event_url: None,
+                occurrence_dtstart: None,
             }],
         )
         .unwrap();

@@ -30,6 +30,14 @@ pub fn expand(
                 title: ev.summary.clone(),
                 start_at: ev.start_at,
                 end_at: ev.end_at,
+                event_url: None,
+                etag: None,
+                description: None,
+                location: None,
+                all_day: false,
+                is_recurring_occurrence: false,
+                parent_event_url: None,
+                occurrence_dtstart: None,
             }]);
         }
         return Ok(vec![]);
@@ -69,6 +77,14 @@ pub fn expand(
                 title: ev.summary.clone(),
                 start_at: start,
                 end_at: start + duration,
+                event_url: None,
+                etag: None,
+                description: None,
+                location: None,
+                all_day: false,
+                is_recurring_occurrence: true,
+                parent_event_url: None,
+                occurrence_dtstart: Some(occ_utc.format("%Y%m%dT%H%M%SZ").to_string()),
             })
         })
         .collect();

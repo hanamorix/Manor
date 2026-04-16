@@ -134,7 +134,7 @@ async fn do_sync(
             .report_events(&cal.url, window_start, window_end)
             .await?;
         for ics in blocks {
-            for parsed in ical::parse_vcalendar(&ics, local_tz) {
+            for parsed in ical::parse_vcalendar(&ics.ical, local_tz) {
                 match expand::expand(&parsed, account_id, window_start, window_end) {
                     Ok(mut occurrences) => new_events.append(&mut occurrences),
                     Err(e) => tracing::warn!("skipping expansion for uid {}: {e}", parsed.uid),

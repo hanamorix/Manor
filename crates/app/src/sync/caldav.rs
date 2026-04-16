@@ -23,6 +23,13 @@ pub struct CalendarInfo {
     pub display_name: Option<String>,
 }
 
+#[derive(Debug, Clone)]
+pub struct ReportItem {
+    pub ical: String,
+    pub href: String,
+    pub etag: String,
+}
+
 impl CalDavClient {
     pub fn new(username: impl Into<String>, password: impl Into<String>) -> Self {
         Self {
@@ -115,7 +122,7 @@ impl CalDavClient {
         calendar_url: &str,
         start: DateTime<Utc>,
         end: DateTime<Utc>,
-    ) -> Result<Vec<String>> {
+    ) -> Result<Vec<ReportItem>> {
         let start_s = start.format("%Y%m%dT%H%M%SZ").to_string();
         let end_s = end.format("%Y%m%dT%H%M%SZ").to_string();
         let body = format!(
@@ -137,7 +144,76 @@ impl CalDavClient {
         let xml = self
             .request_xml(REPORT, calendar_url, Some("1"), &body)
             .await?;
-        Ok(extract_calendar_data_blocks(&xml))
+        Ok(extract_report_items(&xml, calendar_url))
+    }
+
+    /// Fetch a single .ics resource. Returns (ical_body, etag).
+    pub async fn fetch_ical(&self, url: &str) -> Result<(String, String)> {
+        let resp = self
+            .http
+            .get(url)
+            .header(AUTHORIZATION, self.auth_header())
+            .send()
+            .await?;
+        let status = resp.status();
+        if !status.is_success() {
+            bail!("GET {url} returned {status}");
+        }
+        let etag = resp
+            .headers()
+            .get("ETag")
+            .and_then(|v| v.to_str().ok())
+            .unwrap_or("")
+            .to_string();
+        let body = resp.text().await?;
+        Ok((body, etag))
+    }
+
+    /// PUT an iCal body to `url`. If `etag` is Some, sends `If-Match` for optimistic concurrency.
+    /// Returns the new ETag from the response headers (empty string if server doesn't return one).
+    /// Returns an error containing "conflict" if the server responds 412.
+    pub async fn put_event(&self, url: &str, body: &str, etag: Option<&str>) -> Result<String> {
+        let mut req = self
+            .http
+            .put(url)
+            .header(AUTHORIZATION, self.auth_header())
+            .header(CONTENT_TYPE, HeaderValue::from_static("text/calendar; charset=utf-8"))
+            .body(body.to_string());
+        if let Some(e) = etag {
+            req = req.header("If-Match", e);
+        }
+        let resp = req.send().await?;
+        let status = resp.status();
+        if status.as_u16() == 412 {
+            bail!("conflict: event was modified by another client (412)");
+        }
+        if !status.is_success() {
+            let text = resp.text().await.unwrap_or_default();
+            bail!("PUT {url} returned {status}: {text}");
+        }
+        let new_etag = resp
+            .headers()
+            .get("ETag")
+            .and_then(|v| v.to_str().ok())
+            .unwrap_or("")
+            .to_string();
+        Ok(new_etag)
+    }
+
+    /// DELETE an event at `url` with `If-Match: etag`.
+    pub async fn delete_event(&self, url: &str, etag: &str) -> Result<()> {
+        let resp = self
+            .http
+            .delete(url)
+            .header(AUTHORIZATION, self.auth_header())
+            .header("If-Match", etag)
+            .send()
+            .await?;
+        let status = resp.status();
+        if !status.is_success() {
+            bail!("DELETE {url} returned {status}");
+        }
+        Ok(())
     }
 }
 
@@ -269,39 +345,76 @@ fn extract_calendar_collections(xml: &str, base_url: &str) -> Vec<CalendarInfo> 
     out
 }
 
-/// Extract every `<C:calendar-data>` text block from a REPORT response.
-fn extract_calendar_data_blocks(xml: &str) -> Vec<String> {
+/// Extract `<D:response>` blocks from a REPORT response into ReportItems.
+/// Each response contains an href, a getetag, and calendar-data text.
+fn extract_report_items(xml: &str, base_url: &str) -> Vec<ReportItem> {
     let mut reader = Reader::from_str(xml);
     reader.config_mut().trim_text(false);
     let mut buf = Vec::new();
+
+    let mut in_response = false;
+    let mut in_href = false;
+    let mut in_etag = false;
     let mut in_data = false;
-    let mut cur = String::new();
+    let mut cur_href = String::new();
+    let mut cur_etag = String::new();
+    let mut cur_ical = String::new();
     let mut out = Vec::new();
+
     loop {
         match reader.read_event_into(&mut buf) {
             Ok(XmlEvent::Start(e)) => {
-                if local_name(e.name().as_ref()) == "calendar-data" {
-                    in_data = true;
-                    cur.clear();
+                let name = local_name(e.name().as_ref());
+                match name.as_str() {
+                    "response" => {
+                        in_response = true;
+                        cur_href.clear();
+                        cur_etag.clear();
+                        cur_ical.clear();
+                    }
+                    "href" if in_response => {
+                        in_href = true;
+                        cur_href.clear();
+                    }
+                    "getetag" if in_response => {
+                        in_etag = true;
+                        cur_etag.clear();
+                    }
+                    "calendar-data" if in_response => {
+                        in_data = true;
+                        cur_ical.clear();
+                    }
+                    _ => {}
                 }
             }
             Ok(XmlEvent::Text(t)) => {
-                if in_data {
-                    cur.push_str(&t.unescape().unwrap_or_default());
-                }
+                let text = t.unescape().unwrap_or_default();
+                if in_href { cur_href.push_str(&text); }
+                if in_etag { cur_etag.push_str(&text); }
+                if in_data { cur_ical.push_str(&text); }
             }
             Ok(XmlEvent::CData(t)) => {
                 if in_data {
-                    let s = String::from_utf8_lossy(&t);
-                    cur.push_str(&s);
+                    cur_ical.push_str(&String::from_utf8_lossy(&t));
                 }
             }
             Ok(XmlEvent::End(e)) => {
-                if local_name(e.name().as_ref()) == "calendar-data" {
-                    in_data = false;
-                    if !cur.trim().is_empty() {
-                        out.push(cur.clone());
+                let name = local_name(e.name().as_ref());
+                match name.as_str() {
+                    "href" => in_href = false,
+                    "getetag" => in_etag = false,
+                    "calendar-data" => in_data = false,
+                    "response" => {
+                        if in_response && !cur_ical.trim().is_empty() {
+                            out.push(ReportItem {
+                                href: absolutize(base_url, cur_href.trim()),
+                                etag: cur_etag.trim().to_string(),
+                                ical: cur_ical.clone(),
+                            });
+                        }
+                        in_response = false;
                     }
+                    _ => {}
                 }
             }
             Ok(XmlEvent::Eof) => break,
@@ -409,6 +522,7 @@ mod tests {
   <D:response>
     <D:href>/home/cal1/1.ics</D:href>
     <D:propstat><D:prop>
+      <D:getetag>"etag1"</D:getetag>
       <C:calendar-data>BEGIN:VCALENDAR
 VERSION:2.0
 BEGIN:VEVENT
@@ -429,12 +543,107 @@ END:VCALENDAR</C:calendar-data>
         let client = CalDavClient::new("u", "p");
         let start = Utc::now() - chrono::Duration::days(7);
         let end = Utc::now() + chrono::Duration::days(14);
-        let ics = client
+        let items = client
             .report_events(&format!("{}/home/cal1/", server.uri()), start, end)
             .await
             .unwrap();
-        assert_eq!(ics.len(), 1);
-        assert!(ics[0].contains("UID:u1"));
+        assert_eq!(items.len(), 1);
+        assert!(items[0].ical.contains("UID:u1"));
+    }
+
+    #[tokio::test]
+    async fn report_events_returns_report_items_with_href_and_etag() {
+        let server = MockServer::start().await;
+        let body = r#"<?xml version="1.0"?>
+<D:multistatus xmlns:D="DAV:" xmlns:C="urn:ietf:params:xml:ns:caldav">
+  <D:response>
+    <D:href>/home/cal1/event-1.ics</D:href>
+    <D:propstat><D:prop>
+      <D:getetag>"abc123"</D:getetag>
+      <C:calendar-data>BEGIN:VCALENDAR
+VERSION:2.0
+BEGIN:VEVENT
+UID:u1
+DTSTART:20260415T093000Z
+DTEND:20260415T103000Z
+SUMMARY:Standup
+END:VEVENT
+END:VCALENDAR</C:calendar-data>
+    </D:prop><D:status>HTTP/1.1 200 OK</D:status></D:propstat>
+  </D:response>
+</D:multistatus>"#;
+        Mock::given(method("REPORT"))
+            .respond_with(ResponseTemplate::new(207).set_body_string(body))
+            .mount(&server)
+            .await;
+
+        let client = CalDavClient::new("u", "p");
+        let start = Utc::now() - chrono::Duration::days(7);
+        let end = Utc::now() + chrono::Duration::days(14);
+        let items = client
+            .report_events(&format!("{}/home/cal1/", server.uri()), start, end)
+            .await
+            .unwrap();
+        assert_eq!(items.len(), 1);
+        assert!(items[0].href.ends_with("/event-1.ics"));
+        assert_eq!(items[0].etag, "\"abc123\"");
+        assert!(items[0].ical.contains("UID:u1"));
+    }
+
+    #[tokio::test]
+    async fn put_event_returns_new_etag() {
+        let server = MockServer::start().await;
+        Mock::given(method("PUT"))
+            .respond_with(
+                ResponseTemplate::new(201)
+                    .append_header("ETag", "\"newetag456\""),
+            )
+            .mount(&server)
+            .await;
+
+        let client = CalDavClient::new("u", "p");
+        let ical = "BEGIN:VCALENDAR\r\nVERSION:2.0\r\nBEGIN:VEVENT\r\nUID:test\r\nEND:VEVENT\r\nEND:VCALENDAR\r\n";
+        let etag = client
+            .put_event(&format!("{}/home/cal/event.ics", server.uri()), ical, None)
+            .await
+            .unwrap();
+        assert_eq!(etag, "\"newetag456\"");
+    }
+
+    #[tokio::test]
+    async fn put_event_412_returns_conflict_error() {
+        let server = MockServer::start().await;
+        Mock::given(method("PUT"))
+            .respond_with(ResponseTemplate::new(412))
+            .mount(&server)
+            .await;
+
+        let client = CalDavClient::new("u", "p");
+        let result = client
+            .put_event(
+                &format!("{}/home/cal/event.ics", server.uri()),
+                "irrelevant",
+                Some("\"old-etag\""),
+            )
+            .await;
+        assert!(result.is_err());
+        assert!(result.unwrap_err().to_string().contains("conflict"));
+    }
+
+    #[tokio::test]
+    async fn delete_event_sends_delete_with_if_match() {
+        let server = MockServer::start().await;
+        Mock::given(method("DELETE"))
+            .and(header("If-Match", "\"abc\""))
+            .respond_with(ResponseTemplate::new(204))
+            .mount(&server)
+            .await;
+
+        let client = CalDavClient::new("u", "p");
+        client
+            .delete_event(&format!("{}/home/cal/event.ics", server.uri()), "\"abc\"")
+            .await
+            .unwrap();
     }
 
     #[tokio::test]
