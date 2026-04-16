@@ -1,7 +1,7 @@
 //! Ledger transaction DAL — manual and synced entries.
 
 use anyhow::Result;
-use chrono::{Datelike, TimeZone, Utc};
+use chrono::{TimeZone, Utc};
 use rusqlite::{params, Connection, Row};
 use serde::{Deserialize, Serialize};
 
@@ -115,9 +115,12 @@ pub(crate) fn month_start_ts(year: i32, month: u32) -> i64 {
 
 /// Unix timestamp for the first second of the month *after* the given month (exclusive end).
 pub(crate) fn month_end_ts(year: i32, month: u32) -> i64 {
-    let start = Utc.with_ymd_and_hms(year, month, 1, 0, 0, 0).unwrap();
-    let next_month = start + chrono::Duration::days(32);
-    Utc.with_ymd_and_hms(next_month.year(), next_month.month(), 1, 0, 0, 0)
+    let (next_year, next_month) = if month == 12 {
+        (year + 1, 1)
+    } else {
+        (year, month + 1)
+    };
+    Utc.with_ymd_and_hms(next_year, next_month, 1, 0, 0, 0)
         .unwrap()
         .timestamp()
 }
