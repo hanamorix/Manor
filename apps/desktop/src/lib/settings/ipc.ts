@@ -60,3 +60,12 @@ export async function setDefaultCalendar(accountId: number, url: string): Promis
 export async function dataDirPath(): Promise<string> {
   return invoke<string>("data_dir_path");
 }
+
+export interface OllamaStatus {
+  reachable: boolean;
+  models: string[];
+}
+
+export async function ollamaStatus(): Promise<OllamaStatus> {
+  return invoke<OllamaStatus>("ollama_status");
+}
