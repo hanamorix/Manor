@@ -1,12 +1,14 @@
 import { useEffect, useRef, useState } from "react";
 import type { CalendarAccount } from "../../lib/settings/ipc";
-import { syncAccount, removeCalendarAccount } from "../../lib/settings/ipc";
+import { syncAccount, removeCalendarAccount, listCalendars, setDefaultCalendar } from "../../lib/settings/ipc";
+import type { CalendarInfo } from "../../lib/settings/ipc";
 import { listEventsToday } from "../../lib/today/ipc";
 import { useSettingsStore } from "../../lib/settings/state";
 import { useTodayStore } from "../../lib/today/state";
 
 interface AccountRowProps {
   account: CalendarAccount;
+  onRefresh?: () => void;
 }
 
 function relativeTime(seconds: number): string {
@@ -23,7 +25,7 @@ function providerBadge(url: string): string {
   return "●";
 }
 
-export default function AccountRow({ account }: AccountRowProps) {
+export default function AccountRow({ account, onRefresh }: AccountRowProps) {
   const upsertAccount = useSettingsStore((s) => s.upsertAccount);
   const removeAccount = useSettingsStore((s) => s.removeAccount);
   const markSyncing = useSettingsStore((s) => s.markSyncing);
@@ -33,6 +35,11 @@ export default function AccountRow({ account }: AccountRowProps) {
 
   const [removeArmed, setRemoveArmed] = useState(false);
   const removeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [calendars, setCalendarsState] = useState<CalendarInfo[]>([]);
+
+  useEffect(() => {
+    listCalendars(account.id).then(setCalendarsState).catch(() => {});
+  }, [account.id]);
 
   useEffect(() => () => {
     if (removeTimer.current) clearTimeout(removeTimer.current);
@@ -77,8 +84,7 @@ export default function AccountRow({ account }: AccountRowProps) {
     <div
       style={{
         display: "flex",
-        gap: 10,
-        alignItems: "center",
+        flexDirection: "column",
         padding: "8px 10px",
         background: removeArmed ? "rgba(255, 59, 48, 0.06)" : "white",
         border: "1px solid var(--hairline)",
@@ -86,68 +92,99 @@ export default function AccountRow({ account }: AccountRowProps) {
         marginBottom: 6,
       }}
     >
-      <div
-        style={{
-          width: 28,
-          height: 28,
-          borderRadius: 6,
-          background: "var(--imessage-blue)",
-          color: "white",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          fontSize: 11,
-          fontWeight: 700,
-        }}
-      >
-        {providerBadge(account.server_url)}
-      </div>
-      <div style={{ flex: 1, minWidth: 0 }}>
-        <div style={{ fontWeight: 600, fontSize: 13 }}>{account.display_name}</div>
+      <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
         <div
           style={{
+            width: 28,
+            height: 28,
+            borderRadius: 6,
+            background: "var(--imessage-blue)",
+            color: "white",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
             fontSize: 11,
-            color: account.last_error ? "var(--imessage-red)" : "rgba(0,0,0,0.5)",
-            whiteSpace: "nowrap",
-            overflow: "hidden",
-            textOverflow: "ellipsis",
+            fontWeight: 700,
           }}
-          title={account.last_error ?? undefined}
         >
-          {account.username} · {statusLine}
+          {providerBadge(account.server_url)}
         </div>
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <div style={{ fontWeight: 600, fontSize: 13 }}>{account.display_name}</div>
+          <div
+            style={{
+              fontSize: 11,
+              color: account.last_error ? "var(--imessage-red)" : "rgba(0,0,0,0.5)",
+              whiteSpace: "nowrap",
+              overflow: "hidden",
+              textOverflow: "ellipsis",
+            }}
+            title={account.last_error ?? undefined}
+          >
+            {account.username} · {statusLine}
+          </div>
+        </div>
+        <button
+          onClick={handleSync}
+          disabled={syncing}
+          style={{
+            padding: "5px 10px",
+            borderRadius: 6,
+            fontSize: 11,
+            fontWeight: 600,
+            border: "1px solid var(--hairline)",
+            background: "white",
+            cursor: syncing ? "default" : "pointer",
+            opacity: syncing ? 0.5 : 1,
+          }}
+        >
+          Sync
+        </button>
+        <button
+          onClick={handleRemoveClick}
+          style={{
+            padding: "5px 10px",
+            borderRadius: 6,
+            fontSize: 11,
+            fontWeight: 600,
+            border: "1px solid var(--hairline)",
+            background: "white",
+            cursor: "pointer",
+            color: removeArmed ? "var(--imessage-red)" : "inherit",
+          }}
+        >
+          {removeArmed ? "Yes?" : "Remove"}
+        </button>
       </div>
-      <button
-        onClick={handleSync}
-        disabled={syncing}
-        style={{
-          padding: "5px 10px",
-          borderRadius: 6,
-          fontSize: 11,
-          fontWeight: 600,
-          border: "1px solid var(--hairline)",
-          background: "white",
-          cursor: syncing ? "default" : "pointer",
-          opacity: syncing ? 0.5 : 1,
-        }}
-      >
-        Sync
-      </button>
-      <button
-        onClick={handleRemoveClick}
-        style={{
-          padding: "5px 10px",
-          borderRadius: 6,
-          fontSize: 11,
-          fontWeight: 600,
-          border: "1px solid var(--hairline)",
-          background: "white",
-          cursor: "pointer",
-          color: removeArmed ? "var(--imessage-red)" : "inherit",
-        }}
-      >
-        {removeArmed ? "Yes?" : "Remove"}
-      </button>
+
+      {calendars.length > 0 && (
+        <div style={{ marginTop: 10, display: "flex", alignItems: "center", gap: 8 }}>
+          <span style={{ fontSize: 11, color: "rgba(0,0,0,0.5)", minWidth: 100 }}>Default calendar</span>
+          <select
+            value={account.default_calendar_url ?? ""}
+            onChange={async (e) => {
+              await setDefaultCalendar(account.id, e.target.value);
+              onRefresh?.();
+            }}
+            style={{
+              flex: 1,
+              padding: "5px 8px",
+              fontSize: 12,
+              border: "1px solid var(--hairline)",
+              borderRadius: 8,
+              background: "#fafafa",
+              fontFamily: "inherit",
+            }}
+          >
+            <option value="">Auto-select</option>
+            {calendars.map((c) => (
+              <option key={c.id} value={c.url}>
+                {c.display_name ?? c.url}
+              </option>
+            ))}
+          </select>
+        </div>
+      )}
     </div>
   );
 }
