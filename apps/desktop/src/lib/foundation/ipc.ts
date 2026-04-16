@@ -69,3 +69,7 @@ export async function householdSetWorkingHours(hours: WorkingHours): Promise<Hou
 export async function householdSetDnd(windows: DndWindow[]): Promise<Household> {
   return invoke<Household>("household_set_dnd", { args: { windows } });
 }
+
+export async function appVersion(): Promise<string> {
+  return invoke<string>("app_version");
+}
