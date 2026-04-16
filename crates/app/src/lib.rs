@@ -1,6 +1,7 @@
 //! Tauri command glue for Manor.
 
 pub mod assistant;
+pub mod foundation;
 pub mod ledger;
 pub mod rhythm;
 pub mod sync;
@@ -146,6 +147,31 @@ pub fn register(builder: Builder<Wry>) -> Builder<Wry> {
             ledger::commands::ledger_upsert_budget,
             ledger::commands::ledger_delete_budget,
             ledger::commands::ledger_monthly_summary,
+            foundation::commands::setting_get,
+            foundation::commands::setting_set,
+            foundation::commands::setting_delete,
+            foundation::commands::person_list,
+            foundation::commands::person_add,
+            foundation::commands::person_update,
+            foundation::commands::person_delete,
+            foundation::commands::household_get,
+            foundation::commands::household_set_owner,
+            foundation::commands::household_set_working_hours,
+            foundation::commands::household_set_dnd,
+            foundation::commands::tag_list,
+            foundation::commands::tag_upsert,
+            foundation::commands::tag_delete,
+            foundation::commands::tag_link,
+            foundation::commands::tag_unlink,
+            foundation::commands::tag_for_entity,
+            foundation::commands::note_insert,
+            foundation::commands::note_update,
+            foundation::commands::note_delete,
+            foundation::commands::note_list_for,
+            foundation::commands::attachment_store,
+            foundation::commands::attachment_get_bytes,
+            foundation::commands::attachment_list_for,
+            foundation::commands::attachment_delete,
         ])
 }
 
