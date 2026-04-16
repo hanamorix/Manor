@@ -89,6 +89,32 @@ pub fn register(builder: Builder<Wry>) -> Builder<Wry> {
                 }
             });
 
+            // Trash: permanently delete rows that have been soft-deleted beyond
+            // the user's configured retention period.
+            let db_arc_trash = app.state::<assistant::commands::Db>().inner().clone_arc();
+            tauri::async_runtime::spawn_blocking(move || {
+                let conn = db_arc_trash.lock().unwrap();
+                let now_ts = chrono::Utc::now().timestamp();
+                let raw = manor_core::setting::get_or_default(&conn, "trash.auto_empty_days", "30")
+                    .unwrap_or_else(|_| "30".to_string());
+                if raw == "never" {
+                    return;
+                }
+                let days: i64 = raw.parse().unwrap_or(30);
+                if days <= 0 {
+                    return;
+                }
+                let cutoff = now_ts - (days * 86400);
+                match manor_core::trash::empty_older_than(&conn, cutoff) {
+                    Ok(totals) => {
+                        for (table, n) in totals {
+                            tracing::info!("trash: permanently deleted {n} row(s) from {table}");
+                        }
+                    }
+                    Err(e) => tracing::warn!("trash: empty_older_than failed: {e}"),
+                }
+            });
+
             Ok(())
         })
         .invoke_handler(tauri::generate_handler![
