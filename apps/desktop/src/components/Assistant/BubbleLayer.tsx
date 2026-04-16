@@ -52,8 +52,11 @@ export default function BubbleLayer() {
   const setDrawerOpen = useAssistantStore((s) => s.setDrawerOpen);
   const setUnreadCount = useAssistantStore((s) => s.setUnreadCount);
   const drawerOpen = useAssistantStore((s) => s.drawerOpen);
+  const avatarState = useAssistantStore((s) => s.avatarState);
 
   if (drawerOpen) return null;
+
+  const isGenerating = avatarState === "thinking" || avatarState === "speaking";
 
   return (
     <div
@@ -74,6 +77,8 @@ export default function BubbleLayer() {
         <Bubble
           key={b.id}
           bubble={b}
+          // Show typing dots when this is the active (still-empty) assistant bubble
+          isLoading={isGenerating && b.kind === "assistant" && b.content === ""}
           onDismiss={async () => {
             // Natural fade marks assistant messages as seen too — looking at the
             // bubble for its TTL counts as "saw it". Click-to-open also marks via
@@ -93,13 +98,38 @@ export default function BubbleLayer() {
 
 interface BubbleProps {
   bubble: TransientBubble;
+  isLoading: boolean;
   onDismiss: () => void;
   onClick: () => void;
 }
 
 const MAX_BUBBLE_LINES = 6;
 
-function Bubble({ bubble, onDismiss, onClick }: BubbleProps) {
+const DOT_BASE: React.CSSProperties = {
+  width: 8,
+  height: 8,
+  borderRadius: "50%",
+  background: "rgba(255,255,255,0.9)",
+  display: "inline-block",
+};
+
+function TypingDots() {
+  return (
+    <div style={{ display: "flex", gap: 5, alignItems: "center", padding: "2px 0" }}>
+      {[0, 1, 2].map((i) => (
+        <span
+          key={i}
+          style={{
+            ...DOT_BASE,
+            animation: `typingBounce 1.2s ease-in-out ${i * 0.2}s infinite`,
+          }}
+        />
+      ))}
+    </div>
+  );
+}
+
+function Bubble({ bubble, isLoading, onDismiss, onClick }: BubbleProps) {
   const timerRef = useRef<TtlTimer | null>(null);
   const contentRef = useRef<HTMLDivElement>(null);
   const [overflowing, setOverflowing] = useState(false);
@@ -152,29 +182,35 @@ function Bubble({ bubble, onDismiss, onClick }: BubbleProps) {
         animation: "bubbleIn 200ms ease-out",
       }}
     >
-      <div
-        ref={contentRef}
-        style={{
-          display: "-webkit-box",
-          WebkitLineClamp: MAX_BUBBLE_LINES,
-          WebkitBoxOrient: "vertical",
-          overflow: "hidden",
-        }}
-      >
-        {bubble.content}
-      </div>
-      {overflowing && (
-        <div
-          style={{
-            marginTop: 6,
-            fontSize: 12,
-            fontWeight: 700,
-            opacity: 0.85,
-            letterSpacing: 0.2,
-          }}
-        >
-          See more →
-        </div>
+      {isLoading ? (
+        <TypingDots />
+      ) : (
+        <>
+          <div
+            ref={contentRef}
+            style={{
+              display: "-webkit-box",
+              WebkitLineClamp: MAX_BUBBLE_LINES,
+              WebkitBoxOrient: "vertical",
+              overflow: "hidden",
+            }}
+          >
+            {bubble.content}
+          </div>
+          {overflowing && (
+            <div
+              style={{
+                marginTop: 6,
+                fontSize: 12,
+                fontWeight: 700,
+                opacity: 0.85,
+                letterSpacing: 0.2,
+              }}
+            >
+              See more →
+            </div>
+          )}
+        </>
       )}
     </div>
   );
