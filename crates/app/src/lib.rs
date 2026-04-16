@@ -214,6 +214,7 @@ pub fn register(builder: Builder<Wry>) -> Builder<Wry> {
             safety::snapshot_commands::backup_create_now,
             safety::snapshot_commands::backup_list,
             safety::snapshot_commands::backup_restore,
+            safety::panic_commands::panic_erase_everything,
         ])
 }
 
