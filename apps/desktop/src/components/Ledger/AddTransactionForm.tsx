@@ -50,7 +50,7 @@ export default function AddTransactionForm({ categories, onClose, onSaved }: Pro
       setError("Enter a description");
       return;
     }
-    const dateTs = Math.floor(new Date(date).getTime() / 1000);
+    const dateTs = Math.floor(new Date(date + "T00:00:00").getTime() / 1000);
     const signedPence = isIncome ? Math.abs(pence) : -Math.abs(pence);
 
     setSaving(true);
