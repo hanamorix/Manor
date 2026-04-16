@@ -1,1 +1,203 @@
-//! Transaction DAL — placeholder for future implementation.
+//! Ledger transaction DAL — manual and synced entries.
+
+use anyhow::Result;
+use chrono::{Datelike, TimeZone, Utc};
+use rusqlite::{params, Connection, Row};
+use serde::{Deserialize, Serialize};
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+pub struct Transaction {
+    pub id: i64,
+    pub bank_account_id: Option<i64>,
+    pub amount_pence: i64,
+    pub currency: String,
+    pub description: String,
+    pub merchant: Option<String>,
+    pub category_id: Option<i64>,
+    pub date: i64,
+    pub source: String,
+    pub note: Option<String>,
+    pub created_at: i64,
+}
+
+impl Transaction {
+    fn from_row(row: &Row) -> rusqlite::Result<Self> {
+        Ok(Self {
+            id: row.get("id")?,
+            bank_account_id: row.get("bank_account_id")?,
+            amount_pence: row.get("amount_pence")?,
+            currency: row.get("currency")?,
+            description: row.get("description")?,
+            merchant: row.get("merchant")?,
+            category_id: row.get("category_id")?,
+            date: row.get("date")?,
+            source: row.get("source")?,
+            note: row.get("note")?,
+            created_at: row.get("created_at")?,
+        })
+    }
+}
+
+/// Insert a manual transaction. Returns the inserted row.
+pub fn insert(
+    conn: &Connection,
+    amount_pence: i64,
+    currency: &str,
+    description: &str,
+    merchant: Option<&str>,
+    category_id: Option<i64>,
+    date: i64,
+    note: Option<&str>,
+) -> Result<Transaction> {
+    let now = Utc::now().timestamp();
+    conn.execute(
+        "INSERT INTO ledger_transaction
+         (bank_account_id, amount_pence, currency, description, merchant,
+          category_id, date, source, note, created_at)
+         VALUES (NULL, ?1, ?2, ?3, ?4, ?5, ?6, 'manual', ?7, ?8)",
+        params![amount_pence, currency, description, merchant, category_id, date, note, now],
+    )?;
+    get(conn, conn.last_insert_rowid())
+}
+
+/// Update description, merchant, category and note on an existing transaction.
+pub fn update(
+    conn: &Connection,
+    id: i64,
+    description: &str,
+    merchant: Option<&str>,
+    category_id: Option<i64>,
+    note: Option<&str>,
+) -> Result<Transaction> {
+    let rows = conn.execute(
+        "UPDATE ledger_transaction
+         SET description = ?1, merchant = ?2, category_id = ?3, note = ?4
+         WHERE id = ?5 AND deleted_at IS NULL",
+        params![description, merchant, category_id, note, id],
+    )?;
+    anyhow::ensure!(rows > 0, "transaction id={} not found", id);
+    get(conn, id)
+}
+
+/// Soft-delete a transaction.
+pub fn delete(conn: &Connection, id: i64) -> Result<()> {
+    let now = Utc::now().timestamp();
+    conn.execute(
+        "UPDATE ledger_transaction SET deleted_at = ?1 WHERE id = ?2",
+        params![now, id],
+    )?;
+    Ok(())
+}
+
+/// All non-deleted transactions for a given month, newest first.
+pub fn list_by_month(conn: &Connection, year: i32, month: u32) -> Result<Vec<Transaction>> {
+    let start = month_start_ts(year, month);
+    let end = month_end_ts(year, month);
+    let mut stmt = conn.prepare(
+        "SELECT id, bank_account_id, amount_pence, currency, description, merchant,
+                category_id, date, source, note, created_at
+         FROM ledger_transaction
+         WHERE deleted_at IS NULL AND date >= ?1 AND date < ?2
+         ORDER BY date DESC, id DESC",
+    )?;
+    let rows = stmt
+        .query_map(params![start, end], Transaction::from_row)?
+        .collect::<rusqlite::Result<Vec<_>>>()?;
+    Ok(rows)
+}
+
+/// Unix timestamp for the first second of the given month (UTC).
+pub(crate) fn month_start_ts(year: i32, month: u32) -> i64 {
+    Utc.with_ymd_and_hms(year, month, 1, 0, 0, 0)
+        .unwrap()
+        .timestamp()
+}
+
+/// Unix timestamp for the first second of the month *after* the given month (exclusive end).
+pub(crate) fn month_end_ts(year: i32, month: u32) -> i64 {
+    let start = Utc.with_ymd_and_hms(year, month, 1, 0, 0, 0).unwrap();
+    let next_month = start + chrono::Duration::days(32);
+    Utc.with_ymd_and_hms(next_month.year(), next_month.month(), 1, 0, 0, 0)
+        .unwrap()
+        .timestamp()
+}
+
+fn get(conn: &Connection, id: i64) -> Result<Transaction> {
+    let mut stmt = conn.prepare(
+        "SELECT id, bank_account_id, amount_pence, currency, description, merchant,
+                category_id, date, source, note, created_at
+         FROM ledger_transaction WHERE id = ?1",
+    )?;
+    Ok(stmt.query_row([id], Transaction::from_row)?)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::assistant::db;
+    use tempfile::tempdir;
+
+    fn fresh_conn() -> (tempfile::TempDir, Connection) {
+        let dir = tempdir().unwrap();
+        let conn = db::init(&dir.path().join("t.db")).unwrap();
+        (dir, conn)
+    }
+
+    fn april_ts(day: u32) -> i64 {
+        Utc.with_ymd_and_hms(2026, 4, day, 12, 0, 0).unwrap().timestamp()
+    }
+
+    #[test]
+    fn insert_and_retrieve_manual_transaction() {
+        let (_d, conn) = fresh_conn();
+        let tx = insert(&conn, -1240, "GBP", "Tesco Express", Some("Tesco"), Some(1), april_ts(16), None).unwrap();
+        assert_eq!(tx.amount_pence, -1240);
+        assert_eq!(tx.description, "Tesco Express");
+        assert_eq!(tx.merchant, Some("Tesco".to_string()));
+        assert_eq!(tx.category_id, Some(1));
+        assert_eq!(tx.source, "manual");
+        assert!(tx.bank_account_id.is_none());
+    }
+
+    #[test]
+    fn list_by_month_filters_correctly() {
+        let (_d, conn) = fresh_conn();
+        // April transaction
+        insert(&conn, -500, "GBP", "April spend", None, None, april_ts(10), None).unwrap();
+        // March transaction (should not appear)
+        let march_ts = Utc.with_ymd_and_hms(2026, 3, 15, 12, 0, 0).unwrap().timestamp();
+        insert(&conn, -300, "GBP", "March spend", None, None, march_ts, None).unwrap();
+
+        let txns = list_by_month(&conn, 2026, 4).unwrap();
+        assert_eq!(txns.len(), 1);
+        assert_eq!(txns[0].description, "April spend");
+    }
+
+    #[test]
+    fn update_edits_description_and_category() {
+        let (_d, conn) = fresh_conn();
+        let tx = insert(&conn, -800, "GBP", "Old desc", None, None, april_ts(15), None).unwrap();
+        let updated = update(&conn, tx.id, "New desc", Some("Deliveroo"), Some(2), Some("note")).unwrap();
+        assert_eq!(updated.description, "New desc");
+        assert_eq!(updated.merchant, Some("Deliveroo".to_string()));
+        assert_eq!(updated.category_id, Some(2));
+        assert_eq!(updated.note, Some("note".to_string()));
+    }
+
+    #[test]
+    fn delete_soft_deletes_transaction() {
+        let (_d, conn) = fresh_conn();
+        let tx = insert(&conn, -100, "GBP", "Gone", None, None, april_ts(1), None).unwrap();
+        delete(&conn, tx.id).unwrap();
+        let txns = list_by_month(&conn, 2026, 4).unwrap();
+        assert!(txns.is_empty());
+    }
+
+    #[test]
+    fn month_boundary_tests() {
+        // March end should equal April start
+        assert_eq!(month_end_ts(2026, 3), month_start_ts(2026, 4));
+        // December wraps to January
+        assert_eq!(month_end_ts(2026, 12), month_start_ts(2027, 1));
+    }
+}
