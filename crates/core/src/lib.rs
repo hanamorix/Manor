@@ -5,6 +5,7 @@ pub mod household;
 pub mod ledger;
 pub mod person;
 pub mod setting;
+pub mod tag;
 
 /// Returns the crate version string, used by the shell for the About screen.
 pub fn version() -> &'static str {
