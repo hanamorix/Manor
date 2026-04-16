@@ -116,3 +116,15 @@ export async function updateEvent(args: UpdateEventArgs): Promise<void> {
 export async function deleteEvent(args: DeleteEventArgs): Promise<void> {
   return invoke("delete_event", { args });
 }
+
+export interface Weather {
+  temp_c: number;
+  condition: string;
+  emoji: string;
+  location: string;
+  fetched_at: number;
+}
+
+export async function weatherCurrent(): Promise<Weather | null> {
+  return invoke<Weather | null>("weather_current");
+}

@@ -2,10 +2,60 @@ import { useEffect, useState } from "react";
 import {
   householdGet, householdSetOwner, householdSetWorkingHours,
   personList, personAdd, personDelete,
+  settingGet, settingSet,
   type Household, type Person, type WorkingHours,
 } from "../../lib/foundation/ipc";
 
 const DAYS = ["mon", "tue", "wed", "thu", "fri", "sat", "sun"];
+
+function WeatherLocationInput() {
+  const [value, setValue] = useState("");
+  const [loaded, setLoaded] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [message, setMessage] = useState<string | null>(null);
+
+  useEffect(() => {
+    void settingGet("today.weather_location").then((v) => {
+      setValue(v ?? "");
+      setLoaded(true);
+    });
+  }, []);
+
+  const save = async () => {
+    setSaving(true);
+    setMessage(null);
+    try {
+      await settingSet("today.weather_location", value.trim());
+      setMessage("Saved. Weather refreshes on the next Today load.");
+    } catch (e) {
+      setMessage(`Failed: ${e}`);
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  if (!loaded) return <div style={{ fontSize: 12, color: "#666" }}>…</div>;
+
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+      <input
+        value={value}
+        onChange={(e) => setValue(e.target.value)}
+        placeholder="e.g. London, NW1 (leave blank for auto-detect)"
+        style={{ width: "100%" }}
+      />
+      <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
+        <button onClick={save} disabled={saving}>
+          {saving ? "Saving…" : "Save location"}
+        </button>
+        {message && <span style={{ fontSize: 11, color: message.includes("Failed") ? "#f66" : "#6f6" }}>{message}</span>}
+      </div>
+      <div style={{ fontSize: 11, color: "#666" }}>
+        Uses wttr.in — if blank, location is inferred from your IP.
+      </div>
+    </div>
+  );
+}
 
 export default function HouseholdTab() {
   const [household, setHousehold] = useState<Household | null>(null);
@@ -133,6 +183,11 @@ export default function HouseholdTab() {
                  placeholder="Add a member" />
           <button onClick={onAddPerson} disabled={!newName.trim()}>Add</button>
         </div>
+      </section>
+
+      <section>
+        <h2 style={{ margin: "0 0 8px 0", fontSize: 15 }}>Weather location</h2>
+        <WeatherLocationInput />
       </section>
     </div>
   );
