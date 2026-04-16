@@ -286,4 +286,110 @@ mod tests {
             "future-due task should appear without suffix: {result}"
         );
     }
+
+    // ── test 6: shape templating (quiet / moderate / full) ─────────────────
+
+    fn seed_n_tasks(conn: &Connection, n: usize) {
+        for i in 0..n {
+            seed_task(conn, &format!("Task {i}"), None);
+        }
+    }
+
+    fn seed_n_events(conn: &Connection, acct: i64, n: usize, date: &str) {
+        for i in 0..n {
+            let h = 8 + i as u32;
+            let start = local_ts(date, h, 0);
+            let end = local_ts(date, h, 59);
+            seed_event(conn, acct, &format!("Event {i}"), start, end);
+        }
+    }
+
+    #[test]
+    fn shape_quiet_moderate_full() {
+        // quiet: 1 event + 2 tasks
+        {
+            let (_d, conn) = fresh_conn();
+            let acct = seed_account(&conn);
+            seed_n_events(&conn, acct, 1, "2026-04-15");
+            seed_n_tasks(&conn, 2);
+            let now = local_dt("2026-04-15", 9, 0);
+            let result = compose_today_context(now, &conn).unwrap();
+            assert!(result.contains("Quiet day:"), "expected Quiet: {result}");
+        }
+
+        // moderate: 3 events + 5 tasks
+        {
+            let (_d, conn) = fresh_conn();
+            let acct = seed_account(&conn);
+            seed_n_events(&conn, acct, 3, "2026-04-15");
+            seed_n_tasks(&conn, 5);
+            let now = local_dt("2026-04-15", 9, 0);
+            let result = compose_today_context(now, &conn).unwrap();
+            assert!(result.contains("Moderate day:"), "expected Moderate: {result}");
+        }
+
+        // full: 5 events + 10 tasks
+        {
+            let (_d, conn) = fresh_conn();
+            let acct = seed_account(&conn);
+            seed_n_events(&conn, acct, 5, "2026-04-15");
+            seed_n_tasks(&conn, 10);
+            let now = local_dt("2026-04-15", 9, 0);
+            let result = compose_today_context(now, &conn).unwrap();
+            assert!(result.contains("Full day:"), "expected Full: {result}");
+        }
+    }
+
+    // ── test 7: timezone display in header ─────────────────────────────────
+
+    #[test]
+    fn header_contains_time_and_timezone() {
+        let (_d, conn) = fresh_conn();
+        let now = local_dt("2026-04-15", 14, 32);
+        let result = compose_today_context(now, &conn).unwrap();
+
+        assert!(
+            result.contains("Now: 14:32"),
+            "header time wrong: {result}"
+        );
+        let tz = now.format("%Z").to_string();
+        assert!(
+            !tz.is_empty(),
+            "timezone abbreviation is empty — chrono problem"
+        );
+        assert!(
+            result.contains(&format!("Now: 14:32 {tz}")),
+            "tz not in header: {result}"
+        );
+    }
+
+    // ── test 8: day-boundary edges ─────────────────────────────────────────
+
+    #[test]
+    fn day_boundary_excludes_yesterday_includes_midnight_today() {
+        let (_d, conn) = fresh_conn();
+        let acct = seed_account(&conn);
+
+        // Yesterday 23:59 start, ends exactly at today midnight — should NOT appear
+        let yesterday_start = local_ts("2026-04-14", 23, 59);
+        let yesterday_end = local_ts("2026-04-15", 0, 0);
+        seed_event(&conn, acct, "Late yesterday", yesterday_start, yesterday_end);
+
+        // Today 00:00 exactly — should appear
+        let today_start = local_ts("2026-04-15", 0, 0);
+        let today_end = local_ts("2026-04-15", 1, 0);
+        seed_event(&conn, acct, "Midnight start", today_start, today_end);
+
+        let now = local_dt("2026-04-15", 9, 0);
+        let result = compose_today_context(now, &conn).unwrap();
+
+        assert!(
+            !result.contains("Late yesterday"),
+            "event before today should be excluded: {result}"
+        );
+        assert!(
+            result.contains("- 00:00 — Midnight start"),
+            "midnight-start event should be included: {result}"
+        );
+    }
 }
