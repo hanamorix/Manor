@@ -24,13 +24,18 @@ pub struct Household {
 }
 
 pub fn get(conn: &Connection) -> Result<Household> {
-    let (owner_id, wh_json, dnd_json, created_at, updated_at): (Option<i64>, String, String, i64, i64) =
-        conn.query_row(
-            "SELECT owner_person_id, working_hours_json, dnd_windows_json, created_at, updated_at
+    let (owner_id, wh_json, dnd_json, created_at, updated_at): (
+        Option<i64>,
+        String,
+        String,
+        i64,
+        i64,
+    ) = conn.query_row(
+        "SELECT owner_person_id, working_hours_json, dnd_windows_json, created_at, updated_at
              FROM household WHERE id = 1",
-            [],
-            |r| Ok((r.get(0)?, r.get(1)?, r.get(2)?, r.get(3)?, r.get(4)?)),
-        )?;
+        [],
+        |r| Ok((r.get(0)?, r.get(1)?, r.get(2)?, r.get(3)?, r.get(4)?)),
+    )?;
     Ok(Household {
         owner_person_id: owner_id,
         working_hours: serde_json::from_str(&wh_json)?,
@@ -91,7 +96,9 @@ mod tests {
     #[test]
     fn set_owner_roundtrips() {
         let (_d, conn) = fresh_conn();
-        let person_id = crate::person::insert(&conn, "Hana", "owner", None, None, None).unwrap().id;
+        let person_id = crate::person::insert(&conn, "Hana", "owner", None, None, None)
+            .unwrap()
+            .id;
         let h = set_owner(&conn, Some(person_id)).unwrap();
         assert_eq!(h.owner_person_id, Some(person_id));
     }
@@ -111,7 +118,11 @@ mod tests {
     #[test]
     fn set_dnd_windows_persists() {
         let (_d, conn) = fresh_conn();
-        let w = vec![DndWindow { day: "fri".into(), start_hour: 18, end_hour: 23 }];
+        let w = vec![DndWindow {
+            day: "fri".into(),
+            start_hour: 18,
+            end_hour: 23,
+        }];
         set_dnd_windows(&conn, &w).unwrap();
         let h = get(&conn).unwrap();
         assert_eq!(h.dnd_windows.len(), 1);

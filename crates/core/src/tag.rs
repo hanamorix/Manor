@@ -31,17 +31,16 @@ pub fn upsert(conn: &Connection, name: &str, color: &str) -> Result<Tag> {
          ON CONFLICT(name) DO UPDATE SET color = excluded.color",
         params![name, color],
     )?;
-    let mut stmt = conn.prepare(
-        "SELECT id, name, color, created_at FROM tag WHERE name = ?1 COLLATE NOCASE",
-    )?;
+    let mut stmt =
+        conn.prepare("SELECT id, name, color, created_at FROM tag WHERE name = ?1 COLLATE NOCASE")?;
     Ok(stmt.query_row([name], Tag::from_row)?)
 }
 
 pub fn list(conn: &Connection) -> Result<Vec<Tag>> {
-    let mut stmt = conn.prepare(
-        "SELECT id, name, color, created_at FROM tag ORDER BY name ASC",
-    )?;
-    let tags = stmt.query_map([], Tag::from_row)?.collect::<rusqlite::Result<Vec<_>>>()?;
+    let mut stmt = conn.prepare("SELECT id, name, color, created_at FROM tag ORDER BY name ASC")?;
+    let tags = stmt
+        .query_map([], Tag::from_row)?
+        .collect::<rusqlite::Result<Vec<_>>>()?;
     Ok(tags)
 }
 
@@ -77,16 +76,18 @@ pub fn tags_for(conn: &Connection, entity_type: &str, entity_id: i64) -> Result<
          WHERE l.entity_type = ?1 AND l.entity_id = ?2
          ORDER BY t.name ASC",
     )?;
-    let tags = stmt.query_map(params![entity_type, entity_id], Tag::from_row)?
+    let tags = stmt
+        .query_map(params![entity_type, entity_id], Tag::from_row)?
         .collect::<rusqlite::Result<Vec<_>>>()?;
     Ok(tags)
 }
 
 pub fn entities_with_tag(conn: &Connection, tag_id: i64) -> Result<Vec<(String, i64)>> {
-    let mut stmt = conn.prepare(
-        "SELECT entity_type, entity_id FROM tag_link WHERE tag_id = ?1",
-    )?;
-    let rows = stmt.query_map([tag_id], |r| Ok((r.get::<_, String>(0)?, r.get::<_, i64>(1)?)))?
+    let mut stmt = conn.prepare("SELECT entity_type, entity_id FROM tag_link WHERE tag_id = ?1")?;
+    let rows = stmt
+        .query_map([tag_id], |r| {
+            Ok((r.get::<_, String>(0)?, r.get::<_, i64>(1)?))
+        })?
         .collect::<rusqlite::Result<Vec<_>>>()?;
     Ok(rows)
 }
@@ -157,7 +158,9 @@ mod tests {
         let t = upsert(&conn, "x", "#888").unwrap();
         link(&conn, t.id, "event", 9).unwrap();
         delete_tag(&conn, t.id).unwrap();
-        let n: i64 = conn.query_row("SELECT COUNT(*) FROM tag_link", [], |r| r.get(0)).unwrap();
+        let n: i64 = conn
+            .query_row("SELECT COUNT(*) FROM tag_link", [], |r| r.get(0))
+            .unwrap();
         assert_eq!(n, 0);
     }
 
@@ -169,6 +172,9 @@ mod tests {
         link(&conn, t.id, "event", 2).unwrap();
         let mut rows = entities_with_tag(&conn, t.id).unwrap();
         rows.sort();
-        assert_eq!(rows, vec![("event".to_string(), 2), ("task".to_string(), 1)]);
+        assert_eq!(
+            rows,
+            vec![("event".to_string(), 2), ("task".to_string(), 1)]
+        );
     }
 }

@@ -7,11 +7,9 @@ use serde::{de::DeserializeOwned, Serialize};
 
 pub fn get(conn: &Connection, key: &str) -> Result<Option<String>> {
     let result: Option<String> = conn
-        .query_row(
-            "SELECT value FROM setting WHERE key = ?1",
-            [key],
-            |r| r.get(0),
-        )
+        .query_row("SELECT value FROM setting WHERE key = ?1", [key], |r| {
+            r.get(0)
+        })
         .ok();
     Ok(result)
 }
@@ -37,11 +35,11 @@ pub fn delete(conn: &Connection, key: &str) -> Result<()> {
 
 pub fn list_prefixed(conn: &Connection, prefix: &str) -> Result<Vec<(String, String)>> {
     let like = format!("{prefix}%");
-    let mut stmt = conn.prepare(
-        "SELECT key, value FROM setting WHERE key LIKE ?1 ORDER BY key",
-    )?;
+    let mut stmt = conn.prepare("SELECT key, value FROM setting WHERE key LIKE ?1 ORDER BY key")?;
     let rows = stmt
-        .query_map([&like], |r| Ok((r.get::<_, String>(0)?, r.get::<_, String>(1)?)))?
+        .query_map([&like], |r| {
+            Ok((r.get::<_, String>(0)?, r.get::<_, String>(1)?))
+        })?
         .collect::<rusqlite::Result<Vec<_>>>()?;
     Ok(rows)
 }
@@ -102,9 +100,15 @@ mod tests {
     #[test]
     fn get_or_default_falls_back() {
         let (_d, conn) = fresh_conn();
-        assert_eq!(get_or_default(&conn, "missing", "fallback").unwrap(), "fallback");
+        assert_eq!(
+            get_or_default(&conn, "missing", "fallback").unwrap(),
+            "fallback"
+        );
         set(&conn, "missing", "real").unwrap();
-        assert_eq!(get_or_default(&conn, "missing", "fallback").unwrap(), "real");
+        assert_eq!(
+            get_or_default(&conn, "missing", "fallback").unwrap(),
+            "real"
+        );
     }
 
     #[test]
@@ -114,10 +118,13 @@ mod tests {
         set(&conn, "a.y", "2").unwrap();
         set(&conn, "b.z", "3").unwrap();
         let rows = list_prefixed(&conn, "a.").unwrap();
-        assert_eq!(rows, vec![
-            ("a.x".to_string(), "1".to_string()),
-            ("a.y".to_string(), "2".to_string()),
-        ]);
+        assert_eq!(
+            rows,
+            vec![
+                ("a.x".to_string(), "1".to_string()),
+                ("a.y".to_string(), "2".to_string()),
+            ]
+        );
     }
 
     #[test]

@@ -72,7 +72,9 @@ pub fn list(conn: &Connection) -> Result<Vec<Person>> {
         "SELECT id, name, kind, email, phone, note, created_at, updated_at
          FROM person WHERE deleted_at IS NULL ORDER BY name ASC",
     )?;
-    let people = stmt.query_map([], Person::from_row)?.collect::<rusqlite::Result<Vec<_>>>()?;
+    let people = stmt
+        .query_map([], Person::from_row)?
+        .collect::<rusqlite::Result<Vec<_>>>()?;
     Ok(people)
 }
 
@@ -82,7 +84,9 @@ pub fn list_by_kind(conn: &Connection, kind: &str) -> Result<Vec<Person>> {
         "SELECT id, name, kind, email, phone, note, created_at, updated_at
          FROM person WHERE kind = ?1 AND deleted_at IS NULL ORDER BY name ASC",
     )?;
-    let people = stmt.query_map([kind], Person::from_row)?.collect::<rusqlite::Result<Vec<_>>>()?;
+    let people = stmt
+        .query_map([kind], Person::from_row)?
+        .collect::<rusqlite::Result<Vec<_>>>()?;
     Ok(people)
 }
 
@@ -178,7 +182,16 @@ mod tests {
         let (_d, conn) = fresh_conn();
         let p = insert(&conn, "A", "member", None, None, None).unwrap();
         std::thread::sleep(std::time::Duration::from_millis(1100));
-        let u = update(&conn, p.id, "B", "contact", Some("b@x.com"), None, Some("note")).unwrap();
+        let u = update(
+            &conn,
+            p.id,
+            "B",
+            "contact",
+            Some("b@x.com"),
+            None,
+            Some("note"),
+        )
+        .unwrap();
         assert_eq!(u.name, "B");
         assert_eq!(u.kind, "contact");
         assert!(u.updated_at >= p.updated_at);

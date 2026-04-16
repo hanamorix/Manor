@@ -60,7 +60,9 @@ impl Event {
             description: row.get("description")?,
             location: row.get("location")?,
             all_day: row.get::<_, i64>("all_day").map(|v| v != 0)?,
-            is_recurring_occurrence: row.get::<_, i64>("is_recurring_occurrence").map(|v| v != 0)?,
+            is_recurring_occurrence: row
+                .get::<_, i64>("is_recurring_occurrence")
+                .map(|v| v != 0)?,
             parent_event_url: row.get("parent_event_url")?,
             occurrence_dtstart: row.get("occurrence_dtstart")?,
         })

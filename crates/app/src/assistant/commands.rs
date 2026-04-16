@@ -460,23 +460,15 @@ pub fn list_events_today(state: State<'_, Db>) -> Result<Vec<Event>, String> {
 // === Calendar list + default ===
 
 #[tauri::command]
-pub fn list_calendars(
-    db: State<'_, Db>,
-    account_id: i64,
-) -> Result<Vec<Calendar>, String> {
+pub fn list_calendars(db: State<'_, Db>, account_id: i64) -> Result<Vec<Calendar>, String> {
     let conn = db.0.lock().map_err(|e| e.to_string())?;
     calendar::list(&conn, account_id).map_err(|e| e.to_string())
 }
 
 #[tauri::command]
-pub fn set_default_calendar(
-    db: State<'_, Db>,
-    account_id: i64,
-    url: String,
-) -> Result<(), String> {
+pub fn set_default_calendar(db: State<'_, Db>, account_id: i64, url: String) -> Result<(), String> {
     let conn = db.0.lock().map_err(|e| e.to_string())?;
-    calendar_account::set_default_calendar(&conn, account_id, &url)
-        .map_err(|e| e.to_string())
+    calendar_account::set_default_calendar(&conn, account_id, &url).map_err(|e| e.to_string())
 }
 
 // === Event write commands ===
@@ -526,14 +518,13 @@ pub async fn create_event(
     tauri::async_runtime::spawn_blocking(move || {
         let account = {
             let conn = db_arc.lock().unwrap();
-            calendar_account::get(&conn, account_id)
-                .ok()
-                .flatten()
+            calendar_account::get(&conn, account_id).ok().flatten()
         }
         .ok_or_else(|| "account not found".to_string())?;
 
         let client = crate::sync::caldav::CalDavClient::new(&account.username, &password);
-        handle.block_on(client.put_event(&url, &ical, None))
+        handle
+            .block_on(client.put_event(&url, &ical, None))
             .map_err(|e| e.to_string())?;
 
         // Re-sync account to pick up the new event
@@ -574,14 +565,18 @@ pub async fn update_event(
     let (account_id, event_url, is_recurring, parent_url, occurrence_dtstart, password) = {
         let conn = db.0.lock().map_err(|e| e.to_string())?;
         let events = event::list_today(&conn, 0, i64::MAX).map_err(|e| e.to_string())?;
-        let ev = events.iter().find(|e| e.id == args.event_id)
+        let ev = events
+            .iter()
+            .find(|e| e.id == args.event_id)
             .ok_or_else(|| "event not found".to_string())?
             .clone();
         let pw = crate::sync::keychain::get_password(ev.calendar_account_id)
             .map_err(|e| format!("keychain: {e}"))?;
         (
             ev.calendar_account_id,
-            ev.event_url.clone().ok_or("event has no URL (manual event?)")?,
+            ev.event_url
+                .clone()
+                .ok_or("event has no URL (manual event?)")?,
             ev.is_recurring_occurrence,
             ev.parent_event_url.clone(),
             ev.occurrence_dtstart.clone(),
@@ -630,7 +625,12 @@ pub async fn update_event(
             let uid = old_ical
                 .lines()
                 .find(|l| l.trim_start_matches(' ').starts_with("UID:"))
-                .map(|l| l.trim_start_matches(' ').trim_start_matches("UID:").trim().to_string())
+                .map(|l| {
+                    l.trim_start_matches(' ')
+                        .trim_start_matches("UID:")
+                        .trim()
+                        .to_string()
+                })
                 .unwrap_or_else(new_uid);
             let new_ical = crate::sync::ical_write::generate_vcalendar(
                 &uid,
@@ -677,14 +677,18 @@ pub async fn delete_event(
     let (account_id, event_url, is_recurring, parent_url, occurrence_dtstart, password) = {
         let conn = db.0.lock().map_err(|e| e.to_string())?;
         let events = event::list_today(&conn, 0, i64::MAX).map_err(|e| e.to_string())?;
-        let ev = events.iter().find(|e| e.id == args.event_id)
+        let ev = events
+            .iter()
+            .find(|e| e.id == args.event_id)
             .ok_or_else(|| "event not found".to_string())?
             .clone();
         let pw = crate::sync::keychain::get_password(ev.calendar_account_id)
             .map_err(|e| format!("keychain: {e}"))?;
         (
             ev.calendar_account_id,
-            ev.event_url.clone().ok_or("event has no URL (manual event?)")?,
+            ev.event_url
+                .clone()
+                .ok_or("event has no URL (manual event?)")?,
             ev.is_recurring_occurrence,
             ev.parent_event_url.clone(),
             ev.occurrence_dtstart.clone(),

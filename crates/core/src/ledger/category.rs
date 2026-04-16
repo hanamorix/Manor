@@ -43,12 +43,7 @@ pub fn list(conn: &Connection) -> Result<Vec<Category>> {
     Ok(rows)
 }
 
-pub fn insert(
-    conn: &Connection,
-    name: &str,
-    emoji: &str,
-    is_income: bool,
-) -> Result<Category> {
+pub fn insert(conn: &Connection, name: &str, emoji: &str, is_income: bool) -> Result<Category> {
     let max_order: i32 = conn.query_row(
         "SELECT COALESCE(MAX(sort_order), 0) FROM category WHERE deleted_at IS NULL",
         [],
@@ -72,11 +67,10 @@ pub fn update(conn: &Connection, id: i64, name: &str, emoji: &str) -> Result<Cat
 }
 
 pub fn delete(conn: &Connection, id: i64) -> Result<()> {
-    let is_default: i64 = conn.query_row(
-        "SELECT is_default FROM category WHERE id = ?1",
-        [id],
-        |r| r.get(0),
-    )?;
+    let is_default: i64 =
+        conn.query_row("SELECT is_default FROM category WHERE id = ?1", [id], |r| {
+            r.get(0)
+        })?;
     anyhow::ensure!(is_default == 0, "cannot delete a default category");
     // Reassign orphaned transactions to Other (id = 9)
     conn.execute(

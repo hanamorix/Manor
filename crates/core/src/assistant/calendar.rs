@@ -67,7 +67,13 @@ mod tests {
     fn upsert_then_list() {
         let (_d, conn, aid) = fresh("A");
         upsert(&conn, aid, "https://cal.test/home/work/", Some("Work")).unwrap();
-        upsert(&conn, aid, "https://cal.test/home/personal/", Some("Personal")).unwrap();
+        upsert(
+            &conn,
+            aid,
+            "https://cal.test/home/personal/",
+            Some("Personal"),
+        )
+        .unwrap();
         let cals = list(&conn, aid).unwrap();
         assert_eq!(cals.len(), 2);
         assert_eq!(cals[0].display_name.as_deref(), Some("Work"));

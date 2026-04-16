@@ -39,6 +39,7 @@ impl Transaction {
 }
 
 /// Insert a manual transaction. Returns the inserted row.
+#[allow(clippy::too_many_arguments)]
 pub fn insert(
     conn: &Connection,
     amount_pence: i64,
@@ -55,7 +56,16 @@ pub fn insert(
          (bank_account_id, amount_pence, currency, description, merchant,
           category_id, date, source, note, created_at)
          VALUES (NULL, ?1, ?2, ?3, ?4, ?5, ?6, 'manual', ?7, ?8)",
-        params![amount_pence, currency, description, merchant, category_id, date, note, now],
+        params![
+            amount_pence,
+            currency,
+            description,
+            merchant,
+            category_id,
+            date,
+            note,
+            now
+        ],
     )?;
     get(conn, conn.last_insert_rowid())
 }
@@ -147,13 +157,25 @@ mod tests {
     }
 
     fn april_ts(day: u32) -> i64 {
-        Utc.with_ymd_and_hms(2026, 4, day, 12, 0, 0).unwrap().timestamp()
+        Utc.with_ymd_and_hms(2026, 4, day, 12, 0, 0)
+            .unwrap()
+            .timestamp()
     }
 
     #[test]
     fn insert_and_retrieve_manual_transaction() {
         let (_d, conn) = fresh_conn();
-        let tx = insert(&conn, -1240, "GBP", "Tesco Express", Some("Tesco"), Some(1), april_ts(16), None).unwrap();
+        let tx = insert(
+            &conn,
+            -1240,
+            "GBP",
+            "Tesco Express",
+            Some("Tesco"),
+            Some(1),
+            april_ts(16),
+            None,
+        )
+        .unwrap();
         assert_eq!(tx.amount_pence, -1240);
         assert_eq!(tx.description, "Tesco Express");
         assert_eq!(tx.merchant, Some("Tesco".to_string()));
@@ -166,10 +188,33 @@ mod tests {
     fn list_by_month_filters_correctly() {
         let (_d, conn) = fresh_conn();
         // April transaction
-        insert(&conn, -500, "GBP", "April spend", None, None, april_ts(10), None).unwrap();
+        insert(
+            &conn,
+            -500,
+            "GBP",
+            "April spend",
+            None,
+            None,
+            april_ts(10),
+            None,
+        )
+        .unwrap();
         // March transaction (should not appear)
-        let march_ts = Utc.with_ymd_and_hms(2026, 3, 15, 12, 0, 0).unwrap().timestamp();
-        insert(&conn, -300, "GBP", "March spend", None, None, march_ts, None).unwrap();
+        let march_ts = Utc
+            .with_ymd_and_hms(2026, 3, 15, 12, 0, 0)
+            .unwrap()
+            .timestamp();
+        insert(
+            &conn,
+            -300,
+            "GBP",
+            "March spend",
+            None,
+            None,
+            march_ts,
+            None,
+        )
+        .unwrap();
 
         let txns = list_by_month(&conn, 2026, 4).unwrap();
         assert_eq!(txns.len(), 1);
@@ -179,8 +224,26 @@ mod tests {
     #[test]
     fn update_edits_description_and_category() {
         let (_d, conn) = fresh_conn();
-        let tx = insert(&conn, -800, "GBP", "Old desc", None, None, april_ts(15), None).unwrap();
-        let updated = update(&conn, tx.id, "New desc", Some("Deliveroo"), Some(2), Some("note")).unwrap();
+        let tx = insert(
+            &conn,
+            -800,
+            "GBP",
+            "Old desc",
+            None,
+            None,
+            april_ts(15),
+            None,
+        )
+        .unwrap();
+        let updated = update(
+            &conn,
+            tx.id,
+            "New desc",
+            Some("Deliveroo"),
+            Some(2),
+            Some("note"),
+        )
+        .unwrap();
         assert_eq!(updated.description, "New desc");
         assert_eq!(updated.merchant, Some("Deliveroo".to_string()));
         assert_eq!(updated.category_id, Some(2));

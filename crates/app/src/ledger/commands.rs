@@ -30,8 +30,7 @@ pub fn ledger_upsert_category(
     if let Some(id) = args.id {
         category::update(&conn, id, &args.name, &args.emoji).map_err(|e| e.to_string())
     } else {
-        category::insert(&conn, &args.name, &args.emoji, args.is_income)
-            .map_err(|e| e.to_string())
+        category::insert(&conn, &args.name, &args.emoji, args.is_income).map_err(|e| e.to_string())
     }
 }
 

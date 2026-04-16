@@ -206,14 +206,10 @@ pub fn soft_delete(conn: &Connection, id: i64) -> Result<()> {
 
 /// Complete a chore: record a chore_completion, advance next_due using the
 /// original next_due as the base (predictable schedule), advance rotation.
-pub fn complete(
-    conn: &Connection,
-    chore_id: i64,
-    completed_by: Option<i64>,
-) -> Result<()> {
+pub fn complete(conn: &Connection, chore_id: i64, completed_by: Option<i64>) -> Result<()> {
     let now = Utc::now().timestamp_millis();
-    let chore = get(conn, chore_id)?
-        .ok_or_else(|| anyhow::anyhow!("chore {chore_id} not found"))?;
+    let chore =
+        get(conn, chore_id)?.ok_or_else(|| anyhow::anyhow!("chore {chore_id} not found"))?;
 
     conn.execute(
         "INSERT INTO chore_completion (chore_id, completed_at, completed_by, created_at)
@@ -235,8 +231,8 @@ pub fn complete(
 
 /// Skip a chore: advance next_due without recording a completion.
 pub fn skip(conn: &Connection, chore_id: i64) -> Result<()> {
-    let chore = get(conn, chore_id)?
-        .ok_or_else(|| anyhow::anyhow!("chore {chore_id} not found"))?;
+    let chore =
+        get(conn, chore_id)?.ok_or_else(|| anyhow::anyhow!("chore {chore_id} not found"))?;
     let next = next_occurrence_after(&chore.rrule, chore.next_due)?;
     conn.execute(
         "UPDATE chore SET next_due = ?1 WHERE id = ?2",
@@ -412,9 +408,25 @@ mod tests {
         let (_d, conn) = fresh_conn();
         let now = Utc::now().timestamp_millis();
         let end_of_today = now + 3_600_000;
-        insert(&conn, "overdue", "🧹", "FREQ=WEEKLY", now - 86_400_000, "none").unwrap();
+        insert(
+            &conn,
+            "overdue",
+            "🧹",
+            "FREQ=WEEKLY",
+            now - 86_400_000,
+            "none",
+        )
+        .unwrap();
         insert(&conn, "today", "🧹", "FREQ=WEEKLY", now, "none").unwrap();
-        insert(&conn, "later", "🧹", "FREQ=WEEKLY", now + 7 * 86_400_000, "none").unwrap();
+        insert(
+            &conn,
+            "later",
+            "🧹",
+            "FREQ=WEEKLY",
+            now + 7 * 86_400_000,
+            "none",
+        )
+        .unwrap();
 
         let due = list_due_today(&conn, end_of_today).unwrap();
         let titles: Vec<&str> = due.iter().map(|c| c.title.as_str()).collect();
@@ -460,7 +472,15 @@ mod tests {
     fn complete_with_person_records_completed_by() {
         let (_d, conn) = fresh_conn();
         let pid = insert_person(&conn, "Rosa").unwrap();
-        let id = insert(&conn, "Bins", "🗑️", "FREQ=WEEKLY", 1_776_259_200_000, "none").unwrap();
+        let id = insert(
+            &conn,
+            "Bins",
+            "🗑️",
+            "FREQ=WEEKLY",
+            1_776_259_200_000,
+            "none",
+        )
+        .unwrap();
         complete(&conn, id, Some(pid)).unwrap();
 
         let comps = list_completions(&conn, id, 10).unwrap();
@@ -499,17 +519,17 @@ mod tests {
         insert_rotation_member(&conn, chore_id, c, 2).unwrap();
 
         let members = list_rotation(&conn, chore_id).unwrap();
-        assert_eq!(members[0].current, true);
+        assert!(members[0].current);
 
         complete(&conn, chore_id, Some(a)).unwrap();
         let after_one = list_rotation(&conn, chore_id).unwrap();
-        assert_eq!(after_one[0].current, false);
-        assert_eq!(after_one[1].current, true);
+        assert!(!after_one[0].current);
+        assert!(after_one[1].current);
 
         complete(&conn, chore_id, Some(b)).unwrap();
         complete(&conn, chore_id, Some(c)).unwrap();
         let after_three = list_rotation(&conn, chore_id).unwrap();
-        assert_eq!(after_three[0].current, true);
+        assert!(after_three[0].current);
     }
 
     #[test]
@@ -540,12 +560,14 @@ mod tests {
             "INSERT INTO chore_completion (chore_id, completed_at, completed_by, created_at)
              VALUES (?1, ?2, ?3, ?2)",
             params![chore_id, now - 86_400_000, a],
-        ).unwrap();
+        )
+        .unwrap();
         conn.execute(
             "INSERT INTO chore_completion (chore_id, completed_at, completed_by, created_at)
              VALUES (?1, ?2, ?3, ?2)",
             params![chore_id, now - 30 * 86_400_000, b],
-        ).unwrap();
+        )
+        .unwrap();
 
         let nudges = check_fairness(&conn, now).unwrap();
         assert_eq!(nudges.len(), 1);
@@ -567,12 +589,14 @@ mod tests {
             "INSERT INTO chore_completion (chore_id, completed_at, completed_by, created_at)
              VALUES (?1, ?2, ?3, ?2)",
             params![chore_id, now - 2 * 86_400_000, a],
-        ).unwrap();
+        )
+        .unwrap();
         conn.execute(
             "INSERT INTO chore_completion (chore_id, completed_at, completed_by, created_at)
              VALUES (?1, ?2, ?3, ?2)",
             params![chore_id, now - 3 * 86_400_000, b],
-        ).unwrap();
+        )
+        .unwrap();
 
         let nudges = check_fairness(&conn, now).unwrap();
         assert!(nudges.is_empty());

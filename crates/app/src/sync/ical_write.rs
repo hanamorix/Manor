@@ -3,8 +3,7 @@
 
 /// Format a UTC timestamp (unix seconds) as iCal DTSTART/DTEND value.
 fn fmt_utc(ts: i64) -> String {
-    let dt = chrono::DateTime::<chrono::Utc>::from_timestamp(ts, 0)
-        .unwrap_or_default();
+    let dt = chrono::DateTime::<chrono::Utc>::from_timestamp(ts, 0).unwrap_or_default();
     dt.format("%Y%m%dT%H%M%SZ").to_string()
 }
 
@@ -20,7 +19,7 @@ fn fold_line(line: &str) -> String {
     let mut first = true;
     while pos < bytes.len() {
         let limit = if first { 75 } else { 74 }; // first line 75, continuation 74 (1 for space)
-        // find a safe split on a char boundary
+                                                 // find a safe split on a char boundary
         let end = (pos + limit).min(bytes.len());
         // walk back to char boundary if needed
         let mut safe = end;
@@ -49,8 +48,10 @@ pub fn generate_vcalendar(
     all_day: bool,
 ) -> String {
     let (dtstart_val, dtend_val) = if all_day {
-        let start_dt = chrono::DateTime::<chrono::Utc>::from_timestamp(dtstart_utc, 0).unwrap_or_default();
-        let end_dt = chrono::DateTime::<chrono::Utc>::from_timestamp(dtend_utc, 0).unwrap_or_default();
+        let start_dt =
+            chrono::DateTime::<chrono::Utc>::from_timestamp(dtstart_utc, 0).unwrap_or_default();
+        let end_dt =
+            chrono::DateTime::<chrono::Utc>::from_timestamp(dtend_utc, 0).unwrap_or_default();
         (
             format!("VALUE=DATE:{}", start_dt.format("%Y%m%d")),
             format!("VALUE=DATE:{}", end_dt.format("%Y%m%d")),
@@ -97,11 +98,7 @@ pub fn generate_vcalendar(
 pub fn add_exdate(ical: &str, occurrence_dtstart_utc: &str) -> String {
     // Insert EXDATE line immediately before END:VEVENT
     let exdate_line = format!("EXDATE:{occurrence_dtstart_utc}");
-    ical.replacen(
-        "END:VEVENT",
-        &format!("{}\r\nEND:VEVENT", exdate_line),
-        1,
-    )
+    ical.replacen("END:VEVENT", &format!("{}\r\nEND:VEVENT", exdate_line), 1)
 }
 
 /// Add a RECURRENCE-ID override VEVENT to a parent iCal (edit one occurrence).
@@ -187,7 +184,10 @@ mod tests {
             true,
         );
         assert!(ical.contains("DTSTART;VALUE=DATE:20250416"));
-        assert!(!ical.contains("DTSTART:20250416T"), "must not use time-based DTSTART for all-day");
+        assert!(
+            !ical.contains("DTSTART:20250416T"),
+            "must not use time-based DTSTART for all-day"
+        );
     }
 
     #[test]

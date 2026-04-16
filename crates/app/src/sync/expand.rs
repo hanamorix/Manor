@@ -180,8 +180,14 @@ mod tests {
         let ev = ParsedEvent {
             uid: "once".into(),
             summary: "Boiler".into(),
-            start_at: Utc.with_ymd_and_hms(2026, 4, 15, 10, 0, 0).unwrap().timestamp(),
-            end_at: Utc.with_ymd_and_hms(2026, 4, 15, 11, 0, 0).unwrap().timestamp(),
+            start_at: Utc
+                .with_ymd_and_hms(2026, 4, 15, 10, 0, 0)
+                .unwrap()
+                .timestamp(),
+            end_at: Utc
+                .with_ymd_and_hms(2026, 4, 15, 11, 0, 0)
+                .unwrap()
+                .timestamp(),
             rrule: None,
             exdates: vec![],
             dtstart_raw: "20260415T100000Z".into(),
@@ -190,7 +196,10 @@ mod tests {
         let end = Utc.with_ymd_and_hms(2026, 4, 20, 0, 0, 0).unwrap();
         let out = expand(&ev, 1, start, end, "https://cal.example.com/home/event.ics").unwrap();
         assert_eq!(out.len(), 1);
-        assert_eq!(out[0].event_url.as_deref(), Some("https://cal.example.com/home/event.ics"));
+        assert_eq!(
+            out[0].event_url.as_deref(),
+            Some("https://cal.example.com/home/event.ics")
+        );
         assert!(!out[0].is_recurring_occurrence);
     }
 
@@ -199,8 +208,15 @@ mod tests {
         let ev = sample_weekly();
         let start = Utc.with_ymd_and_hms(2026, 4, 8, 0, 0, 0).unwrap();
         let end = Utc.with_ymd_and_hms(2026, 4, 29, 0, 0, 0).unwrap();
-        let out = expand(&ev, 1, start, end, "https://cal.example.com/home/standup.ics").unwrap();
-        assert!(out.len() >= 1);
+        let out = expand(
+            &ev,
+            1,
+            start,
+            end,
+            "https://cal.example.com/home/standup.ics",
+        )
+        .unwrap();
+        assert!(!out.is_empty());
         assert!(out[0].is_recurring_occurrence);
         assert_eq!(
             out[0].parent_event_url.as_deref(),

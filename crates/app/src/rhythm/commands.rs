@@ -230,10 +230,7 @@ pub struct UpdateBlockArgs {
 }
 
 #[tauri::command]
-pub fn update_time_block(
-    state: State<'_, Db>,
-    args: UpdateBlockArgs,
-) -> Result<TimeBlock, String> {
+pub fn update_time_block(state: State<'_, Db>, args: UpdateBlockArgs) -> Result<TimeBlock, String> {
     let conn = state.0.lock().map_err(|e| e.to_string())?;
     time_block::update(
         &conn,

@@ -51,9 +51,15 @@ pub fn person_list(state: State<'_, Db>) -> Result<Vec<person::Person>, String> 
 #[tauri::command]
 pub fn person_add(state: State<'_, Db>, args: PersonArgs) -> Result<person::Person, String> {
     let conn = state.0.lock().map_err(|e| e.to_string())?;
-    person::insert(&conn, &args.name, &args.kind, args.email.as_deref(),
-                   args.phone.as_deref(), args.note.as_deref())
-        .map_err(|e| e.to_string())
+    person::insert(
+        &conn,
+        &args.name,
+        &args.kind,
+        args.email.as_deref(),
+        args.phone.as_deref(),
+        args.note.as_deref(),
+    )
+    .map_err(|e| e.to_string())
 }
 
 #[derive(serde::Deserialize)]
@@ -64,12 +70,21 @@ pub struct UpdatePersonArgs {
 }
 
 #[tauri::command]
-pub fn person_update(state: State<'_, Db>, args: UpdatePersonArgs) -> Result<person::Person, String> {
+pub fn person_update(
+    state: State<'_, Db>,
+    args: UpdatePersonArgs,
+) -> Result<person::Person, String> {
     let conn = state.0.lock().map_err(|e| e.to_string())?;
-    person::update(&conn, args.id, &args.fields.name, &args.fields.kind,
-                   args.fields.email.as_deref(), args.fields.phone.as_deref(),
-                   args.fields.note.as_deref())
-        .map_err(|e| e.to_string())
+    person::update(
+        &conn,
+        args.id,
+        &args.fields.name,
+        &args.fields.kind,
+        args.fields.email.as_deref(),
+        args.fields.phone.as_deref(),
+        args.fields.note.as_deref(),
+    )
+    .map_err(|e| e.to_string())
 }
 
 #[tauri::command]
@@ -87,31 +102,38 @@ pub fn household_get(state: State<'_, Db>) -> Result<household::Household, Strin
 }
 
 #[tauri::command]
-pub fn household_set_owner(state: State<'_, Db>, owner_person_id: Option<i64>)
-    -> Result<household::Household, String>
-{
+pub fn household_set_owner(
+    state: State<'_, Db>,
+    owner_person_id: Option<i64>,
+) -> Result<household::Household, String> {
     let conn = state.0.lock().map_err(|e| e.to_string())?;
     household::set_owner(&conn, owner_person_id).map_err(|e| e.to_string())
 }
 
 #[derive(serde::Deserialize)]
-pub struct WorkingHoursArgs { pub hours: household::WorkingHours }
+pub struct WorkingHoursArgs {
+    pub hours: household::WorkingHours,
+}
 
 #[tauri::command]
-pub fn household_set_working_hours(state: State<'_, Db>, args: WorkingHoursArgs)
-    -> Result<household::Household, String>
-{
+pub fn household_set_working_hours(
+    state: State<'_, Db>,
+    args: WorkingHoursArgs,
+) -> Result<household::Household, String> {
     let conn = state.0.lock().map_err(|e| e.to_string())?;
     household::set_working_hours(&conn, &args.hours).map_err(|e| e.to_string())
 }
 
 #[derive(serde::Deserialize)]
-pub struct DndWindowsArgs { pub windows: Vec<household::DndWindow> }
+pub struct DndWindowsArgs {
+    pub windows: Vec<household::DndWindow>,
+}
 
 #[tauri::command]
-pub fn household_set_dnd(state: State<'_, Db>, args: DndWindowsArgs)
-    -> Result<household::Household, String>
-{
+pub fn household_set_dnd(
+    state: State<'_, Db>,
+    args: DndWindowsArgs,
+) -> Result<household::Household, String> {
     let conn = state.0.lock().map_err(|e| e.to_string())?;
     household::set_dnd_windows(&conn, &args.windows).map_err(|e| e.to_string())
 }
@@ -137,25 +159,33 @@ pub fn tag_delete(state: State<'_, Db>, id: i64) -> Result<(), String> {
 }
 
 #[tauri::command]
-pub fn tag_link(state: State<'_, Db>, tag_id: i64, entity_type: String, entity_id: i64)
-    -> Result<(), String>
-{
+pub fn tag_link(
+    state: State<'_, Db>,
+    tag_id: i64,
+    entity_type: String,
+    entity_id: i64,
+) -> Result<(), String> {
     let conn = state.0.lock().map_err(|e| e.to_string())?;
     tag::link(&conn, tag_id, &entity_type, entity_id).map_err(|e| e.to_string())
 }
 
 #[tauri::command]
-pub fn tag_unlink(state: State<'_, Db>, tag_id: i64, entity_type: String, entity_id: i64)
-    -> Result<(), String>
-{
+pub fn tag_unlink(
+    state: State<'_, Db>,
+    tag_id: i64,
+    entity_type: String,
+    entity_id: i64,
+) -> Result<(), String> {
     let conn = state.0.lock().map_err(|e| e.to_string())?;
     tag::unlink(&conn, tag_id, &entity_type, entity_id).map_err(|e| e.to_string())
 }
 
 #[tauri::command]
-pub fn tag_for_entity(state: State<'_, Db>, entity_type: String, entity_id: i64)
-    -> Result<Vec<tag::Tag>, String>
-{
+pub fn tag_for_entity(
+    state: State<'_, Db>,
+    entity_type: String,
+    entity_id: i64,
+) -> Result<Vec<tag::Tag>, String> {
     let conn = state.0.lock().map_err(|e| e.to_string())?;
     tag::tags_for(&conn, &entity_type, entity_id).map_err(|e| e.to_string())
 }
@@ -172,8 +202,13 @@ pub struct NoteInsertArgs {
 #[tauri::command]
 pub fn note_insert(state: State<'_, Db>, args: NoteInsertArgs) -> Result<note::Note, String> {
     let conn = state.0.lock().map_err(|e| e.to_string())?;
-    note::insert(&conn, &args.body_md, args.entity_type.as_deref(), args.entity_id)
-        .map_err(|e| e.to_string())
+    note::insert(
+        &conn,
+        &args.body_md,
+        args.entity_type.as_deref(),
+        args.entity_id,
+    )
+    .map_err(|e| e.to_string())
 }
 
 #[tauri::command]
@@ -189,9 +224,11 @@ pub fn note_delete(state: State<'_, Db>, id: i64) -> Result<(), String> {
 }
 
 #[tauri::command]
-pub fn note_list_for(state: State<'_, Db>, entity_type: String, entity_id: i64)
-    -> Result<Vec<note::Note>, String>
-{
+pub fn note_list_for(
+    state: State<'_, Db>,
+    entity_type: String,
+    entity_id: i64,
+) -> Result<Vec<note::Note>, String> {
     let conn = state.0.lock().map_err(|e| e.to_string())?;
     note::list_for(&conn, &entity_type, entity_id).map_err(|e| e.to_string())
 }
@@ -215,9 +252,16 @@ pub fn attachment_store(
 ) -> Result<attachment::Attachment, String> {
     let root = attachments_root(&app)?;
     let conn = state.0.lock().map_err(|e| e.to_string())?;
-    attachment::store(&conn, &root, &args.bytes, &args.original_name, &args.mime_type,
-                      args.entity_type.as_deref(), args.entity_id)
-        .map_err(|e| e.to_string())
+    attachment::store(
+        &conn,
+        &root,
+        &args.bytes,
+        &args.original_name,
+        &args.mime_type,
+        args.entity_type.as_deref(),
+        args.entity_id,
+    )
+    .map_err(|e| e.to_string())
 }
 
 #[tauri::command]
@@ -232,9 +276,11 @@ pub fn attachment_get_bytes(
 }
 
 #[tauri::command]
-pub fn attachment_list_for(state: State<'_, Db>, entity_type: String, entity_id: i64)
-    -> Result<Vec<attachment::Attachment>, String>
-{
+pub fn attachment_list_for(
+    state: State<'_, Db>,
+    entity_type: String,
+    entity_id: i64,
+) -> Result<Vec<attachment::Attachment>, String> {
     let conn = state.0.lock().map_err(|e| e.to_string())?;
     attachment::list_for(&conn, &entity_type, entity_id).map_err(|e| e.to_string())
 }

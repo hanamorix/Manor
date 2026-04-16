@@ -57,7 +57,8 @@ pub fn list_for(conn: &Connection, entity_type: &str, entity_id: i64) -> Result<
          WHERE entity_type = ?1 AND entity_id = ?2 AND deleted_at IS NULL
          ORDER BY created_at DESC",
     )?;
-    let rows = stmt.query_map(params![entity_type, entity_id], Note::from_row)?
+    let rows = stmt
+        .query_map(params![entity_type, entity_id], Note::from_row)?
         .collect::<rusqlite::Result<Vec<_>>>()?;
     Ok(rows)
 }
@@ -69,7 +70,8 @@ pub fn list_orphans(conn: &Connection) -> Result<Vec<Note>> {
          WHERE entity_type IS NULL AND deleted_at IS NULL
          ORDER BY updated_at DESC",
     )?;
-    let rows = stmt.query_map([], Note::from_row)?
+    let rows = stmt
+        .query_map([], Note::from_row)?
         .collect::<rusqlite::Result<Vec<_>>>()?;
     Ok(rows)
 }
@@ -117,7 +119,13 @@ mod tests {
     #[test]
     fn insert_attached_note() {
         let (_d, conn) = fresh_conn();
-        let n = insert(&conn, "Boiler last serviced 2024", Some("attachment"), Some(7)).unwrap();
+        let n = insert(
+            &conn,
+            "Boiler last serviced 2024",
+            Some("attachment"),
+            Some(7),
+        )
+        .unwrap();
         assert_eq!(n.entity_type.as_deref(), Some("attachment"));
         assert_eq!(n.entity_id, Some(7));
     }

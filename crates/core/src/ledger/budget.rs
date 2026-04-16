@@ -138,8 +138,8 @@ pub fn monthly_summary(conn: &Connection, year: i32, month: u32) -> Result<Month
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::ledger::transaction;
     use crate::assistant::db;
+    use crate::ledger::transaction;
     use tempfile::tempdir;
 
     fn fresh_conn() -> (tempfile::TempDir, Connection) {
@@ -150,7 +150,9 @@ mod tests {
 
     fn april_ts(day: u32) -> i64 {
         use chrono::{TimeZone, Utc};
-        Utc.with_ymd_and_hms(2026, 4, day, 12, 0, 0).unwrap().timestamp()
+        Utc.with_ymd_and_hms(2026, 4, day, 12, 0, 0)
+            .unwrap()
+            .timestamp()
     }
 
     #[test]
@@ -192,9 +194,39 @@ mod tests {
     #[test]
     fn monthly_summary_totals_in_and_out() {
         let (_d, conn) = fresh_conn();
-        transaction::insert(&conn, 320000, "GBP", "Salary", None, Some(10), april_ts(1), None).unwrap();
-        transaction::insert(&conn, -3420, "GBP", "Tesco", None, Some(1), april_ts(5), None).unwrap();
-        transaction::insert(&conn, -1850, "GBP", "Deliveroo", None, Some(2), april_ts(10), None).unwrap();
+        transaction::insert(
+            &conn,
+            320000,
+            "GBP",
+            "Salary",
+            None,
+            Some(10),
+            april_ts(1),
+            None,
+        )
+        .unwrap();
+        transaction::insert(
+            &conn,
+            -3420,
+            "GBP",
+            "Tesco",
+            None,
+            Some(1),
+            april_ts(5),
+            None,
+        )
+        .unwrap();
+        transaction::insert(
+            &conn,
+            -1850,
+            "GBP",
+            "Deliveroo",
+            None,
+            Some(2),
+            april_ts(10),
+            None,
+        )
+        .unwrap();
 
         let s = monthly_summary(&conn, 2026, 4).unwrap();
         assert_eq!(s.total_in_pence, 320000);
@@ -205,7 +237,17 @@ mod tests {
     fn monthly_summary_category_spend_and_budget() {
         let (_d, conn) = fresh_conn();
         upsert(&conn, 1, 40000).unwrap(); // £400 grocery budget
-        transaction::insert(&conn, -3420, "GBP", "Tesco", None, Some(1), april_ts(5), None).unwrap();
+        transaction::insert(
+            &conn,
+            -3420,
+            "GBP",
+            "Tesco",
+            None,
+            Some(1),
+            april_ts(5),
+            None,
+        )
+        .unwrap();
 
         let s = monthly_summary(&conn, 2026, 4).unwrap();
         let groceries = s.by_category.iter().find(|c| c.category_id == 1).unwrap();

@@ -87,7 +87,16 @@ pub fn store(
         "INSERT INTO attachment
          (uuid, original_name, mime_type, size_bytes, sha256, entity_type, entity_id, created_at)
          VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8)",
-        params![uuid, original_name, mime_type, bytes.len() as i64, sha, entity_type, entity_id, now],
+        params![
+            uuid,
+            original_name,
+            mime_type,
+            bytes.len() as i64,
+            sha,
+            entity_type,
+            entity_id,
+            now
+        ],
     )?;
     get(conn, conn.last_insert_rowid())
 }
@@ -115,7 +124,8 @@ pub fn list_for(conn: &Connection, entity_type: &str, entity_id: i64) -> Result<
          WHERE entity_type = ?1 AND entity_id = ?2 AND deleted_at IS NULL
          ORDER BY created_at DESC",
     )?;
-    let rows = stmt.query_map(params![entity_type, entity_id], Attachment::from_row)?
+    let rows = stmt
+        .query_map(params![entity_type, entity_id], Attachment::from_row)?
         .collect::<rusqlite::Result<Vec<_>>>()?;
     Ok(rows)
 }
@@ -133,11 +143,9 @@ pub fn delete(conn: &Connection, id: i64) -> Result<()> {
 /// Hard-delete + file cleanup. Only removes the file if no other non-deleted row
 /// shares the uuid (dedup protection).
 pub fn permanent_delete(conn: &Connection, root: &Path, id: i64) -> Result<()> {
-    let uuid: String = conn.query_row(
-        "SELECT uuid FROM attachment WHERE id = ?1",
-        [id],
-        |r| r.get(0),
-    )?;
+    let uuid: String = conn.query_row("SELECT uuid FROM attachment WHERE id = ?1", [id], |r| {
+        r.get(0)
+    })?;
     conn.execute("DELETE FROM attachment WHERE id = ?1", [id])?;
     let still_referenced: i64 = conn.query_row(
         "SELECT COUNT(*) FROM attachment WHERE uuid = ?1 AND deleted_at IS NULL",
@@ -201,7 +209,16 @@ mod tests {
     #[test]
     fn get_bytes_reads_the_file() {
         let (_d, conn, root) = fresh_env();
-        let a = store(&conn, &root, b"xyz", "x.bin", "application/octet-stream", None, None).unwrap();
+        let a = store(
+            &conn,
+            &root,
+            b"xyz",
+            "x.bin",
+            "application/octet-stream",
+            None,
+            None,
+        )
+        .unwrap();
         let bytes = get_bytes(&conn, &root, a.id).unwrap();
         assert_eq!(bytes, b"xyz");
     }
@@ -209,9 +226,36 @@ mod tests {
     #[test]
     fn list_for_filters_by_entity() {
         let (_d, conn, root) = fresh_env();
-        store(&conn, &root, b"a", "a.txt", "text/plain", Some("task"), Some(1)).unwrap();
-        store(&conn, &root, b"b", "b.txt", "text/plain", Some("task"), Some(1)).unwrap();
-        store(&conn, &root, b"c", "c.txt", "text/plain", Some("task"), Some(2)).unwrap();
+        store(
+            &conn,
+            &root,
+            b"a",
+            "a.txt",
+            "text/plain",
+            Some("task"),
+            Some(1),
+        )
+        .unwrap();
+        store(
+            &conn,
+            &root,
+            b"b",
+            "b.txt",
+            "text/plain",
+            Some("task"),
+            Some(1),
+        )
+        .unwrap();
+        store(
+            &conn,
+            &root,
+            b"c",
+            "c.txt",
+            "text/plain",
+            Some("task"),
+            Some(2),
+        )
+        .unwrap();
         assert_eq!(list_for(&conn, "task", 1).unwrap().len(), 2);
     }
 
@@ -239,7 +283,10 @@ mod tests {
         let b = store(&conn, &root, b"shared", "b.txt", "text/plain", None, None).unwrap();
         assert_eq!(a.uuid, b.uuid);
         permanent_delete(&conn, &root, a.id).unwrap();
-        assert!(file_path(&root, &a.uuid).exists(), "file must remain — b still references it");
+        assert!(
+            file_path(&root, &a.uuid).exists(),
+            "file must remain — b still references it"
+        );
         // Now remove the other reference; file goes.
         permanent_delete(&conn, &root, b.id).unwrap();
         assert!(!file_path(&root, &a.uuid).exists());

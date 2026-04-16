@@ -177,7 +177,10 @@ impl CalDavClient {
             .http
             .put(url)
             .header(AUTHORIZATION, self.auth_header())
-            .header(CONTENT_TYPE, HeaderValue::from_static("text/calendar; charset=utf-8"))
+            .header(
+                CONTENT_TYPE,
+                HeaderValue::from_static("text/calendar; charset=utf-8"),
+            )
             .body(body.to_string());
         if let Some(e) = etag {
             req = req.header("If-Match", e);
@@ -389,9 +392,15 @@ fn extract_report_items(xml: &str, base_url: &str) -> Vec<ReportItem> {
             }
             Ok(XmlEvent::Text(t)) => {
                 let text = t.unescape().unwrap_or_default();
-                if in_href { cur_href.push_str(&text); }
-                if in_etag { cur_etag.push_str(&text); }
-                if in_data { cur_ical.push_str(&text); }
+                if in_href {
+                    cur_href.push_str(&text);
+                }
+                if in_etag {
+                    cur_etag.push_str(&text);
+                }
+                if in_data {
+                    cur_ical.push_str(&text);
+                }
             }
             Ok(XmlEvent::CData(t)) => {
                 if in_data {
@@ -594,10 +603,7 @@ END:VCALENDAR</C:calendar-data>
     async fn put_event_returns_new_etag() {
         let server = MockServer::start().await;
         Mock::given(method("PUT"))
-            .respond_with(
-                ResponseTemplate::new(201)
-                    .append_header("ETag", "\"newetag456\""),
-            )
+            .respond_with(ResponseTemplate::new(201).append_header("ETag", "\"newetag456\""))
             .mount(&server)
             .await;
 
