@@ -3,7 +3,7 @@
 use anyhow::Result;
 use chrono::{Duration, Utc};
 use chrono_tz::Tz;
-use manor_core::assistant::{calendar_account, event};
+use manor_core::assistant::{calendar, calendar_account, event};
 use rusqlite::Connection;
 use serde::{Deserialize, Serialize};
 use std::collections::HashSet;
@@ -125,6 +125,23 @@ async fn do_sync(
     let home_set = client.discover_home_set(&principal).await?;
     let calendars = client.list_calendars(&home_set).await?;
 
+    // Persist discovered calendars.
+    for cal in &calendars {
+        calendar::upsert(conn, account_id, &cal.url, cal.display_name.as_deref())?;
+    }
+
+    // Set default calendar if not already set.
+    if account.default_calendar_url.is_none() {
+        let noise = ["shared", "subscribed", "birthdays", "holidays"];
+        let default = calendars.iter().find(|c| {
+            let name = c.display_name.as_deref().unwrap_or("").to_lowercase();
+            !noise.iter().any(|n| name.contains(n))
+        });
+        if let Some(cal) = default {
+            calendar_account::set_default_calendar(conn, account_id, &cal.url)?;
+        }
+    }
+
     let window_start = Utc::now() - Duration::days(7);
     let window_end = Utc::now() + Duration::days(14);
 
@@ -135,7 +152,7 @@ async fn do_sync(
             .await?;
         for ics in blocks {
             for parsed in ical::parse_vcalendar(&ics.ical, local_tz) {
-                match expand::expand(&parsed, account_id, window_start, window_end) {
+                match expand::expand(&parsed, account_id, window_start, window_end, &ics.href) {
                     Ok(mut occurrences) => new_events.append(&mut occurrences),
                     Err(e) => tracing::warn!("skipping expansion for uid {}: {e}", parsed.uid),
                 }
@@ -148,8 +165,11 @@ async fn do_sync(
     // insert_many uses its own transaction on `conn`, but here we commit via `tx` — inline the INSERTs.
     {
         let mut stmt = tx.prepare(
-            "INSERT INTO event (calendar_account_id, external_id, title, start_at, end_at, created_at)
-             VALUES (?1, ?2, ?3, ?4, ?5, ?6)",
+            "INSERT INTO event (
+                calendar_account_id, external_id, title, start_at, end_at, created_at,
+                event_url, etag, description, location, all_day,
+                is_recurring_occurrence, parent_event_url, occurrence_dtstart
+             ) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14)",
         )?;
         let created_at = Utc::now().timestamp_millis();
         for ev in &new_events {
@@ -161,6 +181,14 @@ async fn do_sync(
                 ev.start_at,
                 ev.end_at,
                 created_at,
+                ev.event_url,
+                ev.etag,
+                ev.description,
+                ev.location,
+                ev.all_day as i64,
+                ev.is_recurring_occurrence as i64,
+                ev.parent_event_url,
+                ev.occurrence_dtstart,
             ]);
         }
     }
@@ -216,7 +244,9 @@ mod tests {
     fn report_body_three_events() -> String {
         r#"<?xml version="1.0"?>
 <D:multistatus xmlns:D="DAV:" xmlns:C="urn:ietf:params:xml:ns:caldav">
-  <D:response><D:href>/home/cal1/1.ics</D:href><D:propstat><D:prop><C:calendar-data>BEGIN:VCALENDAR
+  <D:response><D:href>/home/cal1/1.ics</D:href><D:propstat><D:prop>
+    <D:getetag>"etag1"</D:getetag>
+    <C:calendar-data>BEGIN:VCALENDAR
 VERSION:2.0
 BEGIN:VEVENT
 UID:one
@@ -225,7 +255,9 @@ DTEND:20260415T110000Z
 SUMMARY:One
 END:VEVENT
 END:VCALENDAR</C:calendar-data></D:prop><D:status>HTTP/1.1 200 OK</D:status></D:propstat></D:response>
-  <D:response><D:href>/home/cal1/2.ics</D:href><D:propstat><D:prop><C:calendar-data>BEGIN:VCALENDAR
+  <D:response><D:href>/home/cal1/2.ics</D:href><D:propstat><D:prop>
+    <D:getetag>"etag2"</D:getetag>
+    <C:calendar-data>BEGIN:VCALENDAR
 VERSION:2.0
 BEGIN:VEVENT
 UID:two
