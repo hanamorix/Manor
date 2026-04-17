@@ -30,6 +30,7 @@ const REGISTRY: &[(&str, &str)] = &[
     ("budget", "CAST(category_id AS TEXT)"),
     ("category", "name"),
     ("bank_account", "account_name"),
+    ("remote_call_log", "user_visible_reason"),
 ];
 
 pub fn list_all(conn: &Connection) -> Result<Vec<TrashEntry>> {

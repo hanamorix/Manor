@@ -7,6 +7,7 @@ pub mod household;
 pub mod ledger;
 pub mod note;
 pub mod person;
+pub mod remote_call_log;
 pub mod setting;
 pub mod snapshot;
 pub mod tag;
