@@ -228,7 +228,7 @@ export default function CsvImportDrawer({ onClose, onImported }: Props) {
                   border: "1px solid rgba(255,59,48,0.3)",
                   borderRadius: 10,
                   fontSize: 13,
-                  color: "var(--imessage-red)",
+                  color: "var(--ink)",
                 }}
               >
                 {error}

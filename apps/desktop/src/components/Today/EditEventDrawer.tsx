@@ -129,7 +129,7 @@ export default function EditEventDrawer({ event, onClose, onSaved }: Props) {
           )}
 
           {event.is_recurring_occurrence && (
-            <div style={{ marginBottom: 16, padding: "8px 12px", background: "rgba(0,122,255,0.08)", borderRadius: 8, fontSize: 12, color: "var(--imessage-blue)" }}>
+            <div style={{ marginBottom: 16, padding: "8px 12px", background: "rgba(0,122,255,0.08)", borderRadius: 8, fontSize: 12, color: "var(--ink)" }}>
               Recurring event — editing this occurrence only
             </div>
           )}
@@ -174,7 +174,7 @@ export default function EditEventDrawer({ event, onClose, onSaved }: Props) {
             </div>
 
             {error && (
-              <div style={{ padding: "10px 12px", background: "rgba(255,59,48,0.08)", border: "1px solid rgba(255,59,48,0.3)", borderRadius: 10, fontSize: 13, color: "var(--imessage-red)" }}>
+              <div style={{ padding: "10px 12px", background: "rgba(255,59,48,0.08)", border: "1px solid rgba(255,59,48,0.3)", borderRadius: 10, fontSize: 13, color: "var(--ink)" }}>
                 {error}
               </div>
             )}
@@ -182,7 +182,7 @@ export default function EditEventDrawer({ event, onClose, onSaved }: Props) {
             {!confirmDelete ? (
               <button
                 onClick={() => setConfirmDelete(true)}
-                style={{ marginTop: 8, background: "none", border: "1px solid rgba(255,59,48,0.4)", borderRadius: 10, padding: "10px 0", color: "var(--imessage-red)", fontSize: 13, fontWeight: 600, cursor: "pointer", fontFamily: "inherit" }}
+                style={{ marginTop: 8, background: "none", border: "1px solid rgba(255,59,48,0.4)", borderRadius: 10, padding: "10px 0", color: "var(--ink)", fontSize: 13, fontWeight: 600, cursor: "pointer", fontFamily: "inherit" }}
               >
                 Delete Event
               </button>
@@ -192,7 +192,7 @@ export default function EditEventDrawer({ event, onClose, onSaved }: Props) {
                   <button
                     onClick={() => handleDelete(true)}
                     disabled={deleting}
-                    style={{ background: "rgba(255,59,48,0.08)", border: "1px solid rgba(255,59,48,0.4)", borderRadius: 10, padding: "10px 0", color: "var(--imessage-red)", fontSize: 13, fontWeight: 600, cursor: "pointer", fontFamily: "inherit" }}
+                    style={{ background: "rgba(255,59,48,0.08)", border: "1px solid rgba(255,59,48,0.4)", borderRadius: 10, padding: "10px 0", color: "var(--ink)", fontSize: 13, fontWeight: 600, cursor: "pointer", fontFamily: "inherit" }}
                   >
                     Delete this occurrence only
                   </button>
@@ -200,7 +200,7 @@ export default function EditEventDrawer({ event, onClose, onSaved }: Props) {
                 <button
                   onClick={() => handleDelete(false)}
                   disabled={deleting}
-                  style={{ background: "rgba(255,59,48,0.15)", border: "1px solid rgba(255,59,48,0.6)", borderRadius: 10, padding: "10px 0", color: "var(--imessage-red)", fontSize: 14, fontWeight: 700, cursor: "pointer", fontFamily: "inherit" }}
+                  style={{ background: "rgba(255,59,48,0.15)", border: "1px solid rgba(255,59,48,0.6)", borderRadius: 10, padding: "10px 0", color: "var(--ink)", fontSize: 14, fontWeight: 700, cursor: "pointer", fontFamily: "inherit" }}
                 >
                   {event.is_recurring_occurrence ? "Delete all occurrences" : "Confirm Delete"}
                 </button>
@@ -216,7 +216,7 @@ export default function EditEventDrawer({ event, onClose, onSaved }: Props) {
           <button
             onClick={handleSave}
             disabled={saving}
-            style={{ width: "100%", padding: "12px 0", background: "var(--imessage-blue)", color: "white", border: "none", borderRadius: 12, fontSize: 15, fontWeight: 700, cursor: saving ? "default" : "pointer", opacity: saving ? 0.6 : 1, fontFamily: "inherit" }}
+            style={{ width: "100%", padding: "12px 0", background: "var(--ink)", color: "var(--action-fg)", border: "none", borderRadius: 12, fontSize: 15, fontWeight: 700, cursor: saving ? "default" : "pointer", opacity: saving ? 0.6 : 1, fontFamily: "inherit" }}
           >
             {saving ? "Saving…" : "Save Changes"}
           </button>

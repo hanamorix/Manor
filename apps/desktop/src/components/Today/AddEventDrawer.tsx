@@ -163,7 +163,7 @@ export default function AddEventDrawer({ accountId, defaultCalendarUrl, calendar
             )}
 
             {error && (
-              <div style={{ padding: "10px 12px", background: "rgba(255,59,48,0.08)", border: "1px solid rgba(255,59,48,0.3)", borderRadius: 10, fontSize: 13, color: "var(--imessage-red)" }}>
+              <div style={{ padding: "10px 12px", background: "rgba(255,59,48,0.08)", border: "1px solid rgba(255,59,48,0.3)", borderRadius: 10, fontSize: 13, color: "var(--ink)" }}>
                 {error}
               </div>
             )}
@@ -174,7 +174,7 @@ export default function AddEventDrawer({ accountId, defaultCalendarUrl, calendar
           <button
             onClick={handleSave}
             disabled={saving}
-            style={{ width: "100%", padding: "12px 0", background: "var(--imessage-blue)", color: "white", border: "none", borderRadius: 12, fontSize: 15, fontWeight: 700, cursor: saving ? "default" : "pointer", opacity: saving ? 0.6 : 1, fontFamily: "inherit" }}
+            style={{ width: "100%", padding: "12px 0", background: "var(--ink)", color: "var(--action-fg)", border: "none", borderRadius: 12, fontSize: 15, fontWeight: 700, cursor: saving ? "default" : "pointer", opacity: saving ? 0.6 : 1, fontFamily: "inherit" }}
           >
             {saving ? "Saving…" : "Save"}
           </button>
