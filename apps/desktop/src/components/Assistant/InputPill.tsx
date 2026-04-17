@@ -23,14 +23,11 @@ const InputPill = forwardRef<HTMLInputElement, InputPillProps>(
       }
     };
 
-    const width = focused ? 320 : 220;
-
     return (
       <div
         style={{
           position: "relative",
-          width,
-          transition: "width 150ms ease",
+          width: 320,
         }}
       >
         <input

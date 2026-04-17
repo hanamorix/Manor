@@ -84,10 +84,12 @@ export default function SummaryCard({ summary, year, month, totalBudget, onBudge
             style={{
               background: cardFg,
               opacity: nearLimit ? 0.7 : 1,
-              width: `${Math.min(pct * 100, 100)}%`,
+              width: "100%",
+              transform: `scaleX(${Math.min(pct, 1)})`,
+              transformOrigin: "left",
               height: 6,
               borderRadius: 6,
-              transition: "width 0.3s",
+              transition: "transform var(--duration-med) var(--ease-out)",
             }}
           />
         </div>

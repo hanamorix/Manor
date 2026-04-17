@@ -47,11 +47,13 @@ export default function Wizard() {
           >
             <div
               style={{
-                width: `${(step / 4) * 100}%`,
+                width: "100%",
+                transform: `scaleX(${Math.min(step / 4, 1)})`,
+                transformOrigin: "left",
                 height: "100%",
                 background: "var(--ink)",
                 borderRadius: 2,
-                transition: "width 200ms",
+                transition: "transform var(--duration-med) var(--ease-out)",
               }}
             />
           </div>

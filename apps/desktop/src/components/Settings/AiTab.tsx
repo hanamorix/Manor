@@ -192,10 +192,12 @@ function RemoteProvidersSection() {
         >
           <div
             style={{
-              width: `${pct}%`,
+              width: "100%",
+              transform: `scaleX(${Math.min(pct, 100) / 100})`,
+              transformOrigin: "left",
               height: "100%",
               background: barColor,
-              transition: "width 200ms",
+              transition: "transform var(--duration-med) var(--ease-out)",
             }}
           />
         </div>
