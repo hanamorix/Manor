@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Plus } from "lucide-react";
+import { Plus, ChevronDown, ChevronRight, X } from "lucide-react";
 import { listRecurring, deleteRecurring } from "../../lib/ledger/ipc";
 import { useLedgerStore } from "../../lib/ledger/state";
 import type { Category, RecurringPayment } from "../../lib/ledger/ipc";
@@ -68,7 +68,15 @@ export default function RecurringSection({ categories }: Props) {
           }}
         >
           <div
+            role="button"
+            tabIndex={0}
             onClick={() => setExpanded((v) => !v)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" || e.key === " ") {
+                e.preventDefault();
+                setExpanded((v) => !v);
+              }
+            }}
             style={{
               display: "flex",
               alignItems: "center",
@@ -77,9 +85,11 @@ export default function RecurringSection({ categories }: Props) {
               userSelect: "none",
             }}
           >
-            <span style={{ fontSize: "var(--text-sm)", color: "var(--ink-faint)" }}>
-              {expanded ? "▾" : "▸"}
-            </span>
+            {expanded ? (
+              <ChevronDown size={14} strokeWidth={1.8} color="var(--ink-faint)" />
+            ) : (
+              <ChevronRight size={14} strokeWidth={1.8} color="var(--ink-faint)" />
+            )}
             <h3
               style={{
                 margin: 0,
@@ -173,19 +183,19 @@ export default function RecurringSection({ categories }: Props) {
                       </span>
                       <button
                         onClick={(e) => handleDelete(r.id, e)}
+                        aria-label="Delete"
                         title="Delete"
                         style={{
                           background: "none",
                           border: "none",
-                          fontSize: "var(--text-md)",
                           cursor: "pointer",
                           color: "var(--ink-faint)",
                           padding: "2px 4px",
-                          lineHeight: 1,
-                          fontFamily: "inherit",
+                          display: "inline-flex",
+                          alignItems: "center",
                         }}
                       >
-                        ✕
+                        <X size={14} strokeWidth={1.8} />
                       </button>
                     </div>
                   </div>

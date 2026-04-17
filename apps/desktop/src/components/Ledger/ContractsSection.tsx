@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Plus } from "lucide-react";
+import { Plus, ChevronDown, ChevronRight, Pencil, X } from "lucide-react";
 import { listContracts, deleteContract } from "../../lib/ledger/ipc";
 import { useLedgerStore } from "../../lib/ledger/state";
 import type { Contract } from "../../lib/ledger/ipc";
@@ -137,9 +137,11 @@ export default function ContractsSection() {
               userSelect: "none",
             }}
           >
-            <span style={{ fontSize: "var(--text-sm)", color: "var(--ink-faint)" }}>
-              {expanded ? "▾" : "▸"}
-            </span>
+            {expanded ? (
+              <ChevronDown size={14} strokeWidth={1.8} color="var(--ink-faint)" />
+            ) : (
+              <ChevronRight size={14} strokeWidth={1.8} color="var(--ink-faint)" />
+            )}
             <h3
               style={{
                 margin: 0,
@@ -235,35 +237,35 @@ export default function ContractsSection() {
                       <CountdownPill days={days} alertDays={c.renewal_alert_days} />
                       <button
                         onClick={(e) => { e.stopPropagation(); setEditTarget(c); }}
+                        aria-label="Edit"
                         title="Edit"
                         style={{
                           background: "none",
                           border: "none",
-                          fontSize: "var(--text-sm)",
                           cursor: "pointer",
                           color: "var(--ink-faint)",
                           padding: "2px 4px",
-                          lineHeight: 1,
-                          fontFamily: "inherit",
+                          display: "inline-flex",
+                          alignItems: "center",
                         }}
                       >
-                        ✎
+                        <Pencil size={14} strokeWidth={1.8} />
                       </button>
                       <button
                         onClick={(e) => handleDelete(c.id, e)}
+                        aria-label="Delete"
                         title="Delete"
                         style={{
                           background: "none",
                           border: "none",
-                          fontSize: "var(--text-md)",
                           cursor: "pointer",
                           color: "var(--ink-faint)",
                           padding: "2px 4px",
-                          lineHeight: 1,
-                          fontFamily: "inherit",
+                          display: "inline-flex",
+                          alignItems: "center",
                         }}
                       >
-                        ✕
+                        <X size={14} strokeWidth={1.8} />
                       </button>
                     </div>
                   </div>

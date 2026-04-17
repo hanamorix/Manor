@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { Pencil, Trash2 } from "lucide-react";
 import type { Task } from "../../lib/today/ipc";
 import {
   completeTask,
@@ -143,7 +144,15 @@ export default function TaskRow({ task }: TaskRowProps) {
         />
       ) : (
         <span
+          role="button"
+          tabIndex={0}
           onClick={startEdit}
+          onKeyDown={(e) => {
+            if (e.key === "Enter" || e.key === " ") {
+              e.preventDefault();
+              startEdit();
+            }
+          }}
           style={{
             flex: 1,
             fontSize: "var(--text-md)",
@@ -170,10 +179,13 @@ export default function TaskRow({ task }: TaskRowProps) {
               background: "transparent",
               border: "none",
               cursor: "pointer",
-              fontSize: "var(--text-md)",
+              display: "inline-flex",
+              alignItems: "center",
+              justifyContent: "center",
+              color: "var(--ink-soft)",
             }}
           >
-            ✎
+            <Pencil size={14} strokeWidth={1.8} />
           </button>
           <button
             onClick={armOrConfirmDelete}
@@ -185,11 +197,13 @@ export default function TaskRow({ task }: TaskRowProps) {
               background: "transparent",
               border: "none",
               cursor: "pointer",
-              fontSize: "var(--text-md)",
-              color: deleteArmed ? "var(--ink)" : "inherit",
+              display: "inline-flex",
+              alignItems: "center",
+              justifyContent: "center",
+              color: deleteArmed ? "var(--ink-danger)" : "var(--ink-soft)",
             }}
           >
-            🗑
+            <Trash2 size={14} strokeWidth={1.8} />
           </button>
         </div>
       )}
