@@ -63,7 +63,7 @@ export default function BudgetSheet({ categories, budgets, onClose, onChanged }:
     fontSize: 14,
     border: "1px solid var(--hairline)",
     borderRadius: 8,
-    background: "#fafafa",
+    background: "var(--hairline)",
     fontFamily: "inherit",
     textAlign: "right",
   };
@@ -75,7 +75,7 @@ export default function BudgetSheet({ categories, budgets, onClose, onChanged }:
         style={{
           position: "fixed",
           inset: 0,
-          background: "rgba(0,0,0,0.25)",
+          background: "var(--scrim)",
           zIndex: 1050,
         }}
       />
@@ -106,7 +106,7 @@ export default function BudgetSheet({ categories, budgets, onClose, onChanged }:
         >
           <div>
             <div style={{ fontSize: 16, fontWeight: 700 }}>Monthly Budgets</div>
-            <div style={{ fontSize: 12, color: "rgba(0,0,0,0.4)", marginTop: 2 }}>
+            <div style={{ fontSize: 12, color: "var(--ink-faint)", marginTop: 2 }}>
               Leave blank to skip tracking a category
             </div>
           </div>
@@ -117,7 +117,7 @@ export default function BudgetSheet({ categories, budgets, onClose, onChanged }:
               border: "none",
               fontSize: 20,
               cursor: "pointer",
-              color: "rgba(0,0,0,0.4)",
+              color: "var(--ink-faint)",
               lineHeight: 1,
               padding: 0,
             }}
@@ -155,7 +155,7 @@ export default function BudgetSheet({ categories, budgets, onClose, onChanged }:
                     setDrafts((d) => ({ ...d, [cat.id]: e.target.value }))
                   }
                 />
-                <span style={{ fontSize: 12, color: "rgba(0,0,0,0.35)" }}>/mo</span>
+                <span style={{ fontSize: 12, color: "var(--ink-faint)" }}>/mo</span>
               </div>
             </div>
           ))}
@@ -174,8 +174,8 @@ export default function BudgetSheet({ categories, budgets, onClose, onChanged }:
             style={{
               width: "100%",
               padding: "12px 0",
-              background: "var(--imessage-blue)",
-              color: "white",
+              background: "var(--ink)",
+              color: "var(--action-fg)",
               border: "none",
               borderRadius: 12,
               fontSize: 15,

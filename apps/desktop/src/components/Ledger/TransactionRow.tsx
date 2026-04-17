@@ -1,22 +1,8 @@
 import type { Category, Transaction } from "../../lib/ledger/ipc";
 
-// Category → pastel background colour for the emoji icon
-const CATEGORY_COLORS: Record<number, string> = {
-  1: "#E8F4FD",  // Groceries — light blue
-  2: "#FFF0F0",  // Eating Out — light red
-  3: "#F0F0FF",  // Transport — light purple
-  4: "#F5F0FF",  // Utilities — light violet
-  5: "#FFF8E6",  // Subscriptions — light amber
-  6: "#F0FFF4",  // Health — light green
-  7: "#FFF0F8",  // Shopping — light pink
-  8: "#F0FAFF",  // Entertainment — light cyan
-  9: "#F5F5F5",  // Other — neutral
-  10: "#E8FDF0", // Income — green
-};
-
-function iconBg(categoryId: number | null): string {
-  if (categoryId === null) return "#F5F5F5";
-  return CATEGORY_COLORS[categoryId] ?? "#F5F5F5";
+// CATEGORY_COLORS placeholder — Task 13 replaces with Lucide icons + deletes this
+function iconBg(_categoryId: number | null): string {
+  return "var(--hairline)";
 }
 
 function formatAmount(pence: number, currency: string): string {
@@ -33,8 +19,6 @@ interface Props {
 }
 
 export default function TransactionRow({ tx, category, onClick }: Props) {
-  const isIncome = tx.amount_pence > 0;
-
   return (
     <div
       role="button"
@@ -45,7 +29,7 @@ export default function TransactionRow({ tx, category, onClick }: Props) {
         alignItems: "center",
         justifyContent: "space-between",
         padding: "10px 12px",
-        background: "#fafafa",
+        background: "var(--hairline)",
         borderRadius: 12,
         cursor: "pointer",
         gap: 10,
@@ -79,7 +63,7 @@ export default function TransactionRow({ tx, category, onClick }: Props) {
           >
             {tx.merchant ?? tx.description}
           </div>
-          <div style={{ fontSize: 11, color: "#bbb", marginTop: 1 }}>
+          <div style={{ fontSize: 11, color: "var(--ink-soft)", marginTop: 1 }}>
             {category?.name ?? "Uncategorised"}
             {tx.source === "sync" && " · Synced"}
           </div>
@@ -90,7 +74,7 @@ export default function TransactionRow({ tx, category, onClick }: Props) {
         style={{
           fontSize: 13,
           fontWeight: 600,
-          color: isIncome ? "#2BB94A" : "inherit",
+          color: "var(--ink)",
           flexShrink: 0,
         }}
       >

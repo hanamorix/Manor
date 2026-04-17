@@ -34,11 +34,11 @@ function CountdownPill({ days, alertDays }: PillProps) {
 
   if (days < 0) {
     bg = "var(--paper-muted)";
-    color = "rgba(0,0,0,0.55)";
+    color = "var(--ink-soft)";
     label = "expired";
   } else if (days <= 7) {
     bg = "rgba(255,59,48,0.2)";
-    color = "var(--imessage-red)";
+    color = "var(--ink)";
     label = `${days}d`;
   } else if (days <= alertDays) {
     bg = "rgba(255,149,0,0.2)";
@@ -140,7 +140,7 @@ export default function ContractsSection() {
               }}
             >
               Contracts{" "}
-              <span style={{ color: "rgba(0,0,0,0.45)", fontWeight: 500 }}>
+              <span style={{ color: "var(--ink-faint)", fontWeight: 500 }}>
                 ({contracts.length})
               </span>
             </h3>
@@ -148,8 +148,8 @@ export default function ContractsSection() {
           <button
             onClick={() => setShowAdd(true)}
             style={{
-              background: "var(--imessage-blue)",
-              color: "#fff",
+              background: "var(--ink)",
+              color: "var(--action-fg)",
               border: "none",
               borderRadius: "var(--radius-pill)",
               padding: "4px 12px",
@@ -172,7 +172,7 @@ export default function ContractsSection() {
                   padding: "12px 0",
                   textAlign: "center",
                   fontSize: 13,
-                  color: "rgba(0,0,0,0.4)",
+                  color: "var(--ink-faint)",
                 }}
               >
                 No contracts yet.
@@ -190,7 +190,7 @@ export default function ContractsSection() {
                       justifyContent: "space-between",
                       padding: "8px 10px",
                       borderRadius: "var(--radius-sm)",
-                      background: "#fff",
+                      background: "var(--surface)",
                       border: "1px solid var(--hairline)",
                       cursor: "pointer",
                       transition: "opacity 150ms",
@@ -213,7 +213,7 @@ export default function ContractsSection() {
                       <div
                         style={{
                           fontSize: 11,
-                          color: "rgba(0,0,0,0.45)",
+                          color: "var(--ink-faint)",
                           marginTop: 1,
                         }}
                       >
@@ -245,7 +245,7 @@ export default function ContractsSection() {
                           border: "none",
                           fontSize: 13,
                           cursor: "pointer",
-                          color: "rgba(0,0,0,0.3)",
+                          color: "var(--ink-faint)",
                           padding: "2px 4px",
                           lineHeight: 1,
                           fontFamily: "inherit",
@@ -261,7 +261,7 @@ export default function ContractsSection() {
                           border: "none",
                           fontSize: 14,
                           cursor: "pointer",
-                          color: "rgba(0,0,0,0.3)",
+                          color: "var(--ink-faint)",
                           padding: "2px 4px",
                           lineHeight: 1,
                           fontFamily: "inherit",

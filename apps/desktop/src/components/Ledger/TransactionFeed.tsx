@@ -59,7 +59,7 @@ export default function TransactionFeed({ transactions, categories, onAdd }: Pro
             fontWeight: 700,
             textTransform: "uppercase",
             letterSpacing: 0.6,
-            color: "rgba(0,0,0,0.55)",
+            color: "var(--ink-soft)",
           }}
         >
           Transactions
@@ -67,8 +67,8 @@ export default function TransactionFeed({ transactions, categories, onAdd }: Pro
         <button
           onClick={onAdd}
           style={{
-            background: "var(--imessage-blue)",
-            color: "white",
+            background: "var(--ink)",
+            color: "var(--action-fg)",
             border: "none",
             borderRadius: 20,
             padding: "5px 14px",
@@ -88,7 +88,7 @@ export default function TransactionFeed({ transactions, categories, onAdd }: Pro
             textAlign: "center",
             padding: "24px 0",
             fontSize: 13,
-            color: "rgba(0,0,0,0.35)",
+            color: "var(--ink-faint)",
           }}
         >
           No transactions this month.
@@ -102,7 +102,7 @@ export default function TransactionFeed({ transactions, categories, onAdd }: Pro
           <div
             style={{
               fontSize: 10,
-              color: "#aaa",
+              color: "var(--ink-soft)",
               fontWeight: 700,
               letterSpacing: 0.6,
               padding: "0 4px",

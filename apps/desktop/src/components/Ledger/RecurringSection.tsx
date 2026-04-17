@@ -87,7 +87,7 @@ export default function RecurringSection({ categories }: Props) {
               }}
             >
               Recurring{" "}
-              <span style={{ color: "rgba(0,0,0,0.45)", fontWeight: 500 }}>
+              <span style={{ color: "var(--ink-faint)", fontWeight: 500 }}>
                 ({activeCount} active)
               </span>
             </h3>
@@ -95,8 +95,8 @@ export default function RecurringSection({ categories }: Props) {
           <button
             onClick={() => setShowAdd(true)}
             style={{
-              background: "var(--imessage-blue)",
-              color: "#fff",
+              background: "var(--ink)",
+              color: "var(--action-fg)",
               border: "none",
               borderRadius: "var(--radius-pill)",
               padding: "4px 12px",
@@ -119,7 +119,7 @@ export default function RecurringSection({ categories }: Props) {
                   padding: "12px 0",
                   textAlign: "center",
                   fontSize: 13,
-                  color: "rgba(0,0,0,0.4)",
+                  color: "var(--ink-faint)",
                 }}
               >
                 No recurring payments yet.
@@ -163,7 +163,7 @@ export default function RecurringSection({ categories }: Props) {
                         <div
                           style={{
                             fontSize: 11,
-                            color: "rgba(0,0,0,0.45)",
+                            color: "var(--ink-faint)",
                             marginTop: 1,
                           }}
                         >
@@ -190,7 +190,7 @@ export default function RecurringSection({ categories }: Props) {
                           border: "none",
                           fontSize: 14,
                           cursor: "pointer",
-                          color: "rgba(0,0,0,0.3)",
+                          color: "var(--ink-faint)",
                           padding: "2px 4px",
                           lineHeight: 1,
                           fontFamily: "inherit",

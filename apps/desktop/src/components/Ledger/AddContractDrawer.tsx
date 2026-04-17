@@ -116,7 +116,7 @@ export default function AddContractDrawer({ existing, onClose, onSaved }: Props)
     fontSize: 14,
     border: "1px solid var(--hairline)",
     borderRadius: 10,
-    background: "#fafafa",
+    background: "var(--hairline)",
     fontFamily: "inherit",
     boxSizing: "border-box",
     color: "var(--ink)",
@@ -127,7 +127,7 @@ export default function AddContractDrawer({ existing, onClose, onSaved }: Props)
     fontWeight: 700,
     textTransform: "uppercase",
     letterSpacing: 0.5,
-    color: "rgba(0,0,0,0.5)",
+    color: "var(--ink-soft)",
     marginBottom: 5,
     display: "block",
   };
@@ -140,7 +140,7 @@ export default function AddContractDrawer({ existing, onClose, onSaved }: Props)
         style={{
           position: "fixed",
           inset: 0,
-          background: "rgba(0,0,0,0.25)",
+          background: "var(--scrim)",
           zIndex: 1050,
         }}
       />
@@ -181,7 +181,7 @@ export default function AddContractDrawer({ existing, onClose, onSaved }: Props)
               border: "none",
               fontSize: 20,
               cursor: "pointer",
-              color: "rgba(0,0,0,0.4)",
+              color: "var(--ink-faint)",
               lineHeight: 1,
               padding: 0,
             }}
@@ -323,7 +323,7 @@ export default function AddContractDrawer({ existing, onClose, onSaved }: Props)
                 border: "1px solid rgba(255,59,48,0.3)",
                 borderRadius: 10,
                 fontSize: 13,
-                color: "var(--imessage-red)",
+                color: "var(--ink)",
               }}
             >
               {error}
@@ -363,8 +363,8 @@ export default function AddContractDrawer({ existing, onClose, onSaved }: Props)
             style={{
               flex: 2,
               padding: "10px 16px",
-              background: "var(--imessage-blue)",
-              color: "#fff",
+              background: "var(--ink)",
+              color: "var(--action-fg)",
               border: "none",
               borderRadius: "var(--radius-pill)",
               fontSize: 14,
