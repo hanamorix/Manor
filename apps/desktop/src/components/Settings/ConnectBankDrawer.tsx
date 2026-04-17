@@ -118,11 +118,22 @@ export function ConnectBankDrawer({ mode: _mode, onClose }: Props) {
             country={stage.country}
             search={stage.search}
             institutions={stage.institutions}
-            onCountry={(c) => {
+            onCountry={async (c) => {
               setStage({ kind: "loading" });
-              loadInstitutions(c);
+              try {
+                await loadInstitutions(c);
+              } catch (e: unknown) {
+                setStage({
+                  kind: "error",
+                  message: e instanceof Error ? e.message : String(e),
+                });
+              }
             }}
-            onSearch={(s) => setStage({ ...stage, search: s })}
+            onSearch={(s) =>
+              setStage((prev) =>
+                prev.kind === "pick" ? { ...prev, search: s } : prev
+              )
+            }
             onPick={pickInstitution}
           />
         )}
