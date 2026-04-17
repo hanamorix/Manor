@@ -29,6 +29,9 @@ quick-xml.workspace = true
 base64.workspace = true
 plist.workspace = true
 csv.workspace = true
+tiny_http.workspace = true
+urlencoding.workspace = true
+uuid.workspace = true
 
 [dev-dependencies]
 wiremock.workspace = true

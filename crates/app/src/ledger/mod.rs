@@ -5,3 +5,4 @@ pub mod bank_keychain;
 pub mod commands;
 pub mod csv_import;
 pub mod gocardless;
+pub mod oauth_server;
