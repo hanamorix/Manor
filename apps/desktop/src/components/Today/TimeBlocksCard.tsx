@@ -5,20 +5,12 @@ import { useTimeBlocksStore } from "../../lib/timeblocks/state";
 import { createTimeBlock, dismissPatternNudge, promoteToPattern, type BlockKind } from "../../lib/timeblocks/ipc";
 import { SectionLabel } from "../../lib/ui";
 
-const cardStyle: React.CSSProperties = {
-  background: "var(--paper)",
-  border: "1px solid var(--hairline)",
-  borderRadius: "var(--radius-lg)",
-  boxShadow: "var(--shadow-sm)",
-  padding: "16px 18px",
-};
-
 const addBtn: React.CSSProperties = {
   background: "transparent",
   border: "none",
   color: "var(--ink)",
-  fontWeight: 700,
-  fontSize: 12,
+  fontWeight: 600,
+  fontSize: "var(--text-xs)",
   cursor: "pointer",
   padding: 0,
 };
@@ -137,7 +129,7 @@ export default function TimeBlocksCard() {
   }
 
   return (
-    <section style={cardStyle} aria-label="Time Blocks">
+    <section style={{ marginBottom: 22 }} aria-label="Time Blocks">
       <SectionLabel
         icon={LayoutGrid}
         action={<button style={addBtn} onClick={() => setAdding(true)}>+ Add</button>}

@@ -5,14 +5,6 @@ import { addTask } from "../../lib/today/ipc";
 import { SectionLabel } from "../../lib/ui";
 import TaskRow from "./TaskRow";
 
-const cardStyle: React.CSSProperties = {
-  background: "var(--paper)",
-  border: "1px solid var(--hairline)",
-  borderRadius: "var(--radius-lg)",
-  boxShadow: "var(--shadow-sm)",
-  padding: "16px 18px",
-};
-
 const addLink: React.CSSProperties = {
   background: "transparent",
   border: "none",
@@ -51,7 +43,7 @@ export default function TasksCard() {
   const headerLabel = headerCount > 0 ? `Tasks · ${headerCount} open` : `Tasks`;
 
   return (
-    <div style={cardStyle}>
+    <section style={{ marginBottom: 22 }}>
       <SectionLabel
         icon={ListTodo}
         action={
@@ -110,6 +102,6 @@ export default function TasksCard() {
           }}
         />
       )}
-    </div>
+    </section>
   );
 }

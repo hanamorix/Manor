@@ -4,14 +4,6 @@ import { useChoresStore } from "../../lib/chores/state";
 import { completeChore, skipChore } from "../../lib/chores/ipc";
 import { SectionLabel } from "../../lib/ui";
 
-const cardStyle: React.CSSProperties = {
-  background: "var(--paper)",
-  border: "1px solid var(--hairline)",
-  borderRadius: "var(--radius-lg)",
-  boxShadow: "var(--shadow-sm)",
-  padding: "16px 18px",
-};
-
 const manageLink: React.CSSProperties = {
   background: "transparent",
   border: "none",
@@ -58,7 +50,7 @@ export default function ChoresCard() {
   }
 
   return (
-    <section style={cardStyle} aria-label="Chores">
+    <section style={{ marginBottom: 22 }} aria-label="Chores">
       <SectionLabel
         icon={Sparkles}
         action={

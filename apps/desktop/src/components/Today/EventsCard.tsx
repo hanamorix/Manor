@@ -8,14 +8,6 @@ import { SectionLabel } from "../../lib/ui";
 import AddEventDrawer from "./AddEventDrawer";
 import EditEventDrawer from "./EditEventDrawer";
 
-const cardStyle: React.CSSProperties = {
-  background: "var(--paper)",
-  border: "1px solid var(--hairline)",
-  borderRadius: "var(--radius-lg)",
-  boxShadow: "var(--shadow-sm)",
-  padding: "16px 18px",
-};
-
 function formatTime(unixSeconds: number): string {
   const d = new Date(unixSeconds * 1000);
   return `${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`;
@@ -38,7 +30,7 @@ export default function EventsCard() {
   }
 
   return (
-    <div style={cardStyle}>
+    <section style={{ marginBottom: 22 }}>
       <SectionLabel
         icon={Calendar}
         action={canAdd ? (
@@ -107,6 +99,6 @@ export default function EventsCard() {
           }}
         />
       )}
-    </div>
+    </section>
   );
 }
