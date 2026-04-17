@@ -15,6 +15,7 @@ manor-core.workspace = true
 reqwest.workspace = true
 tokio.workspace = true
 futures-util.workspace = true
+async-trait.workspace = true
 anyhow.workspace = true
 rusqlite.workspace = true
 thiserror.workspace = true

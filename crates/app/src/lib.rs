@@ -4,6 +4,7 @@ pub mod assistant;
 pub mod embedding;
 pub mod foundation;
 pub mod ledger;
+pub mod remote;
 pub mod rhythm;
 pub mod safety;
 pub mod sync;
