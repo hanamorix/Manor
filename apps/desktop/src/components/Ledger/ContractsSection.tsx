@@ -121,7 +121,15 @@ export default function ContractsSection() {
           }}
         >
           <div
+            role="button"
+            tabIndex={0}
             onClick={() => setExpanded((v) => !v)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" || e.key === " ") {
+                e.preventDefault();
+                setExpanded((v) => !v);
+              }
+            }}
             style={{
               display: "flex",
               alignItems: "center",
