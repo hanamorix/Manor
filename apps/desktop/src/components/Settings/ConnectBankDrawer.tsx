@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Check, ArrowRight } from "lucide-react";
+import { Check, ArrowRight, RefreshCw } from "lucide-react";
 import * as ipc from "../../lib/ledger/bank-ipc";
 import { Button } from "../../lib/ui";
 
@@ -29,6 +29,17 @@ interface Props {
 export function ConnectBankDrawer({ mode, onClose }: Props) {
   const [stage, setStage] = useState<Stage>({ kind: "loading" });
   const replacesAccountId = mode.kind === "reconnect" ? mode.account_id : null;
+
+  // If the user closes the drawer while the loopback server is still
+  // listening (authorizing stage), tell the Rust side to release the port
+  // immediately rather than leaking it for ~10 minutes.
+  useEffect(() => {
+    if (stage.kind !== "authorizing") return;
+    const reference = stage.reference;
+    return () => {
+      ipc.cancelConnect(reference).catch(() => {});
+    };
+  }, [stage]);
 
   useEffect(() => {
     (async () => {
@@ -175,7 +186,33 @@ export function ConnectBankDrawer({ mode, onClose }: Props) {
             >
               {stage.message}
             </pre>
-            <Button variant="secondary" onClick={onClose}>Close</Button>
+            <div style={{ display: "flex", gap: 8, marginTop: 12 }}>
+              <Button
+                variant="primary"
+                icon={RefreshCw}
+                onClick={() => {
+                  setStage({ kind: "loading" });
+                  (async () => {
+                    try {
+                      const hasCreds = await ipc.credentialsStatus();
+                      if (!hasCreds) {
+                        setStage({ kind: "byok" });
+                      } else {
+                        await loadInstitutions("GB");
+                      }
+                    } catch (e: unknown) {
+                      setStage({
+                        kind: "error",
+                        message: e instanceof Error ? e.message : String(e),
+                      });
+                    }
+                  })();
+                }}
+              >
+                Try again
+              </Button>
+              <Button variant="secondary" onClick={onClose}>Close</Button>
+            </div>
           </div>
         )}
       </div>
@@ -318,7 +355,7 @@ function PickForm({
       </label>
       <input
         type="text"
-        placeholder="🔍 Type to filter…"
+        placeholder="Type to filter institutions…"
         value={search}
         onChange={(e) => onSearch(e.target.value)}
         style={{

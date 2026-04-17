@@ -4,13 +4,22 @@
 //! sends callback params back through a oneshot channel, and shuts down.
 //!
 //! Timeout: 10 minutes. Non-matching paths return 404 and keep the listener alive.
+//!
+//! Cancellation: each listener holds an Arc<AtomicBool>. The OS thread polls
+//! the flag between short recv_timeout iterations (500ms) — if the host sets
+//! the flag (via `cancel()`), the thread returns and the port is released
+//! well before the 10-minute natural timeout. The drawer calls this when the
+//! user closes mid-auth so we don't leak a listening socket for 10 minutes.
 
 use anyhow::{anyhow, Result};
 use std::collections::HashMap;
+use std::sync::atomic::{AtomicBool, Ordering};
+use std::sync::Arc;
 use std::time::{Duration, Instant};
 use tokio::sync::oneshot;
 
 const TIMEOUT: Duration = Duration::from_secs(600);
+const POLL_INTERVAL: Duration = Duration::from_millis(500);
 
 pub const SELF_CLOSING_HTML: &str = r#"<!doctype html>
 <html><head><title>Manor</title></head>
@@ -25,11 +34,21 @@ pub const SELF_CLOSING_HTML: &str = r#"<!doctype html>
 pub struct LoopbackCallback {
     pub port: u16,
     pub receiver: oneshot::Receiver<Result<HashMap<String, String>>>,
+    cancel: Arc<AtomicBool>,
 }
 
-/// Start the listener. Returns `(port, receiver)`. The receiver resolves to:
+impl LoopbackCallback {
+    /// Signal the listener thread to exit on its next poll tick (≤500ms).
+    /// Safe to call multiple times; idempotent. The channel will resolve
+    /// with `Err(cancelled)` after the thread returns.
+    pub fn cancel(&self) {
+        self.cancel.store(true, Ordering::Relaxed);
+    }
+}
+
+/// Start the listener. Returns `(port, receiver, cancel)`. The receiver resolves to:
 ///   Ok(Ok(params))   — callback received
-///   Ok(Err(e))       — listener errored (bind, timeout, other)
+///   Ok(Err(e))       — listener errored (bind, timeout, cancelled, other)
 ///   Err(RecvError)   — channel dropped unexpectedly
 pub fn start() -> Result<LoopbackCallback> {
     let server = tiny_http::Server::http("127.0.0.1:0")
@@ -41,26 +60,36 @@ pub fn start() -> Result<LoopbackCallback> {
         .port();
 
     let (tx, rx) = oneshot::channel::<Result<HashMap<String, String>>>();
+    let cancel = Arc::new(AtomicBool::new(false));
+    let cancel_clone = cancel.clone();
 
     std::thread::spawn(move || {
         let start = Instant::now();
-        let result = run_until_callback(&server, start);
+        let result = run_until_callback(&server, start, cancel_clone);
         let _ = tx.send(result);
     });
 
-    Ok(LoopbackCallback { port, receiver: rx })
+    Ok(LoopbackCallback { port, receiver: rx, cancel })
 }
 
 fn run_until_callback(
     server: &tiny_http::Server,
     start: Instant,
+    cancel: Arc<AtomicBool>,
 ) -> Result<HashMap<String, String>> {
     loop {
-        let remaining = TIMEOUT.checked_sub(start.elapsed())
+        if cancel.load(Ordering::Relaxed) {
+            return Err(anyhow!("oauth loopback cancelled"));
+        }
+        let remaining = TIMEOUT
+            .checked_sub(start.elapsed())
             .ok_or_else(|| anyhow!("oauth loopback timed out"))?;
-        let req = match server.recv_timeout(remaining) {
+        // Use the shorter of POLL_INTERVAL or remaining so we can tick the
+        // cancel flag at least every 500ms even near the 10-min ceiling.
+        let this_tick = POLL_INTERVAL.min(remaining);
+        let req = match server.recv_timeout(this_tick) {
             Ok(Some(r)) => r,
-            Ok(None) => return Err(anyhow!("oauth loopback timed out")),
+            Ok(None) => continue, // tick expired, loop and recheck cancel
             Err(e) => return Err(anyhow!("listener recv: {e}")),
         };
         let url = req.url().to_string();
@@ -142,5 +171,14 @@ mod tests {
 
         let params = cb.receiver.await.unwrap().unwrap();
         assert_eq!(params.get("ref"), Some(&"ok".to_string()));
+    }
+
+    #[tokio::test]
+    async fn cancel_releases_listener_quickly() {
+        let cb = start().unwrap();
+        cb.cancel();
+        let result = cb.receiver.await.unwrap();
+        assert!(result.is_err());
+        assert!(result.unwrap_err().to_string().contains("cancelled"));
     }
 }

@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { X } from "lucide-react";
 import { createEvent } from "../../lib/today/ipc";
 import type { CalendarInfo } from "../../lib/settings/ipc";
 import { useOverlay } from "../../lib/overlay/state";
@@ -106,7 +107,9 @@ export default function AddEventDrawer({ accountId, defaultCalendarUrl, calendar
       >
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "18px 20px 14px", borderBottom: "1px solid var(--hairline)" }}>
           <div style={{ fontSize: "var(--text-lg)", fontWeight: 600 }}>Add Event</div>
-          <button onClick={onClose} style={{ background: "none", border: "none", fontSize: 20, cursor: "pointer", color: "var(--ink-faint)", lineHeight: 1, padding: 0 }}>✕</button>
+          <button onClick={onClose} aria-label="Close" style={{ background: "none", border: "none", cursor: "pointer", color: "var(--ink-faint)", padding: 0, display: "inline-flex", alignItems: "center" }}>
+            <X size={18} strokeWidth={1.8} />
+          </button>
         </div>
 
         <div style={{ flex: 1, overflow: "auto", padding: "20px" }}>

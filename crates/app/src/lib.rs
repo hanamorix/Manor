@@ -264,6 +264,7 @@ pub fn register(builder: Builder<Wry>) -> Builder<Wry> {
             ledger::bank_commands::ledger_bank_sync_now,
             ledger::bank_commands::ledger_bank_disconnect,
             ledger::bank_commands::ledger_bank_reconnect,
+            ledger::bank_commands::ledger_bank_cancel_connect,
             ledger::bank_commands::ledger_bank_autocat_pending,
             foundation::commands::setting_get,
             foundation::commands::setting_set,

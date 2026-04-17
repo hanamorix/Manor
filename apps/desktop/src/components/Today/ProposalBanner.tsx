@@ -1,4 +1,5 @@
 import { useEffect } from "react";
+import { Check, X } from "lucide-react";
 import { useTodayStore } from "../../lib/today/state";
 import {
   approveProposal,
@@ -120,9 +121,12 @@ export default function ProposalBanner() {
               background: "var(--ink)",
               color: "var(--action-fg)",
               cursor: "pointer",
+              display: "inline-flex",
+              alignItems: "center",
+              justifyContent: "center",
             }}
           >
-            ✓
+            <Check size={12} strokeWidth={2.2} />
           </button>
           <button
             onClick={() => void handleReject(p.id)}
@@ -136,9 +140,12 @@ export default function ProposalBanner() {
               background: "var(--surface)",
               color: "var(--ink-soft)",
               cursor: "pointer",
+              display: "inline-flex",
+              alignItems: "center",
+              justifyContent: "center",
             }}
           >
-            ✗
+            <X size={12} strokeWidth={2.2} />
           </button>
         </div>
       ))}

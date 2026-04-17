@@ -1,4 +1,6 @@
 import { useEffect } from "react";
+import type { LucideIcon } from "lucide-react";
+import { RefreshCw, AlertTriangle, Check, Clock } from "lucide-react";
 import { useBankStore } from "../../lib/ledger/bank-state";
 
 export function SyncStatusPill() {
@@ -11,7 +13,7 @@ export function SyncStatusPill() {
   if (accounts.length === 0) return null;
 
   if (syncStatus.kind === "syncing") {
-    return <Pill color="#3b82f6" text="⟳ syncing…" />;
+    return <Pill icon={RefreshCw} text="syncing…" variant="active" />;
   }
 
   const now = Math.floor(Date.now() / 1000);
@@ -21,7 +23,13 @@ export function SyncStatusPill() {
       (a.requisition_expires_at !== null && a.requisition_expires_at < now),
   );
   if (expired) {
-    return <Pill color="#b7791f" text={`⚠ reconnect ${expired.institution_name}`} />;
+    return (
+      <Pill
+        icon={AlertTriangle}
+        text={`reconnect ${expired.institution_name}`}
+        variant="danger"
+      />
+    );
   }
 
   const mostRecent = accounts.reduce<number | null>((max, a) => {
@@ -29,25 +37,34 @@ export function SyncStatusPill() {
     return max === null || a.last_synced_at > max ? a.last_synced_at : max;
   }, null);
   if (mostRecent === null) {
-    return <Pill color="#71717a" text="not yet synced" />;
+    return <Pill icon={Clock} text="not yet synced" variant="muted" />;
   }
   const diff = now - mostRecent;
-  return <Pill color="#22c55e" text={`✓ synced ${formatRelative(diff)}`} />;
+  return <Pill icon={Check} text={`synced ${formatRelative(diff)}`} variant="ok" />;
 }
 
-function Pill({ color, text }: { color: string; text: string }) {
+type Variant = "active" | "danger" | "muted" | "ok";
+
+function Pill({ icon: Icon, text, variant }: { icon: LucideIcon; text: string; variant: Variant }) {
+  const color =
+    variant === "danger" ? "var(--ink-danger)"
+    : variant === "muted"  ? "var(--ink-faint)"
+    :                        "var(--ink-soft)";
   return (
     <span
       style={{
-        display: "inline-block",
+        display: "inline-flex",
+        alignItems: "center",
+        gap: 5,
         padding: "4px 10px",
-        background: `${color}22`,
+        background: "var(--paper-muted)",
         color,
         borderRadius: "var(--radius-md)",
         fontSize: "var(--text-xs)",
-        border: `1px solid ${color}`,
+        border: "1px solid var(--hairline-strong)",
       }}
     >
+      <Icon size={12} strokeWidth={1.8} />
       {text}
     </span>
   );

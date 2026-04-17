@@ -242,14 +242,15 @@ export default function Assistant() {
       <div
         style={{
           position: "fixed",
-          bottom: minimized ? 8 : 16,
-          right: minimized ? 8 : 16,
+          bottom: 16,
+          right: 16,
           display: "flex",
           flexDirection: "column",
           alignItems: "flex-end",
           gap: 8,
           zIndex: 1000,
-          transition: "bottom 200ms ease-out, right 200ms ease-out",
+          transform: minimized ? "translate(8px, 8px)" : "translate(0, 0)",
+          transition: "transform var(--duration-med) var(--ease-out)",
         }}
       >
         {!minimized && <UnreadBadgeWithAnchor />}
