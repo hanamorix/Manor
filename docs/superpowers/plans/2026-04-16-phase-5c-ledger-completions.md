@@ -14,7 +14,7 @@
 
 | Path | Status | What it does |
 |---|---|---|
-| `crates/core/migrations/V7__ledger_completions.sql` | Create | Schema — `recurring_payment` + `contract` + `ledger_transaction.recurring_payment_id` |
+| `crates/core/migrations/V12__ledger_completions.sql` | Create | Schema — `recurring_payment` + `contract` + `ledger_transaction.recurring_payment_id` |
 | `crates/core/src/ledger/recurring.rs` | Create | `RecurringPayment` DAL + `auto_insert_due` |
 | `crates/core/src/ledger/contract.rs` | Create | `Contract` DAL + `check_renewals` |
 | `crates/core/src/ledger/transaction.rs` | Modify | Add `recurring_payment_id` field; `insert_recurring` helper |
@@ -40,16 +40,16 @@
 
 ---
 
-## Task 1: V7 Schema Migration
+## Task 1: V12 Schema Migration
 
 **Files:**
-- Create: `crates/core/migrations/V7__ledger_completions.sql`
+- Create: `crates/core/migrations/V12__ledger_completions.sql`
 - Test: existing migration runner — `crates/core/src/assistant/db.rs`
 
 - [ ] **Step 1: Write the migration**
 
 ```sql
--- V7__ledger_completions.sql
+-- V12__ledger_completions.sql
 -- Recurring payment templates — auto-insert logic runs on app open.
 CREATE TABLE recurring_payment (
     id           INTEGER PRIMARY KEY,
@@ -97,8 +97,8 @@ Expected: existing ledger tests still pass; no migration errors.
 - [ ] **Step 3: Commit**
 
 ```bash
-git add crates/core/migrations/V7__ledger_completions.sql
-git commit -m "feat(core): V7 migration — recurring_payment, contract, recurring_payment_id"
+git add crates/core/migrations/V12__ledger_completions.sql
+git commit -m "feat(core): V12 migration — recurring_payment, contract, recurring_payment_id"
 ```
 
 ---
@@ -1662,6 +1662,8 @@ mod tests {
 
 - [ ] **Step 2: Add the streaming command**
 
+**NOTE (Landmark 2 update)**: The command routes through `crate::remote::orchestrator::remote_chat` when the user has enabled Claude for reviews (`ai.remote.enabled_for_review == "1"` AND a Claude key is set). Otherwise it falls through to local Ollama via `ai_review::stream_review`. This makes the toggle in Settings → AI actually work.
+
 Append to `crates/app/src/ledger/commands.rs`:
 
 ```rust
@@ -1669,6 +1671,8 @@ Append to `crates/app/src/ledger/commands.rs`:
 
 use crate::assistant::ollama::StreamChunk;
 use crate::ledger::ai_review;
+use crate::remote::{keychain as remote_keychain, orchestrator as remote_orch,
+                    PROVIDER_CLAUDE, REMOTE_ENABLED_FOR_REVIEW_KEY};
 use tauri::ipc::Channel;
 use tokio::sync::mpsc;
 
@@ -1678,23 +1682,60 @@ pub struct AiReviewArgs {
     pub month: u32,
 }
 
+fn should_use_remote(conn: &rusqlite::Connection) -> bool {
+    let enabled = manor_core::setting::get(conn, REMOTE_ENABLED_FOR_REVIEW_KEY)
+        .ok()
+        .flatten()
+        .as_deref()
+        == Some("1");
+    enabled && remote_keychain::has_key(PROVIDER_CLAUDE)
+}
+
 #[tauri::command]
 pub async fn ledger_ai_month_review(
     state: State<'_, Db>,
     args: AiReviewArgs,
     on_event: Channel<StreamChunk>,
 ) -> Result<(), String> {
-    let (summary, renewals) = {
+    let (summary, renewals, use_remote) = {
         let conn = state.0.lock().map_err(|e| e.to_string())?;
         let s = manor_core::ledger::budget::monthly_summary(&conn, args.year, args.month)
             .map_err(|e| e.to_string())?;
         let r = manor_core::ledger::contract::check_renewals(
             &conn, chrono::Utc::now().timestamp(),
         ).map_err(|e| e.to_string())?;
-        (s, r)
+        let use_remote = should_use_remote(&conn);
+        (s, r, use_remote)
     };
     let prompt = ai_review::build_prompt(args.year, args.month, &summary, &renewals);
 
+    if use_remote {
+        // Route through the Landmark 2 orchestrator — redacts, checks budget,
+        // calls Claude, logs to remote_call_log. Non-streaming; we emit the
+        // whole response as a single token chunk.
+        let db_arc = state.inner().clone_arc();
+        match remote_orch::remote_chat(db_arc, remote_orch::RemoteChatRequest {
+            skill: "ledger_review",
+            user_visible_reason: "Month-in-review narrative (ledger)",
+            system_prompt: Some("You are a calm personal finance assistant. \
+                Write 2-3 sentences in plain English. No bullet points. \
+                Do not give financial advice."),
+            user_prompt: &prompt,
+            max_tokens: 400,
+        }).await {
+            Ok(outcome) => {
+                on_event.send(StreamChunk::Token(outcome.text)).map_err(|e| e.to_string())?;
+                on_event.send(StreamChunk::Done).map_err(|e| e.to_string())?;
+                return Ok(());
+            }
+            Err(e) => {
+                tracing::warn!("remote review failed, falling back to local: {e}");
+                // Fall through to local path below.
+            }
+        }
+    }
+
+    // Local Ollama streaming path.
     let (tx, mut rx) = mpsc::channel::<StreamChunk>(64);
     let stream_task = tokio::spawn(async move {
         ai_review::stream_review(prompt, tx).await;
