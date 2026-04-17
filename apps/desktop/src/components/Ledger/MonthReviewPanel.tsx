@@ -111,7 +111,7 @@ export default function MonthReviewPanel({ year, month, summary }: Props) {
             padding: "8px 12px",
             fontSize: "var(--text-xs)",
             color: "var(--ink)",
-            background: "rgba(255, 59, 48, 0.06)",
+            background: "var(--paper-muted)",
             borderRadius: "var(--radius-sm)",
             display: "flex",
             justifyContent: "space-between",

@@ -41,22 +41,22 @@ export const settingsCodeBlock: CSSProperties = {
 
 export const settingsStatusGood: CSSProperties = {
   padding: 10,
-  border: "1px solid rgba(52, 199, 89, 0.3)",
-  background: "rgba(52, 199, 89, 0.08)",
+  border: "1px solid var(--ink-success)",
+  background: "var(--paper-muted)",
   borderRadius: "var(--radius-sm)",
 };
 
 export const settingsStatusWarn: CSSProperties = {
   padding: 10,
-  border: "1px solid rgba(255, 149, 0, 0.35)",
-  background: "rgba(255, 149, 0, 0.08)",
+  border: "1px solid var(--ink-soft)",
+  background: "var(--ink-soft)",
   borderRadius: "var(--radius-sm)",
 };
 
 export const settingsStatusDanger: CSSProperties = {
   padding: 10,
-  border: "1px solid rgba(255, 59, 48, 0.35)",
-  background: "rgba(255, 59, 48, 0.08)",
+  border: "1px solid var(--ink-danger)",
+  background: "var(--paper-muted)",
   borderRadius: "var(--radius-sm)",
 };
 

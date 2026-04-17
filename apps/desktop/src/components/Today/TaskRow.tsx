@@ -88,7 +88,7 @@ export default function TaskRow({ task }: TaskRowProps) {
         gap: 10,
         padding: "6px 4px",
         alignItems: "center",
-        background: deleteArmed ? "rgba(255, 59, 48, 0.08)" : "transparent",
+        background: deleteArmed ? "var(--ink-danger)" : "transparent",
         borderRadius: 6,
         transition: "background 100ms ease",
       }}

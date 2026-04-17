@@ -86,7 +86,7 @@ export default function AccountRow({ account, onRefresh }: AccountRowProps) {
         display: "flex",
         flexDirection: "column",
         padding: "8px 10px",
-        background: removeArmed ? "rgba(255, 59, 48, 0.06)" : "var(--surface)",
+        background: removeArmed ? "var(--ink-danger)" : "var(--surface)",
         border: "1px solid var(--hairline)",
         borderRadius: "var(--radius-lg)",
         marginBottom: 6,

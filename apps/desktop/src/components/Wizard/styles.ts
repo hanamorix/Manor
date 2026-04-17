@@ -5,15 +5,15 @@ import type { CSSProperties } from "react";
 
 export const wizardStatusCardGood: CSSProperties = {
   padding: 12,
-  border: "1px solid rgba(52, 199, 89, 0.3)",
-  background: "rgba(52, 199, 89, 0.08)",
+  border: "1px solid var(--ink-success)",
+  background: "var(--paper-muted)",
   borderRadius: "var(--radius-sm)",
 };
 
 export const wizardStatusCardWarn: CSSProperties = {
   padding: 12,
-  border: "1px solid rgba(255, 149, 0, 0.35)",
-  background: "rgba(255, 149, 0, 0.08)",
+  border: "1px solid var(--ink-soft)",
+  background: "var(--ink-soft)",
   borderRadius: "var(--radius-sm)",
 };
 

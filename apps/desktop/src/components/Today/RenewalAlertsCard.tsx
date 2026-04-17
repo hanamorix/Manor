@@ -15,7 +15,7 @@ export default function RenewalAlertsCard() {
     <section
       style={{
         background: "var(--surface)",
-        border: "1px solid rgba(255, 149, 0, 0.35)",
+        border: "1px solid var(--ink-soft)",
         borderRadius: "var(--radius-md)",
         boxShadow: "var(--shadow-sm)",
         padding: 12,
@@ -44,11 +44,11 @@ export default function RenewalAlertsCard() {
                 padding: 8,
                 borderRadius: "var(--radius-sm)",
                 background: isRed
-                  ? "rgba(255, 59, 48, 0.08)"
-                  : "rgba(255, 149, 0, 0.08)",
+                  ? "var(--ink-danger)"
+                  : "var(--ink-soft)",
                 border: isRed
-                  ? "1px solid rgba(255, 59, 48, 0.25)"
-                  : "1px solid rgba(255, 149, 0, 0.25)",
+                  ? "1px solid var(--ink-danger)"
+                  : "1px solid var(--ink-soft)",
               }}
             >
               <div style={{ fontSize: "var(--text-sm)", color: "var(--ink)" }}>
