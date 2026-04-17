@@ -1,6 +1,8 @@
 import { useState } from "react";
+import { LayoutGrid } from "lucide-react";
 import { useTimeBlocksStore } from "../../lib/timeblocks/state";
 import { createTimeBlock, dismissPatternNudge, promoteToPattern, type BlockKind } from "../../lib/timeblocks/ipc";
+import { SectionLabel } from "../../lib/ui";
 
 const cardStyle: React.CSSProperties = {
   background: "var(--paper)",
@@ -8,19 +10,6 @@ const cardStyle: React.CSSProperties = {
   borderRadius: "var(--radius-lg)",
   boxShadow: "var(--shadow-sm)",
   padding: "16px 18px",
-};
-
-const sectionHeader: React.CSSProperties = {
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "space-between",
-  margin: 0,
-  marginBottom: 8,
-  fontSize: 11,
-  textTransform: "uppercase",
-  letterSpacing: 0.6,
-  color: "rgba(0,0,0,0.55)",
-  fontWeight: 700,
 };
 
 const addBtn: React.CSSProperties = {
@@ -151,10 +140,12 @@ export default function TimeBlocksCard() {
 
   return (
     <section style={cardStyle} aria-label="Time Blocks">
-      <header style={sectionHeader}>
-        <span>Time Blocks</span>
-        <button style={addBtn} onClick={() => setAdding(true)}>+ Add</button>
-      </header>
+      <SectionLabel
+        icon={LayoutGrid}
+        action={<button style={addBtn} onClick={() => setAdding(true)}>+ Add</button>}
+      >
+        Time blocks
+      </SectionLabel>
 
       {blocks.length === 0 && !adding ? (
         <div style={emptyStyle}>No blocks today — time is yours.</div>

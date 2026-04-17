@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { Sparkles } from "lucide-react";
 import { useChoresStore } from "../../lib/chores/state";
 import { listAllChores, checkChoreFairness, type Chore } from "../../lib/chores/ipc";
-import { PageHeader } from "../../lib/ui";
+import { PageHeader, SectionLabel } from "../../lib/ui";
 import ChoreDrawer from "./ChoreDrawer";
 
 const pageStyle: React.CSSProperties = {
@@ -18,15 +18,6 @@ const sectionStyle: React.CSSProperties = {
   boxShadow: "var(--shadow-sm)",
   padding: "16px 18px",
   marginBottom: 12,
-};
-
-const headerStyle: React.CSSProperties = {
-  fontSize: 11,
-  fontWeight: 700,
-  textTransform: "uppercase",
-  letterSpacing: 0.6,
-  color: "var(--ink-soft)",
-  marginBottom: 10,
 };
 
 const rowStyle: React.CSSProperties = {
@@ -118,7 +109,7 @@ export default function ChoresView() {
       ))}
 
       <section style={sectionStyle}>
-        <h2 style={headerStyle}>Due soon</h2>
+        <SectionLabel icon={Sparkles}>Due soon</SectionLabel>
         {dueSoon.length === 0 ? (
           <p style={{ color: "rgba(20,20,30,0.5)", fontSize: 13, margin: 0 }}>Nothing in the next 7 days.</p>
         ) : (
@@ -138,7 +129,7 @@ export default function ChoresView() {
       </section>
 
       <section style={sectionStyle}>
-        <h2 style={headerStyle}>All chores</h2>
+        <SectionLabel icon={Sparkles}>All chores</SectionLabel>
         {allChores.length === 0 ? (
           <p style={{ color: "rgba(20,20,30,0.5)", fontSize: 13, margin: 0 }}>No chores yet — add your first one.</p>
         ) : (

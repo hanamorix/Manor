@@ -1,8 +1,10 @@
 import { useState } from "react";
+import { Calendar } from "lucide-react";
 import { useTodayStore } from "../../lib/today/state";
 import { useSettingsStore } from "../../lib/settings/state";
 import { listEventsToday } from "../../lib/today/ipc";
 import type { Event } from "../../lib/today/ipc";
+import { SectionLabel } from "../../lib/ui";
 import AddEventDrawer from "./AddEventDrawer";
 import EditEventDrawer from "./EditEventDrawer";
 
@@ -12,12 +14,6 @@ const cardStyle: React.CSSProperties = {
   borderRadius: "var(--radius-lg)",
   boxShadow: "var(--shadow-sm)",
   padding: "16px 18px",
-};
-
-const sectionHeader: React.CSSProperties = {
-  fontSize: 11, textTransform: "uppercase", letterSpacing: 0.6,
-  color: "var(--ink-soft)", fontWeight: 700,
-  margin: 0,
 };
 
 function formatTime(unixSeconds: number): string {
@@ -43,9 +39,9 @@ export default function EventsCard() {
 
   return (
     <div style={cardStyle}>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
-        <p style={sectionHeader}>Events</p>
-        {canAdd && (
+      <SectionLabel
+        icon={Calendar}
+        action={canAdd ? (
           <button
             onClick={() => setShowAdd(true)}
             style={{
@@ -62,8 +58,10 @@ export default function EventsCard() {
           >
             +
           </button>
-        )}
-      </div>
+        ) : undefined}
+      >
+        Events
+      </SectionLabel>
 
       {events.length === 0 ? (
         <p style={{ fontStyle: "italic", color: "var(--ink-faint)", margin: 0, fontSize: 13 }}>

@@ -1,5 +1,7 @@
+import { Sparkles } from "lucide-react";
 import { useChoresStore } from "../../lib/chores/state";
 import { completeChore, skipChore } from "../../lib/chores/ipc";
+import { SectionLabel } from "../../lib/ui";
 
 const cardStyle: React.CSSProperties = {
   background: "var(--paper)",
@@ -7,19 +9,6 @@ const cardStyle: React.CSSProperties = {
   borderRadius: "var(--radius-lg)",
   boxShadow: "var(--shadow-sm)",
   padding: "16px 18px",
-};
-
-const sectionHeader: React.CSSProperties = {
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "space-between",
-  margin: 0,
-  marginBottom: 8,
-  fontSize: 11,
-  textTransform: "uppercase",
-  letterSpacing: 0.6,
-  color: "rgba(0,0,0,0.55)",
-  fontWeight: 700,
 };
 
 const manageLink: React.CSSProperties = {
@@ -30,8 +19,6 @@ const manageLink: React.CSSProperties = {
   fontSize: 12,
   cursor: "pointer",
   padding: 0,
-  letterSpacing: 0,
-  textTransform: "none",
 };
 
 const rowStyle: React.CSSProperties = {
@@ -70,12 +57,16 @@ export default function ChoresCard() {
 
   return (
     <section style={cardStyle} aria-label="Chores">
-      <header style={sectionHeader}>
-        <span>Chores</span>
-        <button style={manageLink} onClick={() => {}}>
-          Manage →
-        </button>
-      </header>
+      <SectionLabel
+        icon={Sparkles}
+        action={
+          <button style={manageLink} onClick={() => {}}>
+            Manage →
+          </button>
+        }
+      >
+        Chores
+      </SectionLabel>
       {chores.length === 0 ? (
         <div style={emptyStyle}>All clear today 🧹</div>
       ) : (

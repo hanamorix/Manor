@@ -1,6 +1,8 @@
 import { useState, useRef, useEffect } from "react";
+import { ListTodo } from "lucide-react";
 import { useTodayStore } from "../../lib/today/state";
 import { addTask } from "../../lib/today/ipc";
+import { SectionLabel } from "../../lib/ui";
 import TaskRow from "./TaskRow";
 
 const cardStyle: React.CSSProperties = {
@@ -11,19 +13,6 @@ const cardStyle: React.CSSProperties = {
   padding: "16px 18px",
 };
 
-const sectionHeader: React.CSSProperties = {
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "space-between",
-  margin: 0,
-  marginBottom: 8,
-  fontSize: 11,
-  textTransform: "uppercase",
-  letterSpacing: 0.6,
-  color: "var(--ink-soft)",
-  fontWeight: 700,
-};
-
 const addLink: React.CSSProperties = {
   background: "transparent",
   border: "none",
@@ -32,8 +21,6 @@ const addLink: React.CSSProperties = {
   fontSize: 12,
   cursor: "pointer",
   padding: 0,
-  letterSpacing: 0,
-  textTransform: "none",
 };
 
 export default function TasksCard() {
@@ -65,12 +52,16 @@ export default function TasksCard() {
 
   return (
     <div style={cardStyle}>
-      <div style={sectionHeader}>
-        <span>{headerLabel}</span>
-        <button onClick={() => setAdding(true)} style={addLink}>
-          + Add
-        </button>
-      </div>
+      <SectionLabel
+        icon={ListTodo}
+        action={
+          <button onClick={() => setAdding(true)} style={addLink}>
+            + Add
+          </button>
+        }
+      >
+        {headerLabel}
+      </SectionLabel>
 
       {tasks.length === 0 && !adding && (
         <p style={{ color: "var(--ink-faint)", margin: 0, fontSize: 13 }}>

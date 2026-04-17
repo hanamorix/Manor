@@ -1,8 +1,8 @@
 import { useEffect, useState } from "react";
-import { LayoutGrid } from "lucide-react";
+import { LayoutGrid, RefreshCw } from "lucide-react";
 import { useTimeBlocksStore } from "../../lib/timeblocks/state";
 import { listBlocksForWeek, listRecurringBlocks, type TimeBlock, type BlockKind } from "../../lib/timeblocks/ipc";
-import { PageHeader } from "../../lib/ui";
+import { PageHeader, SectionLabel } from "../../lib/ui";
 import BlockDrawer from "./BlockDrawer";
 
 const pageStyle: React.CSSProperties = {
@@ -18,15 +18,6 @@ const sectionStyle: React.CSSProperties = {
   boxShadow: "var(--shadow-sm)",
   padding: "16px 18px",
   marginBottom: 12,
-};
-
-const headerStyle: React.CSSProperties = {
-  fontSize: 11,
-  fontWeight: 700,
-  textTransform: "uppercase",
-  letterSpacing: 0.6,
-  color: "var(--ink-soft)",
-  marginBottom: 10,
 };
 
 const dayHeading: React.CSSProperties = {
@@ -129,7 +120,7 @@ export default function TimeBlocksView() {
       <PageHeader icon={LayoutGrid} title="Time blocks" />
 
       <section style={sectionStyle}>
-        <h2 style={headerStyle}>This week</h2>
+        <SectionLabel icon={LayoutGrid}>This week</SectionLabel>
         {weekBlocks.length === 0 ? (
           <p style={{ color: "rgba(20,20,30,0.5)", fontSize: 13, margin: 0 }}>No blocks this week yet.</p>
         ) : (
@@ -157,7 +148,7 @@ export default function TimeBlocksView() {
       </section>
 
       <section style={sectionStyle}>
-        <h2 style={headerStyle}>Recurring patterns</h2>
+        <SectionLabel icon={RefreshCw}>Recurring patterns</SectionLabel>
         {recurring.length === 0 ? (
           <p style={{ color: "rgba(20,20,30,0.5)", fontSize: 13, margin: 0 }}>No patterns yet. Nell will suggest one when she notices a repetition.</p>
         ) : (
