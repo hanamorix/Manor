@@ -48,7 +48,7 @@ const InputPill = forwardRef<HTMLInputElement, InputPillProps>(
           style={{
             width: "100%",
             padding: "8px 14px",
-            borderRadius: "var(--radius-pill)",
+            borderRadius: "var(--radius-md)",
             border: "1px solid var(--hairline)",
             background: "var(--paper)",
             fontSize: 14,
@@ -56,27 +56,6 @@ const InputPill = forwardRef<HTMLInputElement, InputPillProps>(
             color: "var(--ink)",
             boxShadow: focused ? "var(--shadow-md)" : "var(--shadow-sm)",
             transition: "box-shadow 150ms ease",
-          }}
-        />
-        {/*
-          iMessage-style tail on the bottom-right of the pill, pointing
-          down toward the avatar. A 10×10 square rotated 45° with only the
-          right + bottom borders + half a fill — the top-left half tucks
-          under the pill, the bottom-right half pokes out as the tail tip.
-        */}
-        <span
-          aria-hidden="true"
-          style={{
-            position: "absolute",
-            bottom: -4,
-            right: 18,
-            width: 10,
-            height: 10,
-            background: "var(--paper)",
-            borderRight: "1px solid var(--hairline)",
-            borderBottom: "1px solid var(--hairline)",
-            transform: "rotate(45deg)",
-            pointerEvents: "none",
           }}
         />
       </div>
