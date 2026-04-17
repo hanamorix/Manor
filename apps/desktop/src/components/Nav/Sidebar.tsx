@@ -1,4 +1,5 @@
 import { useNavStore, type View } from "../../lib/nav";
+import { useSettingsStore } from "../../lib/settings/state";
 
 const SIDEBAR_WIDTH = 58;
 
@@ -15,7 +16,7 @@ const railStyle: React.CSSProperties = {
   height: "100vh",
 };
 
-const avatarStyle: React.CSSProperties = {
+const manorButtonStyle: React.CSSProperties = {
   width: 32,
   height: 32,
   borderRadius: "50%",
@@ -26,6 +27,10 @@ const avatarStyle: React.CSSProperties = {
   fontSize: 16,
   boxShadow: "0 2px 6px rgba(255,136,0,0.3)",
   marginBottom: 10,
+  border: "none",
+  cursor: "pointer",
+  padding: 0,
+  fontFamily: "inherit",
 };
 
 const iconStyle = (active: boolean): React.CSSProperties => ({
@@ -68,9 +73,18 @@ function NavIcon({ view, icon, title }: NavIconProps) {
 }
 
 export default function Sidebar() {
+  const setModalOpen = useSettingsStore((s) => s.setModalOpen);
   return (
     <nav style={railStyle} aria-label="Primary navigation">
-      <div style={avatarStyle} aria-hidden="true">🌸</div>
+      <button
+        type="button"
+        onClick={() => setModalOpen(true)}
+        title="Settings"
+        aria-label="Open settings"
+        style={manorButtonStyle}
+      >
+        🌸
+      </button>
       <NavIcon view="today" icon="🏠" title="Today" />
       <NavIcon view="chores" icon="🧹" title="Chores" />
       <NavIcon view="timeblocks" icon="⏱" title="Time Blocks" />

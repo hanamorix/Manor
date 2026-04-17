@@ -2,6 +2,7 @@ import { useEffect, useRef } from "react";
 import Avatar from "./Avatar";
 import BubbleLayer from "./BubbleLayer";
 import InputPill from "./InputPill";
+import UnreadBadge from "./UnreadBadge";
 import ConversationDrawer from "./ConversationDrawer";
 import { useAssistantStore } from "../../lib/assistant/state";
 import { sendMessage, getUnreadCount, listMessages } from "../../lib/assistant/ipc";
@@ -237,7 +238,6 @@ export default function Assistant() {
   // avatar so it doesn't need to trigger minimize.
   const overlayCount = useOverlayStore((s) => s.count);
   const settingsOpen = useSettingsStore((s) => s.modalOpen);
-  const setSettingsOpen = useSettingsStore((s) => s.setModalOpen);
   const minimized = overlayCount > 0 || settingsOpen;
 
   return (
@@ -258,9 +258,7 @@ export default function Assistant() {
           transition: "bottom 200ms ease-out, right 200ms ease-out",
         }}
       >
-        {!minimized && (
-          <ChatButton onClick={() => setDrawerOpen(true)} />
-        )}
+        {!minimized && <UnreadBadgeWithAnchor />}
         {!minimized && transientBubbles.length === 0 && (
           <InputPill
             ref={pillRef}
@@ -271,61 +269,19 @@ export default function Assistant() {
         )}
         <Avatar
           height={minimized ? 40 : 96}
-          onClick={() => setSettingsOpen(true)}
+          onClick={() => setDrawerOpen(true)}
         />
       </div>
     </>
   );
 }
 
-function ChatButton({ onClick }: { onClick: () => void }) {
-  const unread = useAssistantStore((s) => s.unreadCount);
+function UnreadBadgeWithAnchor() {
   return (
-    <button
-      onClick={onClick}
-      title="Open conversation"
-      aria-label="Open conversation"
-      style={{
-        position: "relative",
-        width: 36,
-        height: 36,
-        borderRadius: "50%",
-        background: "var(--paper)",
-        border: "1px solid var(--hairline)",
-        boxShadow: "var(--shadow-sm)",
-        cursor: "pointer",
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        fontSize: 16,
-        padding: 0,
-        fontFamily: "inherit",
-      }}
-    >
-      <span aria-hidden="true">💬</span>
-      {unread > 0 && (
-        <div
-          style={{
-            position: "absolute",
-            top: -4,
-            right: -4,
-            minWidth: 18,
-            height: 18,
-            padding: "0 5px",
-            borderRadius: "var(--radius-pill)",
-            background: "var(--imessage-red)",
-            color: "white",
-            fontSize: 10,
-            fontWeight: 700,
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            boxShadow: "var(--shadow-sm)",
-          }}
-        >
-          {unread > 9 ? "9+" : unread}
-        </div>
-      )}
-    </button>
+    <div style={{ position: "relative" }}>
+      <div style={{ position: "absolute", top: -6, right: -6 }}>
+        <UnreadBadge />
+      </div>
+    </div>
   );
 }
