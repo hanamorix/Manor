@@ -318,7 +318,7 @@ function PickForm({
       </label>
       <input
         type="text"
-        placeholder="🔍 Type to filter…"
+        placeholder="Type to filter institutions…"
         value={search}
         onChange={(e) => onSearch(e.target.value)}
         style={{

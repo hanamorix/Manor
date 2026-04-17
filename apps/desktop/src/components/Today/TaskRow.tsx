@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { Pencil, Trash2 } from "lucide-react";
+import { Pencil, Trash2, Check } from "lucide-react";
 import type { Task } from "../../lib/today/ipc";
 import {
   completeTask,
@@ -115,7 +115,7 @@ export default function TaskRow({ task }: TaskRowProps) {
           lineHeight: 1,
         }}
       >
-        {completing ? "✓" : ""}
+        {completing && <Check size={12} strokeWidth={2.2} />}
       </button>
 
       {editing ? (
