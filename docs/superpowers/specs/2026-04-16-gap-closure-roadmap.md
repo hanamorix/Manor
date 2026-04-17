@@ -1,7 +1,7 @@
 # Gap Closure Roadmap
 
-- **Date**: 2026-04-16
-- **Status**: Draft — pending Hana approval
+- **Date**: 2026-04-16 (updated 2026-04-17)
+- **Status**: Landmark 1 ✅ SHIPPED. Landmark 2 next. Landmark 3 deferred.
 - **Authors**: Hana (product), Nell (architect)
 
 ## Purpose
@@ -19,26 +19,26 @@ Life Assistant ("Manor") has shipped v0.1 → v0.3b end-to-end but skipped found
 
 ## Gap inventory (derived from §4 gap scan 2026-04-16)
 
-| # | Gap | Source | Needs |
+| # | Gap | Source | Status |
 |---|---|---|---|
-| G1 | `person` + `household` tables | design §4.2 | spec + plan |
-| G2 | `attachment` table + file storage layer | design §4.2 | spec + plan |
-| G3 | `tag` + `tag_link` tables | design §4.2 | spec + plan |
-| G4 | `note` table | design §4.2 | spec + plan |
-| G5 | `setting(key, value)` table | design §4.2 | spec + plan |
-| G6 | `remote_call_log` table | design §4.2, §4.6 | spec + plan (paired with G12) |
-| G7 | `embedding` table + `sqlite-vec` | design §4.2, §4.8 | spec + plan |
-| G8 | First-launch wizard | design §6.1 | spec + plan |
-| G9 | Weather strip in Today header | design §6.2, §11.3 | plan only (small) |
-| G10 | Trash view + panic button + auto-empty | design §4.7 | spec + plan |
-| G11 | Snapshot backup / `.lifebackup` archives | design §8.1 | spec + plan |
-| G12 | Remote LLM support (keys, tier routing, redaction, budget caps) | design §5.1–5.7 | spec + plan |
-| G13 | Settings sections 1, 2, 4, 5 (only §3 Calendar built) | design §6.4 | plan only (derived from G1–G12) |
-| G14 | v0.3 Ledger design drift re: contracts table split | self-review | housekeeping commit |
-| G15 | Phase 3c plan checkboxes unchecked despite code being live | self-review | housekeeping commit |
-| G16 | v0.4 Hearth | roadmap gap | brainstorm → spec → plan |
-| G17 | v0.5 Bones | roadmap gap | brainstorm → spec → plan |
-| G18 | v1.0 Companion (iOS + sync) | roadmap gap | brainstorm → spec → plan |
+| G1 | `person` + `household` tables | design §4.2 | ✅ Phase A |
+| G2 | `attachment` table + file storage layer | design §4.2 | ✅ Phase A |
+| G3 | `tag` + `tag_link` tables | design §4.2 | ✅ Phase A |
+| G4 | `note` table | design §4.2 | ✅ Phase A |
+| G5 | `setting(key, value)` table | design §4.2 | ✅ Phase A |
+| G6 | `remote_call_log` table | design §4.2, §4.6 | ⏳ Landmark 2 |
+| G7 | `embedding` table | design §4.2, §4.8 | ✅ Phase C (pure-Rust cosine; sqlite-vec deferred — DAL stable for later swap) |
+| G8 | First-launch wizard | design §6.1 | ✅ Phase D |
+| G9 | Weather strip in Today header | design §6.2, §11.3 | ✅ Phase D |
+| G10 | Trash view + panic button + auto-empty | design §4.7 | ✅ Phase B |
+| G11 | Snapshot backup / `.lifebackup` archives | design §8.1 | ✅ Phase B |
+| G12 | Remote LLM support (keys, tier routing, redaction, budget caps) | design §5.1–5.7 | ⏳ Landmark 2 |
+| G13 | Settings sections 1, 2, 4, 5 | design §6.4 | ✅ Phase E |
+| G14 | v0.3 Ledger design drift re: contracts table split | self-review | ✅ Phase E Task 1 |
+| G15 | Phase 3c plan checkboxes unchecked despite code being live | self-review | ✅ Phase E Task 1 |
+| G16 | v0.4 Hearth | roadmap gap | 🔮 Landmark 3 (not sequenced) |
+| G17 | v0.5 Bones | roadmap gap | 🔮 Landmark 3 (not sequenced) |
+| G18 | v1.0 Companion (iOS + sync) | roadmap gap | 🔮 Landmark 3 (not sequenced) |
 
 ---
 
@@ -46,7 +46,9 @@ Life Assistant ("Manor") has shipped v0.1 → v0.3b end-to-end but skipped found
 
 Three landmarks. Each is a single spec + implementation plan that ships a testable, reviewable chunk.
 
-### Landmark 1 — v0.1 Completion (bundles G1–G11, G13, G14, G15)
+### Landmark 1 — v0.1 Completion (bundles G1–G11, G13, G14, G15) — ✅ **SHIPPED 2026-04-17**
+
+**40 commits, +30 tests, 5 phases.** See `specs/2026-04-16-v0.1-completion-design.md` + 5 phase plans.
 
 A single design spec that says "finish what v0.1 already promised." Subsystems chunked into **five phases inside the plan**:
 
@@ -74,7 +76,7 @@ A single design spec that says "finish what v0.1 already promised." Subsystems c
 
 **Defers**: G6 `remote_call_log` and G12 Remote LLM — they only matter once a remote key can be added, which is Landmark 2.
 
-### Landmark 2 — Remote LLM support (bundles G6, G12)
+### Landmark 2 — Remote LLM support (bundles G6, G12) — ⏳ **NEXT**
 
 Own design spec. Cross-cuts skills and UX, carries the most privacy risk (redaction pipeline is tricky, budget caps have edge cases, keys-in-keychain UX needs care). Landing this while people are using v0.1 on local-only is the safe moment.
 
@@ -95,11 +97,12 @@ Each needs its own brainstorm to flesh out what's only one paragraph in the over
 
 ## What gets written next
 
-1. `specs/2026-04-16-v0.1-completion-design.md` — the big one (Landmark 1). Drafts all subsystems at design-spec granularity.
-2. `plans/2026-04-xx-v0.1-completion.md` — from the approved spec, tasks grouped by phase A→E.
-3. Execute plan via subagent-driven-development (or executing-plans for inline).
-4. When Landmark 1 ships, repeat for Landmark 2.
-5. Landmark 3 after that — brainstorming session per release.
+1. ~~`specs/2026-04-16-v0.1-completion-design.md` — the big one (Landmark 1).~~ ✅ shipped.
+2. ~~5 phase plans (A–E), executed via subagent-driven-development.~~ ✅ all shipped.
+3. **Landmark 2 design spec** — `specs/2026-04-xx-remote-llm-design.md`. Covers: `remote_call_log` schema, provider abstraction, keychain key UX, tier routing, redaction pipeline, budget caps, Settings/AI tab upgrade.
+4. **Landmark 2 plan** — probably 8–10 tasks (redaction is the risky one; worth property-test rigor).
+5. Execute. When Landmark 2 ships, Manor supports BYO remote keys with proper privacy guardrails.
+6. Landmark 3 (v0.4 Hearth onward) — one brainstorm per release, each its own spec + plan cycle. Not sequenced here.
 
 ## Non-goals for this roadmap
 
@@ -109,4 +112,4 @@ Each needs its own brainstorm to flesh out what's only one paragraph in the over
 
 ---
 
-*End of roadmap. Next step: Landmark 1 design spec.*
+*End of roadmap. Next step: Landmark 2 design spec (Remote LLM support).*
