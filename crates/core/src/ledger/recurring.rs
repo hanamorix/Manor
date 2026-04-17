@@ -1,7 +1,7 @@
 //! RecurringPayment DAL — templates that auto-insert transactions monthly.
 
 use anyhow::Result;
-use chrono::Utc;
+use chrono::{DateTime, Datelike, TimeZone, Utc};
 use rusqlite::{params, Connection, Row};
 use serde::{Deserialize, Serialize};
 
@@ -132,6 +132,76 @@ fn get(conn: &Connection, id: i64) -> Result<RecurringPayment> {
     Ok(stmt.query_row([id], RecurringPayment::from_row)?)
 }
 
+/// Run auto-insert for all active recurring payments. For each payment whose
+/// `day_of_month <= today.day` and which has no transaction in the current
+/// calendar month yet, insert one. All-or-nothing transaction.
+///
+/// Returns the number of transactions inserted.
+pub fn auto_insert_due(conn: &mut Connection, now: DateTime<Utc>) -> Result<usize> {
+    let tx = conn.transaction()?;
+    let year = now.year();
+    let month = now.month();
+    let today_dom = now.day() as i64;
+    let month_start = crate::ledger::transaction::month_start_ts(year, month);
+    let month_end = crate::ledger::transaction::month_end_ts(year, month);
+    let today_midnight = Utc
+        .with_ymd_and_hms(year, month, now.day(), 0, 0, 0)
+        .single()
+        .ok_or_else(|| anyhow::anyhow!("invalid ymd"))?
+        .timestamp();
+
+    let due: Vec<(i64, String, i64, String, Option<i64>)> = {
+        let mut stmt = tx.prepare(
+            "SELECT r.id, r.description, r.amount_pence, r.currency, r.category_id
+             FROM recurring_payment r
+             WHERE r.deleted_at IS NULL
+               AND r.active = 1
+               AND r.day_of_month <= ?1
+               AND NOT EXISTS (
+                   SELECT 1 FROM ledger_transaction t
+                   WHERE t.recurring_payment_id = r.id
+                     AND t.deleted_at IS NULL
+                     AND t.date >= ?2 AND t.date < ?3
+               )",
+        )?;
+        let rows = stmt
+            .query_map(params![today_dom, month_start, month_end], |row| {
+                Ok((
+                    row.get(0)?,
+                    row.get(1)?,
+                    row.get(2)?,
+                    row.get(3)?,
+                    row.get(4)?,
+                ))
+            })?
+            .collect::<rusqlite::Result<Vec<_>>>()?;
+        rows
+    };
+
+    let inserted = due.len();
+    for (id, description, amount_pence, currency, category_id) in due {
+        // Debit: store as negative pence.
+        let signed = -amount_pence.abs();
+        tx.execute(
+            "INSERT INTO ledger_transaction
+             (bank_account_id, amount_pence, currency, description, merchant,
+              category_id, date, source, note, recurring_payment_id, created_at)
+             VALUES (NULL, ?1, ?2, ?3, NULL, ?4, ?5, 'recurring', NULL, ?6, ?7)",
+            params![
+                signed,
+                currency,
+                description,
+                category_id,
+                today_midnight,
+                id,
+                Utc::now().timestamp()
+            ],
+        )?;
+    }
+    tx.commit()?;
+    Ok(inserted)
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -189,5 +259,61 @@ mod tests {
         let r = insert(&conn, "Gone", 100, "GBP", None, 1, None).unwrap();
         delete(&conn, r.id).unwrap();
         assert!(list(&conn).unwrap().is_empty());
+    }
+
+    use crate::ledger::transaction;
+
+    fn utc_day(year: i32, month: u32, day: u32) -> DateTime<Utc> {
+        Utc.with_ymd_and_hms(year, month, day, 12, 0, 0).unwrap()
+    }
+
+    #[test]
+    fn auto_insert_inserts_when_day_reached_and_no_existing() {
+        let (_d, mut conn) = fresh_conn();
+        insert(&conn, "Rent", 100000, "GBP", None, 1, None).unwrap();
+        let count = auto_insert_due(&mut conn, utc_day(2026, 4, 16)).unwrap();
+        assert_eq!(count, 1);
+        let txns = transaction::list_by_month(&conn, 2026, 4).unwrap();
+        assert_eq!(txns.len(), 1);
+        assert_eq!(txns[0].source, "recurring");
+        assert_eq!(txns[0].amount_pence, -100000);
+        assert!(txns[0].recurring_payment_id.is_some());
+    }
+
+    #[test]
+    fn auto_insert_skips_when_day_not_reached() {
+        let (_d, mut conn) = fresh_conn();
+        insert(&conn, "Rent", 100000, "GBP", None, 20, None).unwrap();
+        let count = auto_insert_due(&mut conn, utc_day(2026, 4, 10)).unwrap();
+        assert_eq!(count, 0);
+    }
+
+    #[test]
+    fn auto_insert_is_idempotent_within_month() {
+        let (_d, mut conn) = fresh_conn();
+        insert(&conn, "Rent", 100000, "GBP", None, 1, None).unwrap();
+        auto_insert_due(&mut conn, utc_day(2026, 4, 16)).unwrap();
+        let count = auto_insert_due(&mut conn, utc_day(2026, 4, 20)).unwrap();
+        assert_eq!(count, 0);
+        let txns = transaction::list_by_month(&conn, 2026, 4).unwrap();
+        assert_eq!(txns.len(), 1);
+    }
+
+    #[test]
+    fn auto_insert_re_runs_next_month() {
+        let (_d, mut conn) = fresh_conn();
+        insert(&conn, "Rent", 100000, "GBP", None, 1, None).unwrap();
+        auto_insert_due(&mut conn, utc_day(2026, 4, 16)).unwrap();
+        let count = auto_insert_due(&mut conn, utc_day(2026, 5, 2)).unwrap();
+        assert_eq!(count, 1);
+    }
+
+    #[test]
+    fn auto_insert_skips_inactive() {
+        let (_d, mut conn) = fresh_conn();
+        let r = insert(&conn, "Paused", 500, "GBP", None, 1, None).unwrap();
+        update(&conn, r.id, "Paused", 500, None, 1, false, None).unwrap();
+        let count = auto_insert_due(&mut conn, utc_day(2026, 4, 16)).unwrap();
+        assert_eq!(count, 0);
     }
 }
