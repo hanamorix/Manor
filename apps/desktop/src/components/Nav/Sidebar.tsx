@@ -61,10 +61,17 @@ function NavIcon({ view, icon: Icon, title }: NavIconProps) {
   return (
     <div
       role="button"
+      tabIndex={0}
       aria-label={title}
       aria-current={active ? "page" : undefined}
       title={title}
       onClick={() => setView(view)}
+      onKeyDown={(e) => {
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault();
+          setView(view);
+        }
+      }}
       style={iconWrapStyle}
     >
       {active && (

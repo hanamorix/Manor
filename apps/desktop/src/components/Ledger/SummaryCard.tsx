@@ -33,6 +33,12 @@ export default function SummaryCard({ summary, year, month, totalBudget, onBudge
   return (
     <div
       onClick={onBudgetPress}
+      onKeyDown={(e) => {
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault();
+          onBudgetPress();
+        }
+      }}
       role="button"
       tabIndex={0}
       style={{
