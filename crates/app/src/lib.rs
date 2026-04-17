@@ -118,6 +118,28 @@ pub fn register(builder: Builder<Wry>) -> Builder<Wry> {
                 }
             });
 
+            // Ledger: auto-insert due recurring payments + log renewal alerts.
+            let db_arc_ledger = app.state::<assistant::commands::Db>().inner().clone_arc();
+            tauri::async_runtime::spawn_blocking(move || {
+                let mut conn = db_arc_ledger.lock().unwrap();
+                let now = chrono::Utc::now();
+
+                match manor_core::ledger::recurring::auto_insert_due(&mut conn, now) {
+                    Ok(n) if n > 0 => {
+                        tracing::info!("ledger: auto-inserted {n} recurring transaction(s)")
+                    }
+                    Ok(_) => {}
+                    Err(e) => tracing::warn!("ledger: auto_insert_due failed: {e}"),
+                }
+                match manor_core::ledger::contract::check_renewals(&conn, now.timestamp()) {
+                    Ok(alerts) if !alerts.is_empty() => {
+                        tracing::info!("ledger: {} contract renewal alert(s) active", alerts.len());
+                    }
+                    Ok(_) => {}
+                    Err(e) => tracing::warn!("ledger: check_renewals failed: {e}"),
+                }
+            });
+
             // Embeddings: one batch of stale-row indexing on app start.
             // Runs async so it doesn't block setup; silently no-ops if Ollama is down.
             let db_arc_embed = app.state::<assistant::commands::Db>().inner().clone_arc();
@@ -188,6 +210,18 @@ pub fn register(builder: Builder<Wry>) -> Builder<Wry> {
             ledger::commands::ledger_upsert_budget,
             ledger::commands::ledger_delete_budget,
             ledger::commands::ledger_monthly_summary,
+            ledger::commands::ledger_list_recurring,
+            ledger::commands::ledger_add_recurring,
+            ledger::commands::ledger_update_recurring,
+            ledger::commands::ledger_delete_recurring,
+            ledger::commands::ledger_list_contracts,
+            ledger::commands::ledger_add_contract,
+            ledger::commands::ledger_update_contract,
+            ledger::commands::ledger_delete_contract,
+            ledger::commands::ledger_get_renewal_alerts,
+            ledger::commands::ledger_preview_csv,
+            ledger::commands::ledger_import_csv,
+            ledger::commands::ledger_ai_month_review,
             foundation::commands::setting_get,
             foundation::commands::setting_set,
             foundation::commands::setting_delete,
