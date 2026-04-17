@@ -72,8 +72,8 @@ export default function ProposalBanner() {
             display: "flex",
             alignItems: "center",
             gap: 10,
-            background: "linear-gradient(180deg, #FFF3D6, #FFE4A8)",
-            border: "1px solid #FFC15C",
+            background: "var(--hairline)",
+            border: "1px solid var(--hairline-strong)",
             borderRadius: "var(--radius-md)",
             padding: "10px 14px",
             animation: "bannerIn 200ms ease-out",
@@ -81,8 +81,8 @@ export default function ProposalBanner() {
         >
           <span
             style={{
-              background: "#FF8800",
-              color: "white",
+              background: "var(--ink)",
+              color: "var(--action-fg)",
               fontSize: 10,
               fontWeight: 700,
               padding: "2px 8px",
@@ -94,13 +94,13 @@ export default function ProposalBanner() {
             PROPOSAL
           </span>
           <div style={{ flex: 1, minWidth: 0 }}>
-            <div style={{ fontWeight: 700, fontSize: 13, color: "#3a2818" }}>
+            <div style={{ fontWeight: 700, fontSize: 13, color: "var(--ink)" }}>
               {summarise(p)}
             </div>
             <div
               style={{
                 fontSize: 11,
-                color: "rgba(58, 40, 24, 0.7)",
+                color: "var(--ink-soft)",
                 whiteSpace: "nowrap",
                 overflow: "hidden",
                 textOverflow: "ellipsis",
@@ -118,8 +118,8 @@ export default function ProposalBanner() {
               fontSize: 12,
               fontWeight: 700,
               border: "none",
-              background: "var(--imessage-green)",
-              color: "white",
+              background: "var(--ink)",
+              color: "var(--action-fg)",
               cursor: "pointer",
             }}
           >
@@ -134,8 +134,8 @@ export default function ProposalBanner() {
               fontSize: 12,
               fontWeight: 700,
               border: "none",
-              background: "rgba(255,255,255,0.7)",
-              color: "rgba(0,0,0,0.6)",
+              background: "var(--surface)",
+              color: "var(--ink-soft)",
               cursor: "pointer",
             }}
           >

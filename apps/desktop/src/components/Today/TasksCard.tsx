@@ -20,14 +20,14 @@ const sectionHeader: React.CSSProperties = {
   fontSize: 11,
   textTransform: "uppercase",
   letterSpacing: 0.6,
-  color: "rgba(0,0,0,0.55)",
+  color: "var(--ink-soft)",
   fontWeight: 700,
 };
 
 const addLink: React.CSSProperties = {
   background: "transparent",
   border: "none",
-  color: "var(--imessage-blue)",
+  color: "var(--ink)",
   fontWeight: 700,
   fontSize: 12,
   cursor: "pointer",
@@ -73,7 +73,7 @@ export default function TasksCard() {
       </div>
 
       {tasks.length === 0 && !adding && (
-        <p style={{ color: "rgba(0,0,0,0.5)", margin: 0, fontSize: 13 }}>
+        <p style={{ color: "var(--ink-faint)", margin: 0, fontSize: 13 }}>
           Nothing on your plate. Type <code>/task</code> or click + Add to add one.
         </p>
       )}

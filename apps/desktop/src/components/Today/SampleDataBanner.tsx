@@ -56,11 +56,11 @@ export default function SampleDataBanner() {
 
   return (
     <div style={{
-      padding: 10, borderRadius: 8, background: "#1a1a10",
-      border: "1px solid #332", display: "flex", justifyContent: "space-between",
+      padding: 10, borderRadius: 8, background: "var(--surface)",
+      border: "1px solid var(--hairline-strong)", display: "flex", justifyContent: "space-between",
       alignItems: "center", fontSize: 12,
     }}>
-      <span style={{ color: "#d90" }}>
+      <span style={{ color: "var(--ink)" }}>
         {count} sample item{count === 1 ? "" : "s"} still here from setup.
       </span>
       <button onClick={deleteAll} disabled={deleting} style={{ fontSize: 12 }}>

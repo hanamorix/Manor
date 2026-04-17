@@ -50,9 +50,9 @@ export default function HeaderCard() {
     <div style={cardStyle}>
       <div>
         <h1 style={{ margin: 0, fontSize: 22, fontWeight: 700 }}>Today</h1>
-        <div style={{ fontSize: 13, color: "rgba(0,0,0,0.55)" }}>{dateLabel}</div>
+        <div style={{ fontSize: 13, color: "var(--ink-soft)" }}>{dateLabel}</div>
         {weather && (
-          <div style={{ fontSize: 12, color: "rgba(0,0,0,0.55)", marginTop: 2 }}>
+          <div style={{ fontSize: 12, color: "var(--ink-soft)", marginTop: 2 }}>
             {weather.emoji} {weather.temp_c}°C, {weather.condition}
             {weather.location && ` — ${weather.location}`}
           </div>
@@ -63,7 +63,7 @@ export default function HeaderCard() {
           style={{
             fontFamily: "ui-monospace, SFMono-Regular, Menlo, monospace",
             fontSize: 12,
-            color: "rgba(0,0,0,0.55)",
+            color: "var(--ink-soft)",
           }}
           aria-label="current local time"
         >

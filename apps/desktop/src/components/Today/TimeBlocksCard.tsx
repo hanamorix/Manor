@@ -26,7 +26,7 @@ const sectionHeader: React.CSSProperties = {
 const addBtn: React.CSSProperties = {
   background: "transparent",
   border: "none",
-  color: "var(--imessage-blue)",
+  color: "var(--ink)",
   fontWeight: 700,
   fontSize: 12,
   cursor: "pointer",
@@ -79,8 +79,8 @@ const nudgeStyle: React.CSSProperties = {
 };
 
 const nudgeBtn: React.CSSProperties = {
-  background: "var(--imessage-blue)",
-  color: "white",
+  background: "var(--ink)",
+  color: "var(--action-fg)",
   border: "none",
   borderRadius: 999,
   padding: "4px 10px",

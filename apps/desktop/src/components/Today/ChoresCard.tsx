@@ -25,7 +25,7 @@ const sectionHeader: React.CSSProperties = {
 const manageLink: React.CSSProperties = {
   background: "transparent",
   border: "none",
-  color: "var(--imessage-blue)",
+  color: "var(--ink)",
   fontWeight: 600,
   fontSize: 12,
   cursor: "pointer",

@@ -14,7 +14,7 @@ export default function RenewalAlertsCard() {
   return (
     <section
       style={{
-        background: "#fff",
+        background: "var(--surface)",
         border: "1px solid rgba(255, 149, 0, 0.35)",
         borderRadius: "var(--radius-md)",
         boxShadow: "var(--shadow-sm)",
@@ -66,8 +66,8 @@ export default function RenewalAlertsCard() {
                   borderRadius: "var(--radius-pill)",
                   fontSize: 11,
                   fontWeight: 600,
-                  background: isRed ? "var(--imessage-red)" : "#b36b00",
-                  color: "#fff",
+                  background: isRed ? "var(--ink)" : "#b36b00",
+                  color: "var(--action-fg)",
                 }}
               >
                 {a.days_remaining}d

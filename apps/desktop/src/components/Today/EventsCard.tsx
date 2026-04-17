@@ -16,7 +16,7 @@ const cardStyle: React.CSSProperties = {
 
 const sectionHeader: React.CSSProperties = {
   fontSize: 11, textTransform: "uppercase", letterSpacing: 0.6,
-  color: "rgba(0,0,0,0.55)", fontWeight: 700,
+  color: "var(--ink-soft)", fontWeight: 700,
   margin: 0,
 };
 
@@ -54,7 +54,7 @@ export default function EventsCard() {
               fontSize: 18,
               lineHeight: 1,
               cursor: "pointer",
-              color: "var(--imessage-blue)",
+              color: "var(--ink)",
               padding: "0 2px",
               fontWeight: 300,
             }}
@@ -66,7 +66,7 @@ export default function EventsCard() {
       </div>
 
       {events.length === 0 ? (
-        <p style={{ fontStyle: "italic", color: "rgba(0,0,0,0.5)", margin: 0, fontSize: 13 }}>
+        <p style={{ fontStyle: "italic", color: "var(--ink-faint)", margin: 0, fontSize: 13 }}>
           No events today.
         </p>
       ) : (
@@ -77,7 +77,7 @@ export default function EventsCard() {
               onClick={() => setEditingEvent(e)}
               style={{ display: "flex", gap: 10, padding: "4px 0", fontSize: 13, cursor: "pointer" }}
             >
-              <span style={{ fontWeight: 700, minWidth: 48, color: "var(--imessage-blue)" }}>
+              <span style={{ fontWeight: 700, minWidth: 48, color: "var(--ink)", fontFamily: "var(--font-mono)" }}>
                 {formatTime(e.start_at)}
               </span>
               <span>{e.title}</span>
