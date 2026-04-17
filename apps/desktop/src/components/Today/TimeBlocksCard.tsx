@@ -1,5 +1,6 @@
 import { useState } from "react";
-import { LayoutGrid } from "lucide-react";
+import { LayoutGrid, Target, Inbox, ShoppingCart, BellOff } from "lucide-react";
+import type { LucideIcon } from "lucide-react";
 import { useTimeBlocksStore } from "../../lib/timeblocks/state";
 import { createTimeBlock, dismissPatternNudge, promoteToPattern, type BlockKind } from "../../lib/timeblocks/ipc";
 import { SectionLabel } from "../../lib/ui";
@@ -22,11 +23,11 @@ const addBtn: React.CSSProperties = {
   padding: 0,
 };
 
-const KIND_COLOR: Record<BlockKind, string> = {
-  focus: "#007aff",
-  errands: "#FFC15C",
-  admin: "#9b59b6",
-  dnd: "#ff3b30",
+const KIND_ICON: Record<BlockKind, LucideIcon> = {
+  focus: Target,
+  errands: ShoppingCart,
+  admin: Inbox,
+  dnd: BellOff,
 };
 
 const KIND_LABEL: Record<BlockKind, string> = {
@@ -36,18 +37,15 @@ const KIND_LABEL: Record<BlockKind, string> = {
   dnd: "DND",
 };
 
-const pillStyle = (kind: BlockKind): React.CSSProperties => ({
+const pillStyle: React.CSSProperties = {
   display: "flex",
   alignItems: "center",
-  gap: 10,
-  padding: "8px 12px",
-  borderRadius: 8,
-  borderLeft: `3px solid ${KIND_COLOR[kind]}`,
-  background: "rgba(20,20,30,0.03)",
+  gap: 8,
+  padding: "6px 0",
+  borderBottom: "1px solid var(--hairline)",
   fontSize: 13,
   color: "var(--ink)",
-  marginBottom: 6,
-});
+};
 
 const emptyStyle: React.CSSProperties = {
   padding: "10px 4px",
@@ -151,17 +149,18 @@ export default function TimeBlocksCard() {
         <div style={emptyStyle}>No blocks today — time is yours.</div>
       ) : (
         <div>
-          {blocks.map((b) => (
-            <div key={b.id} style={pillStyle(b.kind as BlockKind)}>
-              <strong style={{ color: KIND_COLOR[b.kind as BlockKind], fontWeight: 700, fontSize: 11, textTransform: "uppercase", letterSpacing: 0.5 }}>
-                {KIND_LABEL[b.kind as BlockKind]}
-              </strong>
-              <span style={{ flex: 1 }}>{b.title}</span>
-              <span style={{ color: "rgba(20,20,30,0.5)", fontSize: 12 }}>
-                {b.start_time}–{b.end_time}
-              </span>
-            </div>
-          ))}
+          {blocks.map((b) => {
+            const Icon = KIND_ICON[b.kind as BlockKind] ?? Target;
+            return (
+              <div key={b.id} style={pillStyle}>
+                <Icon size={14} strokeWidth={1.8} color="var(--ink-soft)" aria-label={KIND_LABEL[b.kind as BlockKind]} />
+                <span style={{ flex: 1, fontSize: "var(--text-sm)" }}>{b.title}</span>
+                <time className="num" style={{ fontSize: "var(--text-xs)", color: "var(--ink-soft)" }}>
+                  {b.start_time}–{b.end_time}
+                </time>
+              </div>
+            );
+          })}
         </div>
       )}
 
