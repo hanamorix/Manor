@@ -254,7 +254,7 @@ export default function AddTransactionForm({ categories, onClose, onSaved }: Pro
                 border: "1px solid rgba(255,59,48,0.3)",
                 borderRadius: 10,
                 fontSize: 13,
-                color: "var(--imessage-red)",
+                color: "var(--ink)",
               }}
             >
               {error}
@@ -275,7 +275,7 @@ export default function AddTransactionForm({ categories, onClose, onSaved }: Pro
             style={{
               width: "100%",
               padding: "12px 0",
-              background: "var(--imessage-blue)",
+              background: "var(--action-bg)",
               color: "white",
               border: "none",
               borderRadius: 12,
