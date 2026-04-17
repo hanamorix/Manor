@@ -2,6 +2,7 @@ import { useState } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import { settingSet } from "../../lib/foundation/ipc";
 import { useWizardStore } from "../../lib/wizard/state";
+import { wizardPrimaryButton, wizardSecondaryButton } from "./styles";
 
 async function seedSampleData(): Promise<void> {
   // Create "sample" tag (idempotent — returns existing if already present).
@@ -61,32 +62,43 @@ export default function StepSample() {
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
       <div>
-        <h2 style={{ margin: "0 0 8px 0" }}>Explore with sample data</h2>
-        <p style={{ fontSize: 13, color: "#aaa", lineHeight: 1.5 }}>
+        <h2 style={{ margin: "0 0 8px 0", fontSize: 16, color: "var(--ink)" }}>
+          Explore with sample data
+        </h2>
+        <p style={{ fontSize: 13, color: "rgba(0,0,0,0.65)", lineHeight: 1.5, margin: 0 }}>
           Want a sample task and chore so you can see how Manor feels? They'll be
-          tagged <code>sample</code> — a banner on Today lets you delete them whenever.
+          tagged{" "}
+          <code
+            style={{
+              fontFamily: "ui-monospace, SFMono-Regular, Menlo, monospace",
+              fontSize: 11,
+              background: "var(--paper-muted)",
+              padding: "1px 4px",
+              borderRadius: 3,
+            }}
+          >
+            sample
+          </code>{" "}
+          — a banner on Today lets you delete them whenever.
         </p>
       </div>
 
       {message && (
-        <div style={{ fontSize: 12, color: message.includes("Failed") ? "#f66" : "#6f6" }}>
+        <div
+          style={{
+            fontSize: 12,
+            color: message.includes("Failed") ? "var(--imessage-red)" : "var(--imessage-green)",
+          }}
+        >
           {message}
         </div>
       )}
 
       <div style={{ display: "flex", gap: 8, justifyContent: "flex-end" }}>
-        <button
-          onClick={() => void finish(false)}
-          disabled={working}
-          style={{ padding: "8px 12px" }}
-        >
+        <button onClick={() => void finish(false)} disabled={working} style={wizardSecondaryButton}>
           Skip — I'll start fresh
         </button>
-        <button
-          onClick={() => void finish(true)}
-          disabled={working}
-          style={{ padding: "8px 16px", background: "var(--imessage-blue, #3a95f7)", color: "#fff" }}
-        >
+        <button onClick={() => void finish(true)} disabled={working} style={wizardPrimaryButton}>
           {working ? "Setting up…" : "Add sample data"}
         </button>
       </div>
