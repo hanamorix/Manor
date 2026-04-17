@@ -76,9 +76,9 @@ export default function AddTransactionForm({ categories, onClose, onSaved }: Pro
   const inputStyle: React.CSSProperties = {
     width: "100%",
     padding: "9px 12px",
-    fontSize: 14,
+    fontSize: "var(--text-md)",
     border: "1px solid var(--hairline)",
-    borderRadius: 10,
+    borderRadius: "var(--radius-lg)",
     background: "#fafafa",
     fontFamily: "inherit",
     boxSizing: "border-box",
@@ -86,10 +86,8 @@ export default function AddTransactionForm({ categories, onClose, onSaved }: Pro
 
   const labelStyle: React.CSSProperties = {
     fontSize: 11,
-    fontWeight: 700,
-    textTransform: "uppercase",
-    letterSpacing: 0.5,
-    color: "rgba(0,0,0,0.5)",
+    fontWeight: 600,
+    color: "var(--scrim)",
     marginBottom: 5,
     display: "block",
   };
@@ -101,7 +99,7 @@ export default function AddTransactionForm({ categories, onClose, onSaved }: Pro
         style={{
           position: "fixed",
           inset: 0,
-          background: "rgba(0,0,0,0.25)",
+          background: "var(--ink-faint)",
           zIndex: 1050,
         }}
       />
@@ -113,7 +111,7 @@ export default function AddTransactionForm({ categories, onClose, onSaved }: Pro
           bottom: 0,
           width: 420,
           background: "var(--paper)",
-          boxShadow: "-4px 0 24px rgba(0,0,0,0.12)",
+          boxShadow: "var(--shadow-lg)",
           zIndex: 1100,
           display: "flex",
           flexDirection: "column",
@@ -130,7 +128,7 @@ export default function AddTransactionForm({ categories, onClose, onSaved }: Pro
             borderBottom: "1px solid var(--hairline)",
           }}
         >
-          <div style={{ fontSize: 16, fontWeight: 700 }}>Add Transaction</div>
+          <div style={{ fontSize: "var(--text-lg)", fontWeight: 600 }}>Add Transaction</div>
           <button
             onClick={onClose}
             style={{
@@ -138,7 +136,7 @@ export default function AddTransactionForm({ categories, onClose, onSaved }: Pro
               border: "none",
               fontSize: 20,
               cursor: "pointer",
-              color: "rgba(0,0,0,0.4)",
+              color: "var(--ink-faint)",
               lineHeight: 1,
               padding: 0,
             }}
@@ -161,7 +159,7 @@ export default function AddTransactionForm({ categories, onClose, onSaved }: Pro
                 style={{
                   flex: 1,
                   padding: "8px 0",
-                  borderRadius: 10,
+                  borderRadius: "var(--radius-lg)",
                   border: "1px solid var(--hairline)",
                   background:
                     (type === "income") === isIncome
@@ -169,9 +167,9 @@ export default function AddTransactionForm({ categories, onClose, onSaved }: Pro
                         ? "#2BB94A"
                         : "#0866EF"
                       : "transparent",
-                  color: (type === "income") === isIncome ? "white" : "rgba(0,0,0,0.5)",
+                  color: (type === "income") === isIncome ? "white" : "var(--scrim)",
                   fontWeight: 600,
-                  fontSize: 13,
+                  fontSize: "var(--text-sm)",
                   cursor: "pointer",
                   fontFamily: "inherit",
                 }}
@@ -250,11 +248,11 @@ export default function AddTransactionForm({ categories, onClose, onSaved }: Pro
               style={{
                 marginTop: 16,
                 padding: "10px 12px",
-                background: "rgba(255,59,48,0.08)",
-                border: "1px solid rgba(255,59,48,0.3)",
-                borderRadius: 10,
-                fontSize: 13,
-                color: "var(--imessage-red)",
+                background: "var(--paper-muted)",
+                border: "1px solid var(--ink-danger)",
+                borderRadius: "var(--radius-lg)",
+                fontSize: "var(--text-sm)",
+                color: "var(--ink)",
               }}
             >
               {error}
@@ -275,12 +273,12 @@ export default function AddTransactionForm({ categories, onClose, onSaved }: Pro
             style={{
               width: "100%",
               padding: "12px 0",
-              background: "var(--imessage-blue)",
+              background: "var(--action-bg)",
               color: "white",
               border: "none",
-              borderRadius: 12,
+              borderRadius: "var(--radius-lg)",
               fontSize: 15,
-              fontWeight: 700,
+              fontWeight: 600,
               cursor: saving ? "default" : "pointer",
               opacity: saving ? 0.6 : 1,
               fontFamily: "inherit",

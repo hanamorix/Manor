@@ -1,6 +1,8 @@
 import { useEffect, useState } from "react";
+import { Sparkles, Plus } from "lucide-react";
 import { useChoresStore } from "../../lib/chores/state";
 import { listAllChores, checkChoreFairness, type Chore } from "../../lib/chores/ipc";
+import { PageHeader, SectionLabel, Button } from "../../lib/ui";
 import ChoreDrawer from "./ChoreDrawer";
 
 const pageStyle: React.CSSProperties = {
@@ -10,21 +12,7 @@ const pageStyle: React.CSSProperties = {
 };
 
 const sectionStyle: React.CSSProperties = {
-  background: "var(--paper)",
-  border: "1px solid var(--hairline)",
-  borderRadius: "var(--radius-lg)",
-  boxShadow: "var(--shadow-sm)",
-  padding: "16px 18px",
-  marginBottom: 12,
-};
-
-const headerStyle: React.CSSProperties = {
-  fontSize: 11,
-  fontWeight: 700,
-  textTransform: "uppercase",
-  letterSpacing: 0.6,
-  color: "rgba(0,0,0,0.55)",
-  marginBottom: 10,
+  marginBottom: 22,
 };
 
 const rowStyle: React.CSSProperties = {
@@ -37,33 +25,21 @@ const rowStyle: React.CSSProperties = {
 };
 
 const dueBadge = (daysAway: number): React.CSSProperties => ({
-  fontSize: 11,
+  fontSize: "var(--text-xs)",
   padding: "2px 8px",
-  borderRadius: 999,
-  background: daysAway <= 0 ? "rgba(255,59,48,0.1)" : "rgba(20,20,30,0.05)",
-  color: daysAway <= 0 ? "var(--imessage-red)" : "rgba(20,20,30,0.55)",
-  fontWeight: 600,
+  borderRadius: "var(--radius-sm)",
+  background: daysAway <= 0 ? "var(--paper-muted)" : "var(--paper-muted)",
+  color: daysAway <= 0 ? "var(--ink-danger)" : "var(--ink-soft)",
+  fontWeight: 500,
 });
-
-const addBtn: React.CSSProperties = {
-  background: "var(--imessage-blue)",
-  color: "white",
-  border: "none",
-  borderRadius: 999,
-  padding: "10px 20px",
-  fontSize: 14,
-  fontWeight: 600,
-  cursor: "pointer",
-  marginTop: 12,
-};
 
 const fairnessBanner: React.CSSProperties = {
   background: "rgba(255,193,92,0.12)",
   borderRadius: "var(--radius-md)",
   padding: "10px 14px",
   marginBottom: 12,
-  fontSize: 13,
-  color: "rgba(20,20,30,0.7)",
+  fontSize: "var(--text-sm)",
+  color: "var(--ink-soft)",
 };
 
 function daysUntil(ms: number): number {
@@ -99,7 +75,7 @@ export default function ChoresView() {
 
   return (
     <div style={pageStyle}>
-      <h1 style={{ fontSize: 24, fontWeight: 700, margin: "0 0 16px" }}>Chores</h1>
+      <PageHeader icon={Sparkles} title="Chores" />
 
       {fairnessNudges.map((n) => (
         <div key={n.chore_id} style={fairnessBanner}>
@@ -108,7 +84,7 @@ export default function ChoresView() {
           </span>
           <button
             onClick={() => dismissFairnessNudge(n.chore_id)}
-            style={{ float: "right", background: "transparent", border: "none", color: "rgba(20,20,30,0.5)", cursor: "pointer", fontSize: 12 }}
+            style={{ float: "right", background: "transparent", border: "none", color: "var(--ink-faint)", cursor: "pointer", fontSize: 12 }}
           >
             Dismiss
           </button>
@@ -116,9 +92,9 @@ export default function ChoresView() {
       ))}
 
       <section style={sectionStyle}>
-        <h2 style={headerStyle}>Due soon</h2>
+        <SectionLabel icon={Sparkles}>Due soon</SectionLabel>
         {dueSoon.length === 0 ? (
-          <p style={{ color: "rgba(20,20,30,0.5)", fontSize: 13, margin: 0 }}>Nothing in the next 7 days.</p>
+          <p style={{ color: "var(--ink-faint)", fontSize: "var(--text-sm)", margin: 0 }}>Nothing in the next 7 days.</p>
         ) : (
           <ul style={{ listStyle: "none", padding: 0, margin: 0 }}>
             {dueSoon.map((c) => {
@@ -136,23 +112,23 @@ export default function ChoresView() {
       </section>
 
       <section style={sectionStyle}>
-        <h2 style={headerStyle}>All chores</h2>
+        <SectionLabel icon={Sparkles}>All chores</SectionLabel>
         {allChores.length === 0 ? (
-          <p style={{ color: "rgba(20,20,30,0.5)", fontSize: 13, margin: 0 }}>No chores yet — add your first one.</p>
+          <p style={{ color: "var(--ink-faint)", fontSize: "var(--text-sm)", margin: 0 }}>No chores yet — add your first one.</p>
         ) : (
           <ul style={{ listStyle: "none", padding: 0, margin: 0 }}>
             {[...allChores].sort((a, b) => a.title.localeCompare(b.title)).map((c) => (
               <li key={c.id} style={rowStyle} onClick={() => setEditing(c)}>
                 <span style={{ fontSize: 18 }}>{c.emoji}</span>
                 <span style={{ flex: 1, fontSize: 14 }}>{c.title}</span>
-                <span style={{ fontSize: 11, color: "rgba(20,20,30,0.45)" }}>{c.rotation === "none" ? "" : c.rotation}</span>
+                <span style={{ fontSize: 11, color: "var(--ink-faint)" }}>{c.rotation === "none" ? "" : c.rotation}</span>
               </li>
             ))}
           </ul>
         )}
       </section>
 
-      <button style={addBtn} onClick={() => setCreating(true)}>+ Add chore</button>
+      <Button variant="primary" icon={Plus} onClick={() => setCreating(true)}>Add chore</Button>
 
       {creating && <ChoreDrawer chore={null} onClose={() => setCreating(false)} />}
       {editing && <ChoreDrawer chore={editing} onClose={() => setEditing(null)} />}

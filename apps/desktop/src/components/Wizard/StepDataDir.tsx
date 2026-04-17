@@ -1,7 +1,8 @@
 import { useEffect, useState } from "react";
+import { ArrowRight } from "lucide-react";
 import { dataDirPath } from "../../lib/settings/ipc";
 import { useWizardStore } from "../../lib/wizard/state";
-import { wizardPrimaryButton } from "./styles";
+import { Button } from "../../lib/ui";
 
 export default function StepDataDir() {
   const advance = useWizardStore((s) => s.advance);
@@ -14,10 +15,10 @@ export default function StepDataDir() {
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
       <div>
-        <h2 style={{ margin: "0 0 8px 0", fontSize: 16, color: "var(--ink)" }}>
+        <h2 style={{ margin: "0 0 8px 0", fontSize: "var(--text-lg)", color: "var(--ink)" }}>
           Where your life lives
         </h2>
-        <p style={{ fontSize: 13, color: "rgba(0,0,0,0.65)", lineHeight: 1.5, margin: 0 }}>
+        <p style={{ fontSize: "var(--text-sm)", color: "var(--ink-soft)", lineHeight: 1.5, margin: 0 }}>
           Manor stores everything — tasks, events, money, chores, attachments — in one
           folder on this Mac. You can change it later, back it up to iCloud Drive, Dropbox,
           or anywhere you like.
@@ -26,7 +27,7 @@ export default function StepDataDir() {
       <div
         style={{
           fontFamily: "ui-monospace, SFMono-Regular, Menlo, monospace",
-          fontSize: 12,
+          fontSize: "var(--text-xs)",
           color: "var(--ink)",
           background: "var(--paper-muted)",
           border: "1px solid var(--hairline)",
@@ -38,9 +39,9 @@ export default function StepDataDir() {
         {dir}
       </div>
       <div style={{ display: "flex", justifyContent: "flex-end" }}>
-        <button onClick={advance} style={wizardPrimaryButton}>
+        <Button variant="primary" icon={ArrowRight} onClick={advance}>
           Next
-        </button>
+        </Button>
       </div>
     </div>
   );

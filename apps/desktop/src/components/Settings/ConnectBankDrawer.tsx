@@ -1,5 +1,7 @@
 import { useEffect, useState } from "react";
+import { Check, ArrowRight } from "lucide-react";
 import * as ipc from "../../lib/ledger/bank-ipc";
+import { Button } from "../../lib/ui";
 
 type Mode =
   | { kind: "connect" }
@@ -91,7 +93,7 @@ export function ConnectBankDrawer({ mode, onClose }: Props) {
       style={{
         position: "fixed",
         inset: 0,
-        background: "rgba(0,0,0,.5)",
+        background: "var(--scrim)",
         display: "flex",
         justifyContent: "flex-end",
         zIndex: 1000,
@@ -101,9 +103,9 @@ export function ConnectBankDrawer({ mode, onClose }: Props) {
         onClick={(e) => e.stopPropagation()}
         style={{
           width: 480,
-          background: "#16213e",
+          background: "var(--paper)",
           padding: 24,
-          color: "#e4e4e7",
+          color: "var(--ink)",
           overflowY: "auto",
         }}
       >
@@ -143,7 +145,7 @@ export function ConnectBankDrawer({ mode, onClose }: Props) {
         {stage.kind === "authorizing" && (
           <div>
             <p>Waiting for {stage.institution.name} authorisation…</p>
-            <p style={{ color: "#a1a1aa", fontSize: 13 }}>
+            <p style={{ color: "var(--ink-soft)", fontSize: 13 }}>
               Complete the login in your browser. Manor will take over automatically.
             </p>
           </div>
@@ -156,7 +158,7 @@ export function ConnectBankDrawer({ mode, onClose }: Props) {
               {stage.account_ids.length === 1 ? "" : "s"}
             </h3>
             <p>Syncing 180 days of transactions — this may take up to 30 seconds.</p>
-            <button onClick={onClose}>Done</button>
+            <Button variant="primary" icon={Check} onClick={onClose}>Done</Button>
           </div>
         )}
 
@@ -166,14 +168,14 @@ export function ConnectBankDrawer({ mode, onClose }: Props) {
             <pre
               style={{
                 whiteSpace: "pre-wrap",
-                background: "#2d2d4a",
+                background: "var(--hairline)",
                 padding: 12,
                 borderRadius: 4,
               }}
             >
               {stage.message}
             </pre>
-            <button onClick={onClose}>Close</button>
+            <Button variant="secondary" onClick={onClose}>Close</Button>
           </div>
         )}
       </div>
@@ -196,13 +198,13 @@ function ByokForm({
         Manor connects to your bank through <b>GoCardless</b>, a free EU/UK service.
         You'll need a GoCardless account and API keys. Takes about 3 minutes, one time.
       </p>
-      <ol style={{ color: "#a1a1aa", fontSize: 14 }}>
+      <ol style={{ color: "var(--ink-soft)", fontSize: 14 }}>
         <li>
           <button
             style={{
               background: "none",
               border: "none",
-              color: "#5b9df9",
+              color: "var(--ink)",
               padding: 0,
               cursor: "pointer",
             }}
@@ -224,9 +226,9 @@ function ByokForm({
             width: "100%",
             padding: 8,
             marginTop: 4,
-            background: "#0a0a1e",
-            color: "#e4e4e7",
-            border: "1px solid #2d2d4a",
+            background: "var(--paper)",
+            color: "var(--ink)",
+            border: "1px solid var(--hairline-strong)",
           }}
         />
       </label>
@@ -240,13 +242,13 @@ function ByokForm({
             width: "100%",
             padding: 8,
             marginTop: 4,
-            background: "#0a0a1e",
-            color: "#e4e4e7",
-            border: "1px solid #2d2d4a",
+            background: "var(--paper)",
+            color: "var(--ink)",
+            border: "1px solid var(--hairline-strong)",
           }}
         />
       </label>
-      <p style={{ color: "#a1a1aa", fontSize: 12, marginTop: 12 }}>
+      <p style={{ color: "var(--ink-soft)", fontSize: "var(--text-xs)", marginTop: 12 }}>
         Your keys are stored in macOS Keychain. They never leave this device.
       </p>
       <div
@@ -257,13 +259,15 @@ function ByokForm({
           marginTop: 20,
         }}
       >
-        <button onClick={onCancel}>Cancel</button>
-        <button
+        <Button variant="secondary" onClick={onCancel}>Cancel</Button>
+        <Button
+          variant="primary"
+          icon={ArrowRight}
           onClick={() => onSubmit(id.trim(), key.trim())}
           disabled={!id.trim() || !key.trim()}
         >
           Continue
-        </button>
+        </Button>
       </div>
     </div>
   );
@@ -321,9 +325,9 @@ function PickForm({
           width: "100%",
           padding: 8,
           marginBottom: 12,
-          background: "#0a0a1e",
-          color: "#e4e4e7",
-          border: "1px solid #2d2d4a",
+          background: "var(--paper)",
+          color: "var(--ink)",
+          border: "1px solid var(--hairline-strong)",
         }}
       />
       <div style={{ maxHeight: 400, overflowY: "auto" }}>
@@ -339,10 +343,10 @@ function PickForm({
               background: "none",
               border: "none",
               padding: "10px 12px",
-              color: "#e4e4e7",
+              color: "var(--ink)",
               textAlign: "left",
               cursor: "pointer",
-              borderBottom: "1px solid #2d2d4a",
+              borderBottom: "1px solid var(--hairline-strong)",
             }}
           >
             {i.logo_url && <img src={i.logo_url} width={24} height={24} alt="" />}
@@ -351,8 +355,8 @@ function PickForm({
               <span
                 style={{
                   marginLeft: "auto",
-                  background: "#ca8a04",
-                  color: "#000",
+                  background: "var(--hairline-strong)",
+                  color: "var(--ink)",
                   padding: "2px 6px",
                   borderRadius: 3,
                   fontSize: 10,

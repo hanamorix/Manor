@@ -37,9 +37,9 @@ export default function AddEventDrawer({ accountId, defaultCalendarUrl, calendar
   const inputStyle: React.CSSProperties = {
     width: "100%",
     padding: "9px 12px",
-    fontSize: 14,
+    fontSize: "var(--text-md)",
     border: "1px solid var(--hairline)",
-    borderRadius: 10,
+    borderRadius: "var(--radius-lg)",
     background: "#fafafa",
     fontFamily: "inherit",
     boxSizing: "border-box",
@@ -47,10 +47,8 @@ export default function AddEventDrawer({ accountId, defaultCalendarUrl, calendar
 
   const labelStyle: React.CSSProperties = {
     fontSize: 11,
-    fontWeight: 700,
-    textTransform: "uppercase",
-    letterSpacing: 0.5,
-    color: "rgba(0,0,0,0.5)",
+    fontWeight: 600,
+    color: "var(--scrim)",
     marginBottom: 5,
     display: "block",
   };
@@ -89,7 +87,7 @@ export default function AddEventDrawer({ accountId, defaultCalendarUrl, calendar
     <>
       <div
         onClick={onClose}
-        style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.25)", zIndex: 1050 }}
+        style={{ position: "fixed", inset: 0, background: "var(--ink-faint)", zIndex: 1050 }}
       />
       <div
         style={{
@@ -99,7 +97,7 @@ export default function AddEventDrawer({ accountId, defaultCalendarUrl, calendar
           bottom: 0,
           width: 420,
           background: "var(--paper)",
-          boxShadow: "-4px 0 24px rgba(0,0,0,0.12)",
+          boxShadow: "var(--shadow-lg)",
           zIndex: 1100,
           display: "flex",
           flexDirection: "column",
@@ -107,8 +105,8 @@ export default function AddEventDrawer({ accountId, defaultCalendarUrl, calendar
         }}
       >
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "18px 20px 14px", borderBottom: "1px solid var(--hairline)" }}>
-          <div style={{ fontSize: 16, fontWeight: 700 }}>Add Event</div>
-          <button onClick={onClose} style={{ background: "none", border: "none", fontSize: 20, cursor: "pointer", color: "rgba(0,0,0,0.4)", lineHeight: 1, padding: 0 }}>✕</button>
+          <div style={{ fontSize: "var(--text-lg)", fontWeight: 600 }}>Add Event</div>
+          <button onClick={onClose} style={{ background: "none", border: "none", fontSize: 20, cursor: "pointer", color: "var(--ink-faint)", lineHeight: 1, padding: 0 }}>✕</button>
         </div>
 
         <div style={{ flex: 1, overflow: "auto", padding: "20px" }}>
@@ -163,7 +161,7 @@ export default function AddEventDrawer({ accountId, defaultCalendarUrl, calendar
             )}
 
             {error && (
-              <div style={{ padding: "10px 12px", background: "rgba(255,59,48,0.08)", border: "1px solid rgba(255,59,48,0.3)", borderRadius: 10, fontSize: 13, color: "var(--imessage-red)" }}>
+              <div style={{ padding: "10px 12px", background: "var(--paper-muted)", border: "1px solid var(--ink-danger)", borderRadius: "var(--radius-lg)", fontSize: "var(--text-sm)", color: "var(--ink)" }}>
                 {error}
               </div>
             )}
@@ -174,7 +172,7 @@ export default function AddEventDrawer({ accountId, defaultCalendarUrl, calendar
           <button
             onClick={handleSave}
             disabled={saving}
-            style={{ width: "100%", padding: "12px 0", background: "var(--imessage-blue)", color: "white", border: "none", borderRadius: 12, fontSize: 15, fontWeight: 700, cursor: saving ? "default" : "pointer", opacity: saving ? 0.6 : 1, fontFamily: "inherit" }}
+            style={{ width: "100%", padding: "12px 0", background: "var(--ink)", color: "var(--action-fg)", border: "none", borderRadius: "var(--radius-lg)", fontSize: 15, fontWeight: 600, cursor: saving ? "default" : "pointer", opacity: saving ? 0.6 : 1, fontFamily: "inherit" }}
           >
             {saving ? "Saving…" : "Save"}
           </button>

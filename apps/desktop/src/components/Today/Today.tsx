@@ -1,4 +1,5 @@
 import { useEffect } from "react";
+import { Sun } from "lucide-react";
 import { useTodayStore } from "../../lib/today/state";
 import { listTasks, listEventsToday } from "../../lib/today/ipc";
 import { useChoresStore } from "../../lib/chores/state";
@@ -6,7 +7,7 @@ import { listChoresDueToday } from "../../lib/chores/ipc";
 import { useTimeBlocksStore } from "../../lib/timeblocks/state";
 import { listBlocksToday } from "../../lib/timeblocks/ipc";
 import { AVATAR_FOOTPRINT_PX } from "../../lib/layout";
-import HeaderCard from "./HeaderCard";
+import { PageHeader } from "../../lib/ui";
 import EventsCard from "./EventsCard";
 import TimeBlocksCard from "./TimeBlocksCard";
 import ChoresCard from "./ChoresCard";
@@ -19,6 +20,8 @@ import Toast from "./Toast";
 export default function Today() {
   const setTasks = useTodayStore((s) => s.setTasks);
   const setEvents = useTodayStore((s) => s.setEvents);
+  const tasks = useTodayStore((s) => s.tasks);
+  const events = useTodayStore((s) => s.events);
   const setChoresDueToday = useChoresStore((s) => s.setChoresDueToday);
   const setTodayBlocks = useTimeBlocksStore((s) => s.setTodayBlocks);
 
@@ -44,7 +47,21 @@ export default function Today() {
         <ProposalBanner />
         <RenewalAlertsCard />
         <SampleDataBanner />
-        <HeaderCard />
+        <PageHeader
+          icon={Sun}
+          title="Today"
+          subtitle={new Date().toLocaleDateString(undefined, {
+            weekday: "long",
+            day: "numeric",
+            month: "long",
+          })}
+          meta={
+            <>
+              <span data-num>{events.length}</span> events ·{" "}
+              <span data-num>{tasks.length}</span> tasks
+            </>
+          }
+        />
         <EventsCard />
         <TimeBlocksCard />
         <ChoresCard />

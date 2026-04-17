@@ -23,12 +23,12 @@ export function BankAccountsSection() {
           marginBottom: 12,
         }}
       >
-        <h3 style={{ color: "#e4e4e7", margin: 0 }}>Bank Accounts</h3>
+        <h3 style={{ color: "var(--ink)", margin: 0 }}>Bank Accounts</h3>
         <button onClick={() => setDrawerMode({ kind: "connect" })}>+ Connect</button>
       </div>
 
       {accounts.length === 0 && (
-        <div style={{ color: "#a1a1aa", padding: "16px 0" }}>
+        <div style={{ color: "var(--ink-soft)", padding: "16px 0" }}>
           No bank accounts connected yet.
         </div>
       )}

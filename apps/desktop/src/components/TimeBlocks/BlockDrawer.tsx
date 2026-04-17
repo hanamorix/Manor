@@ -7,7 +7,7 @@ import { useOverlay } from "../../lib/overlay/state";
 const overlayStyle: React.CSSProperties = {
   position: "fixed",
   inset: 0,
-  background: "rgba(20,20,30,0.2)",
+  background: "var(--scrim)",
   zIndex: 1050,
   display: "flex",
   justifyContent: "flex-end",
@@ -26,10 +26,8 @@ const drawerStyle: React.CSSProperties = {
 const labelStyle: React.CSSProperties = {
   display: "block",
   fontSize: 11,
-  fontWeight: 700,
-  textTransform: "uppercase",
-  letterSpacing: 0.6,
-  color: "rgba(0,0,0,0.55)",
+  fontWeight: 600,
+  color: "var(--ink-soft)",
   marginBottom: 6,
   marginTop: 14,
 };
@@ -37,38 +35,38 @@ const labelStyle: React.CSSProperties = {
 const inputStyle: React.CSSProperties = {
   width: "100%",
   padding: "8px 12px",
-  borderRadius: 8,
+  borderRadius: "var(--radius-lg)",
   border: "1px solid var(--hairline)",
-  fontSize: 14,
+  fontSize: "var(--text-md)",
   fontFamily: "inherit",
 };
 
 const btnPrimary: React.CSSProperties = {
-  background: "var(--imessage-blue)",
-  color: "white",
+  background: "var(--ink)",
+  color: "var(--action-fg)",
   border: "none",
-  borderRadius: 999,
+  borderRadius: "var(--radius-md)",
   padding: "8px 18px",
-  fontSize: 13,
+  fontSize: "var(--text-sm)",
   fontWeight: 600,
   cursor: "pointer",
 };
 
 const btnGhost: React.CSSProperties = {
   background: "transparent",
-  color: "rgba(20,20,30,0.55)",
+  color: "var(--ink-soft)",
   border: "1px solid var(--hairline)",
-  borderRadius: 999,
+  borderRadius: "var(--radius-md)",
   padding: "8px 18px",
-  fontSize: 13,
+  fontSize: "var(--text-sm)",
   cursor: "pointer",
 };
 
 const btnDanger: React.CSSProperties = {
   background: "transparent",
-  color: "var(--imessage-red)",
+  color: "var(--ink)",
   border: "none",
-  fontSize: 12,
+  fontSize: "var(--text-xs)",
   cursor: "pointer",
   padding: "6px 0",
   marginTop: 12,
@@ -144,7 +142,7 @@ export default function BlockDrawer({ block, onClose }: Props) {
   return (
     <div style={overlayStyle} onClick={onClose}>
       <aside style={drawerStyle} onClick={(e) => e.stopPropagation()}>
-        <h2 style={{ margin: "0 0 16px", fontSize: 20, fontWeight: 700 }}>
+        <h2 style={{ margin: "0 0 16px", fontSize: 20, fontWeight: 600 }}>
           {block ? "Edit block" : "New block"}
         </h2>
 

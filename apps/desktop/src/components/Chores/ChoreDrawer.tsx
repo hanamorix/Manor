@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { Check, Plus } from "lucide-react";
 import type { Chore, RotationKind } from "../../lib/chores/ipc";
 import {
   createChore,
@@ -9,11 +10,12 @@ import {
 } from "../../lib/chores/ipc";
 import { useChoresStore } from "../../lib/chores/state";
 import { useOverlay } from "../../lib/overlay/state";
+import { Button } from "../../lib/ui";
 
 const overlayStyle: React.CSSProperties = {
   position: "fixed",
   inset: 0,
-  background: "rgba(20,20,30,0.2)",
+  background: "var(--scrim)",
   zIndex: 1050,
   display: "flex",
   justifyContent: "flex-end",
@@ -32,10 +34,8 @@ const drawerStyle: React.CSSProperties = {
 const labelStyle: React.CSSProperties = {
   display: "block",
   fontSize: 11,
-  fontWeight: 700,
-  textTransform: "uppercase",
-  letterSpacing: 0.6,
-  color: "rgba(0,0,0,0.55)",
+  fontWeight: 600,
+  color: "var(--ink-soft)",
   marginBottom: 6,
   marginTop: 14,
 };
@@ -43,9 +43,9 @@ const labelStyle: React.CSSProperties = {
 const inputStyle: React.CSSProperties = {
   width: "100%",
   padding: "8px 12px",
-  borderRadius: 8,
+  borderRadius: "var(--radius-lg)",
   border: "1px solid var(--hairline)",
-  fontSize: 14,
+  fontSize: "var(--text-md)",
   fontFamily: "inherit",
 };
 
@@ -58,43 +58,22 @@ const tabBar: React.CSSProperties = {
 
 const tabStyle = (active: boolean): React.CSSProperties => ({
   padding: "8px 14px",
-  fontSize: 13,
+  fontSize: "var(--text-sm)",
   fontWeight: 600,
   cursor: "pointer",
-  color: active ? "var(--imessage-blue)" : "rgba(20,20,30,0.55)",
+  color: active ? "var(--ink)" : "var(--ink-soft)",
   background: "transparent",
   border: "none",
   borderBottomStyle: "solid",
   borderBottomWidth: 2,
-  borderBottomColor: active ? "var(--imessage-blue)" : "transparent",
+  borderBottomColor: active ? "var(--ink)" : "transparent",
 });
-
-const btnPrimary: React.CSSProperties = {
-  background: "var(--imessage-blue)",
-  color: "white",
-  border: "none",
-  borderRadius: 999,
-  padding: "8px 18px",
-  fontSize: 13,
-  fontWeight: 600,
-  cursor: "pointer",
-};
-
-const btnGhost: React.CSSProperties = {
-  background: "transparent",
-  color: "rgba(20,20,30,0.55)",
-  border: "1px solid var(--hairline)",
-  borderRadius: 999,
-  padding: "8px 18px",
-  fontSize: 13,
-  cursor: "pointer",
-};
 
 const btnDanger: React.CSSProperties = {
   background: "transparent",
-  color: "var(--imessage-red)",
+  color: "var(--ink)",
   border: "none",
-  fontSize: 12,
+  fontSize: "var(--text-xs)",
   cursor: "pointer",
   padding: "6px 0",
   marginTop: 12,
@@ -162,7 +141,7 @@ export default function ChoreDrawer({ chore, onClose }: Props) {
   return (
     <div style={overlayStyle} onClick={onClose}>
       <aside style={drawerStyle} onClick={(e) => e.stopPropagation()}>
-        <h2 style={{ margin: "0 0 16px", fontSize: 20, fontWeight: 700 }}>
+        <h2 style={{ margin: "0 0 16px", fontSize: 20, fontWeight: 600 }}>
           {chore ? "Edit chore" : "New chore"}
         </h2>
 
@@ -218,8 +197,8 @@ export default function ChoreDrawer({ chore, onClose }: Props) {
             </select>
 
             <div style={{ display: "flex", gap: 8, marginTop: 24 }}>
-              <button style={btnPrimary} onClick={onSave}>{chore ? "Save" : "Create"}</button>
-              <button style={btnGhost} onClick={onClose}>Cancel</button>
+              <Button variant="primary" icon={chore ? Check : Plus} onClick={onSave}>{chore ? "Save" : "Create"}</Button>
+              <Button variant="secondary" onClick={onClose}>Cancel</Button>
             </div>
 
             {chore && (
@@ -231,7 +210,7 @@ export default function ChoreDrawer({ chore, onClose }: Props) {
         {tab === "history" && chore && (
           <div>
             {history.length === 0 ? (
-              <p style={{ color: "rgba(20,20,30,0.5)", fontSize: 13 }}>No completions yet.</p>
+              <p style={{ color: "var(--ink-faint)", fontSize: 13 }}>No completions yet.</p>
             ) : (
               <ul style={{ listStyle: "none", padding: 0, margin: 0 }}>
                 {history.map((h) => (
@@ -239,7 +218,7 @@ export default function ChoreDrawer({ chore, onClose }: Props) {
                     <div style={{ color: "var(--ink)" }}>
                       {new Date(h.completed_at).toLocaleString()}
                     </div>
-                    <div style={{ color: "rgba(20,20,30,0.5)", fontSize: 12 }}>
+                    <div style={{ color: "var(--ink-faint)", fontSize: 12 }}>
                       {h.completed_by ? `by person #${h.completed_by}` : "completed"}
                     </div>
                   </li>

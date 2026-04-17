@@ -1,4 +1,5 @@
 import { useRef, useState } from "react";
+import { Upload } from "lucide-react";
 import {
   previewCsv,
   importCsv,
@@ -7,6 +8,7 @@ import {
 } from "../../lib/ledger/ipc";
 import { useLedgerStore } from "../../lib/ledger/state";
 import { useOverlay } from "../../lib/overlay/state";
+import { Button } from "../../lib/ui";
 
 interface Props {
   onClose: () => void;
@@ -89,10 +91,8 @@ export default function CsvImportDrawer({ onClose, onImported }: Props) {
 
   const labelStyle: React.CSSProperties = {
     fontSize: 11,
-    fontWeight: 700,
-    textTransform: "uppercase",
-    letterSpacing: 0.5,
-    color: "rgba(0,0,0,0.5)",
+    fontWeight: 600,
+    color: "var(--ink-soft)",
     marginBottom: 5,
     display: "block",
   };
@@ -100,10 +100,10 @@ export default function CsvImportDrawer({ onClose, onImported }: Props) {
   const inputStyle: React.CSSProperties = {
     width: "100%",
     padding: "9px 12px",
-    fontSize: 14,
+    fontSize: "var(--text-md)",
     border: "1px solid var(--hairline)",
-    borderRadius: 10,
-    background: "#fafafa",
+    borderRadius: "var(--radius-lg)",
+    background: "var(--hairline)",
     fontFamily: "inherit",
     boxSizing: "border-box",
     color: "var(--ink)",
@@ -119,7 +119,7 @@ export default function CsvImportDrawer({ onClose, onImported }: Props) {
         style={{
           position: "fixed",
           inset: 0,
-          background: "rgba(0,0,0,0.25)",
+          background: "var(--scrim)",
           zIndex: 1050,
         }}
       />
@@ -133,7 +133,7 @@ export default function CsvImportDrawer({ onClose, onImported }: Props) {
           bottom: 0,
           width: 600,
           background: "var(--paper)",
-          boxShadow: "-4px 0 24px rgba(0,0,0,0.12)",
+          boxShadow: "var(--shadow-lg)",
           zIndex: 1100,
           display: "flex",
           flexDirection: "column",
@@ -150,7 +150,7 @@ export default function CsvImportDrawer({ onClose, onImported }: Props) {
             borderBottom: "1px solid var(--hairline)",
           }}
         >
-          <div style={{ fontSize: 16, fontWeight: 700, color: "var(--ink)" }}>
+          <div style={{ fontSize: "var(--text-lg)", fontWeight: 600, color: "var(--ink)" }}>
             Import CSV
           </div>
           <button
@@ -160,7 +160,7 @@ export default function CsvImportDrawer({ onClose, onImported }: Props) {
               border: "none",
               fontSize: 20,
               cursor: "pointer",
-              color: "rgba(0,0,0,0.4)",
+              color: "var(--ink-faint)",
               lineHeight: 1,
               padding: 0,
             }}
@@ -209,7 +209,7 @@ export default function CsvImportDrawer({ onClose, onImported }: Props) {
             {loading && (
               <div
                 style={{
-                  fontSize: 13,
+                  fontSize: "var(--text-sm)",
                   color: "var(--paper-muted)",
                   textAlign: "center",
                   padding: "8px 0",
@@ -224,11 +224,11 @@ export default function CsvImportDrawer({ onClose, onImported }: Props) {
               <div
                 style={{
                   padding: "10px 12px",
-                  background: "rgba(255,59,48,0.08)",
-                  border: "1px solid rgba(255,59,48,0.3)",
-                  borderRadius: 10,
-                  fontSize: 13,
-                  color: "var(--imessage-red)",
+                  background: "var(--paper-muted)",
+                  border: "1px solid var(--ink-danger)",
+                  borderRadius: "var(--radius-lg)",
+                  fontSize: "var(--text-sm)",
+                  color: "var(--ink)",
                 }}
               >
                 {error}
@@ -241,8 +241,8 @@ export default function CsvImportDrawer({ onClose, onImported }: Props) {
                 {/* Summary line */}
                 <div
                   style={{
-                    fontSize: 12,
-                    color: "rgba(0,0,0,0.55)",
+                    fontSize: "var(--text-xs)",
+                    color: "var(--ink-soft)",
                     marginBottom: 8,
                   }}
                 >
@@ -259,14 +259,14 @@ export default function CsvImportDrawer({ onClose, onImported }: Props) {
                 <div
                   style={{
                     border: "1px solid var(--hairline)",
-                    borderRadius: 10,
+                    borderRadius: "var(--radius-lg)",
                     overflow: "hidden",
                   }}
                 >
                   <table
                     style={{
                       width: "100%",
-                      fontSize: 12,
+                      fontSize: "var(--text-xs)",
                       borderCollapse: "collapse",
                     }}
                   >
@@ -284,11 +284,9 @@ export default function CsvImportDrawer({ onClose, onImported }: Props) {
                               style={{
                                 padding: "7px 10px",
                                 textAlign: "left",
-                                fontWeight: 700,
+                                fontWeight: 600,
                                 fontSize: 11,
-                                textTransform: "uppercase",
-                                letterSpacing: 0.4,
-                                color: "rgba(0,0,0,0.55)",
+                                color: "var(--ink-soft)",
                                 whiteSpace: "nowrap",
                               }}
                             >
@@ -303,10 +301,7 @@ export default function CsvImportDrawer({ onClose, onImported }: Props) {
                         const cat = row.suggested_category_id != null
                           ? catMap.get(row.suggested_category_id)
                           : undefined;
-                        const amountColor =
-                          row.amount_pence < 0
-                            ? "var(--imessage-red)"
-                            : "var(--imessage-green)";
+                        const amountColor = "var(--ink)";
 
                         return (
                           <tr
@@ -315,7 +310,7 @@ export default function CsvImportDrawer({ onClose, onImported }: Props) {
                               borderTop: i > 0 ? "1px solid var(--hairline)" : undefined,
                               opacity: row.duplicate ? 0.4 : 1,
                               background:
-                                i % 2 === 0 ? "transparent" : "rgba(0,0,0,0.015)",
+                                i % 2 === 0 ? "transparent" : "var(--hairline)",
                             }}
                           >
                             <td
@@ -355,7 +350,7 @@ export default function CsvImportDrawer({ onClose, onImported }: Props) {
                                 padding: "7px 10px",
                                 color: cat
                                   ? "var(--ink)"
-                                  : "rgba(0,0,0,0.35)",
+                                  : "var(--ink-faint)",
                                 whiteSpace: "nowrap",
                               }}
                             >
@@ -381,46 +376,22 @@ export default function CsvImportDrawer({ onClose, onImported }: Props) {
             gap: 10,
           }}
         >
-          <button
-            onClick={onClose}
-            style={{
-              flex: 1,
-              padding: "10px 16px",
-              background: "transparent",
-              color: "var(--ink)",
-              border: "1px solid var(--hairline)",
-              borderRadius: "var(--radius-pill)",
-              fontSize: 14,
-              fontWeight: 600,
-              cursor: "pointer",
-              fontFamily: "inherit",
-            }}
-          >
+          <Button variant="secondary" onClick={onClose} style={{ flex: 1 }}>
             Cancel
-          </button>
-          <button
+          </Button>
+          <Button
+            variant="primary"
+            icon={Upload}
             onClick={doImport}
             disabled={!canImport}
-            style={{
-              flex: 2,
-              padding: "10px 16px",
-              background: "var(--imessage-blue)",
-              color: "#fff",
-              border: "none",
-              borderRadius: "var(--radius-pill)",
-              fontSize: 14,
-              fontWeight: 600,
-              cursor: canImport ? "pointer" : "default",
-              opacity: canImport ? 1 : 0.5,
-              fontFamily: "inherit",
-            }}
+            style={{ flex: 2, opacity: canImport ? 1 : 0.5 }}
           >
             {importing
               ? "Importing…"
               : rows.length > 0
               ? `Import ${rows.length - duplicateCount} transaction${rows.length - duplicateCount !== 1 ? "s" : ""}`
               : "Import"}
-          </button>
+          </Button>
         </div>
       </div>
     </>

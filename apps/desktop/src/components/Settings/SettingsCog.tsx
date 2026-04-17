@@ -1,3 +1,4 @@
+import { Settings } from "lucide-react";
 import { useSettingsStore } from "../../lib/settings/state";
 
 export default function SettingsCog() {
@@ -17,13 +18,14 @@ export default function SettingsCog() {
         cursor: "pointer",
         opacity: 0.6,
         transition: "opacity 100ms ease",
-        fontSize: 15,
-        lineHeight: 1,
+        display: "inline-flex",
+        alignItems: "center",
+        justifyContent: "center",
       }}
       onMouseEnter={(e) => ((e.currentTarget as HTMLButtonElement).style.opacity = "1")}
       onMouseLeave={(e) => ((e.currentTarget as HTMLButtonElement).style.opacity = "0.6")}
     >
-      ⚙
+      <Settings size={16} strokeWidth={1.8} color="var(--ink-soft)" />
     </button>
   );
 }

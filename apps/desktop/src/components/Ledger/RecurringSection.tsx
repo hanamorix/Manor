@@ -1,8 +1,10 @@
 import { useEffect, useState } from "react";
+import { Plus } from "lucide-react";
 import { listRecurring, deleteRecurring } from "../../lib/ledger/ipc";
 import { useLedgerStore } from "../../lib/ledger/state";
 import type { Category, RecurringPayment } from "../../lib/ledger/ipc";
 import AddRecurringDrawer from "./AddRecurringDrawer";
+import { Button } from "../../lib/ui";
 
 interface Props {
   categories: Category[];
@@ -75,39 +77,26 @@ export default function RecurringSection({ categories }: Props) {
               userSelect: "none",
             }}
           >
-            <span style={{ fontSize: 13, color: "rgba(0,0,0,0.4)" }}>
+            <span style={{ fontSize: "var(--text-sm)", color: "var(--ink-faint)" }}>
               {expanded ? "▾" : "▸"}
             </span>
             <h3
               style={{
                 margin: 0,
-                fontSize: 14,
-                fontWeight: 700,
+                fontSize: "var(--text-md)",
+                fontWeight: 600,
                 color: "var(--ink)",
               }}
             >
               Recurring{" "}
-              <span style={{ color: "rgba(0,0,0,0.45)", fontWeight: 500 }}>
+              <span style={{ color: "var(--ink-faint)", fontWeight: 500 }}>
                 ({activeCount} active)
               </span>
             </h3>
           </div>
-          <button
-            onClick={() => setShowAdd(true)}
-            style={{
-              background: "var(--imessage-blue)",
-              color: "#fff",
-              border: "none",
-              borderRadius: "var(--radius-pill)",
-              padding: "4px 12px",
-              fontSize: 12,
-              fontWeight: 600,
-              cursor: "pointer",
-              fontFamily: "inherit",
-            }}
-          >
-            + Add
-          </button>
+          <Button variant="primary" icon={Plus} onClick={() => setShowAdd(true)}>
+            Add
+          </Button>
         </div>
 
         {/* Row list */}
@@ -118,8 +107,8 @@ export default function RecurringSection({ categories }: Props) {
                 style={{
                   padding: "12px 0",
                   textAlign: "center",
-                  fontSize: 13,
-                  color: "rgba(0,0,0,0.4)",
+                  fontSize: "var(--text-sm)",
+                  color: "var(--ink-faint)",
                 }}
               >
                 No recurring payments yet.
@@ -150,7 +139,7 @@ export default function RecurringSection({ categories }: Props) {
                       <div style={{ minWidth: 0 }}>
                         <div
                           style={{
-                            fontSize: 13,
+                            fontSize: "var(--text-sm)",
                             fontWeight: 600,
                             color: "var(--ink)",
                             overflow: "hidden",
@@ -163,7 +152,7 @@ export default function RecurringSection({ categories }: Props) {
                         <div
                           style={{
                             fontSize: 11,
-                            color: "rgba(0,0,0,0.45)",
+                            color: "var(--ink-faint)",
                             marginTop: 1,
                           }}
                         >
@@ -178,7 +167,7 @@ export default function RecurringSection({ categories }: Props) {
                       style={{ display: "flex", alignItems: "center", gap: 8, flexShrink: 0 }}
                     >
                       <span
-                        style={{ fontSize: 13, fontWeight: 600, color: "var(--ink)" }}
+                        style={{ fontSize: "var(--text-sm)", fontWeight: 600, color: "var(--ink)" }}
                       >
                         {formatPence(r.amount_pence)}
                       </span>
@@ -188,9 +177,9 @@ export default function RecurringSection({ categories }: Props) {
                         style={{
                           background: "none",
                           border: "none",
-                          fontSize: 14,
+                          fontSize: "var(--text-md)",
                           cursor: "pointer",
-                          color: "rgba(0,0,0,0.3)",
+                          color: "var(--ink-faint)",
                           padding: "2px 4px",
                           lineHeight: 1,
                           fontFamily: "inherit",

@@ -1,8 +1,9 @@
 import { useState } from "react";
+import { Check, SkipForward } from "lucide-react";
 import { invoke } from "@tauri-apps/api/core";
 import { settingSet } from "../../lib/foundation/ipc";
 import { useWizardStore } from "../../lib/wizard/state";
-import { wizardPrimaryButton, wizardSecondaryButton } from "./styles";
+import { Button } from "../../lib/ui";
 
 async function seedSampleData(): Promise<void> {
   // Create "sample" tag (idempotent — returns existing if already present).
@@ -62,10 +63,10 @@ export default function StepSample() {
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
       <div>
-        <h2 style={{ margin: "0 0 8px 0", fontSize: 16, color: "var(--ink)" }}>
+        <h2 style={{ margin: "0 0 8px 0", fontSize: "var(--text-lg)", color: "var(--ink)" }}>
           Explore with sample data
         </h2>
-        <p style={{ fontSize: 13, color: "rgba(0,0,0,0.65)", lineHeight: 1.5, margin: 0 }}>
+        <p style={{ fontSize: "var(--text-sm)", color: "var(--ink-soft)", lineHeight: 1.5, margin: 0 }}>
           Want a sample task and chore so you can see how Manor feels? They'll be
           tagged{" "}
           <code
@@ -86,8 +87,8 @@ export default function StepSample() {
       {message && (
         <div
           style={{
-            fontSize: 12,
-            color: message.includes("Failed") ? "var(--imessage-red)" : "var(--imessage-green)",
+            fontSize: "var(--text-xs)",
+            color: message.includes("Failed") ? "var(--ink)" : "var(--ink)",
           }}
         >
           {message}
@@ -95,12 +96,12 @@ export default function StepSample() {
       )}
 
       <div style={{ display: "flex", gap: 8, justifyContent: "flex-end" }}>
-        <button onClick={() => void finish(false)} disabled={working} style={wizardSecondaryButton}>
+        <Button variant="secondary" icon={SkipForward} onClick={() => void finish(false)} disabled={working}>
           Skip — I'll start fresh
-        </button>
-        <button onClick={() => void finish(true)} disabled={working} style={wizardPrimaryButton}>
+        </Button>
+        <Button variant="primary" icon={Check} onClick={() => void finish(true)} disabled={working}>
           {working ? "Setting up…" : "Add sample data"}
-        </button>
+        </Button>
       </div>
     </div>
   );

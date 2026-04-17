@@ -1,3 +1,7 @@
+import {
+  Home, LayoutDashboard, Sparkles, LayoutGrid, Wallet,
+} from "lucide-react";
+import type { LucideIcon } from "lucide-react";
 import { useNavStore, type View } from "../../lib/nav";
 import { useSettingsStore } from "../../lib/settings/state";
 
@@ -19,13 +23,12 @@ const railStyle: React.CSSProperties = {
 const manorButtonStyle: React.CSSProperties = {
   width: 32,
   height: 32,
-  borderRadius: "50%",
-  background: "linear-gradient(135deg, #FFC15C 0%, #FF8800 100%)",
+  borderRadius: "var(--radius-sm, 6px)",
+  background: "var(--ink)",
   display: "flex",
   alignItems: "center",
   justifyContent: "center",
-  fontSize: 16,
-  boxShadow: "0 2px 6px rgba(255,136,0,0.3)",
+  boxShadow: "none",
   marginBottom: 10,
   border: "none",
   cursor: "pointer",
@@ -33,41 +36,63 @@ const manorButtonStyle: React.CSSProperties = {
   fontFamily: "inherit",
 };
 
-const iconStyle = (active: boolean): React.CSSProperties => ({
+const iconWrapStyle: React.CSSProperties = {
+  position: "relative",
   width: 38,
   height: 38,
-  borderRadius: 10,
+  borderRadius: "var(--radius-lg)",
   display: "flex",
   alignItems: "center",
   justifyContent: "center",
-  fontSize: 17,
   cursor: "pointer",
-  background: active ? "var(--paper)" : "transparent",
-  boxShadow: active ? "0 1px 4px rgba(20,20,30,0.1)" : "none",
-  color: active ? "var(--imessage-blue)" : "rgba(20,20,30,0.35)",
-  transition: "background 0.15s, color 0.15s",
-});
+  background: "transparent",
+};
 
 interface NavIconProps {
   view: View;
-  icon: string;
+  icon: LucideIcon;
   title: string;
 }
 
-function NavIcon({ view, icon, title }: NavIconProps) {
+function NavIcon({ view, icon: Icon, title }: NavIconProps) {
   const current = useNavStore((s) => s.view);
   const setView = useNavStore((s) => s.setView);
   const active = current === view;
   return (
     <div
       role="button"
+      tabIndex={0}
       aria-label={title}
       aria-current={active ? "page" : undefined}
       title={title}
       onClick={() => setView(view)}
-      style={iconStyle(active)}
+      onKeyDown={(e) => {
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault();
+          setView(view);
+        }
+      }}
+      style={iconWrapStyle}
     >
-      {icon}
+      {active && (
+        <span
+          style={{
+            position: "absolute",
+            left: 0,
+            top: "50%",
+            transform: "translateY(-50%)",
+            width: 2,
+            height: 16,
+            background: "var(--ink)",
+            borderRadius: 1,
+          }}
+        />
+      )}
+      <Icon
+        size={20}
+        strokeWidth={1.8}
+        color={active ? "var(--ink)" : "var(--ink-faint)"}
+      />
     </div>
   );
 }
@@ -83,12 +108,12 @@ export default function Sidebar() {
         aria-label="Open settings"
         style={manorButtonStyle}
       >
-        🌸
+        <Home size={18} strokeWidth={1.8} color="var(--paper)" />
       </button>
-      <NavIcon view="today" icon="🏠" title="Today" />
-      <NavIcon view="chores" icon="🧹" title="Chores" />
-      <NavIcon view="timeblocks" icon="⏱" title="Time Blocks" />
-      <NavIcon view="ledger" icon="💰" title="Ledger" />
+      <NavIcon view="today" icon={LayoutDashboard} title="Today" />
+      <NavIcon view="chores" icon={Sparkles} title="Chores" />
+      <NavIcon view="timeblocks" icon={LayoutGrid} title="Time Blocks" />
+      <NavIcon view="ledger" icon={Wallet} title="Ledger" />
       <div style={{ flex: 1 }} />
     </nav>
   );

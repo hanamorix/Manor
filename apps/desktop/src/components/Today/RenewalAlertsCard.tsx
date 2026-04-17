@@ -14,8 +14,8 @@ export default function RenewalAlertsCard() {
   return (
     <section
       style={{
-        background: "#fff",
-        border: "1px solid rgba(255, 149, 0, 0.35)",
+        background: "var(--surface)",
+        border: "1px solid var(--ink-soft)",
         borderRadius: "var(--radius-md)",
         boxShadow: "var(--shadow-sm)",
         padding: 12,
@@ -26,9 +26,7 @@ export default function RenewalAlertsCard() {
           fontSize: 11,
           color: "#b36b00",
           marginBottom: 8,
-          textTransform: "uppercase",
-          letterSpacing: 0.5,
-          fontWeight: 700,
+          fontWeight: 600,
         }}
       >
         What matters
@@ -46,16 +44,16 @@ export default function RenewalAlertsCard() {
                 padding: 8,
                 borderRadius: "var(--radius-sm)",
                 background: isRed
-                  ? "rgba(255, 59, 48, 0.08)"
-                  : "rgba(255, 149, 0, 0.08)",
+                  ? "var(--ink-danger)"
+                  : "var(--ink-soft)",
                 border: isRed
-                  ? "1px solid rgba(255, 59, 48, 0.25)"
-                  : "1px solid rgba(255, 149, 0, 0.25)",
+                  ? "1px solid var(--ink-danger)"
+                  : "1px solid var(--ink-soft)",
               }}
             >
-              <div style={{ fontSize: 13, color: "var(--ink)" }}>
+              <div style={{ fontSize: "var(--text-sm)", color: "var(--ink)" }}>
                 {a.provider}{" "}
-                <span style={{ fontSize: 11, color: "rgba(0,0,0,0.55)" }}>
+                <span style={{ fontSize: 11, color: "var(--ink-soft)" }}>
                   ({a.kind})
                 </span>{" "}
                 renewing soon
@@ -66,8 +64,8 @@ export default function RenewalAlertsCard() {
                   borderRadius: "var(--radius-pill)",
                   fontSize: 11,
                   fontWeight: 600,
-                  background: isRed ? "var(--imessage-red)" : "#b36b00",
-                  color: "#fff",
+                  background: isRed ? "var(--ink)" : "#b36b00",
+                  color: "var(--action-fg)",
                 }}
               >
                 {a.days_remaining}d

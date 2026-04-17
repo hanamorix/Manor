@@ -1,7 +1,9 @@
 import { useState } from "react";
+import { Check } from "lucide-react";
 import { addContract, updateContract } from "../../lib/ledger/ipc";
 import { useOverlay } from "../../lib/overlay/state";
 import type { Contract } from "../../lib/ledger/ipc";
+import { Button } from "../../lib/ui";
 
 interface Props {
   existing?: Contract;
@@ -113,10 +115,10 @@ export default function AddContractDrawer({ existing, onClose, onSaved }: Props)
   const inputStyle: React.CSSProperties = {
     width: "100%",
     padding: "9px 12px",
-    fontSize: 14,
+    fontSize: "var(--text-md)",
     border: "1px solid var(--hairline)",
-    borderRadius: 10,
-    background: "#fafafa",
+    borderRadius: "var(--radius-lg)",
+    background: "var(--hairline)",
     fontFamily: "inherit",
     boxSizing: "border-box",
     color: "var(--ink)",
@@ -124,10 +126,8 @@ export default function AddContractDrawer({ existing, onClose, onSaved }: Props)
 
   const labelStyle: React.CSSProperties = {
     fontSize: 11,
-    fontWeight: 700,
-    textTransform: "uppercase",
-    letterSpacing: 0.5,
-    color: "rgba(0,0,0,0.5)",
+    fontWeight: 600,
+    color: "var(--ink-soft)",
     marginBottom: 5,
     display: "block",
   };
@@ -140,7 +140,7 @@ export default function AddContractDrawer({ existing, onClose, onSaved }: Props)
         style={{
           position: "fixed",
           inset: 0,
-          background: "rgba(0,0,0,0.25)",
+          background: "var(--scrim)",
           zIndex: 1050,
         }}
       />
@@ -154,7 +154,7 @@ export default function AddContractDrawer({ existing, onClose, onSaved }: Props)
           bottom: 0,
           width: 420,
           background: "var(--paper)",
-          boxShadow: "-4px 0 24px rgba(0,0,0,0.12)",
+          boxShadow: "var(--shadow-lg)",
           zIndex: 1100,
           display: "flex",
           flexDirection: "column",
@@ -171,7 +171,7 @@ export default function AddContractDrawer({ existing, onClose, onSaved }: Props)
             borderBottom: "1px solid var(--hairline)",
           }}
         >
-          <div style={{ fontSize: 16, fontWeight: 700, color: "var(--ink)" }}>
+          <div style={{ fontSize: "var(--text-lg)", fontWeight: 600, color: "var(--ink)" }}>
             {existing ? "Edit contract" : "Add contract"}
           </div>
           <button
@@ -181,7 +181,7 @@ export default function AddContractDrawer({ existing, onClose, onSaved }: Props)
               border: "none",
               fontSize: 20,
               cursor: "pointer",
-              color: "rgba(0,0,0,0.4)",
+              color: "var(--ink-faint)",
               lineHeight: 1,
               padding: 0,
             }}
@@ -319,11 +319,11 @@ export default function AddContractDrawer({ existing, onClose, onSaved }: Props)
               style={{
                 marginTop: 16,
                 padding: "10px 12px",
-                background: "rgba(255,59,48,0.08)",
-                border: "1px solid rgba(255,59,48,0.3)",
-                borderRadius: 10,
-                fontSize: 13,
-                color: "var(--imessage-red)",
+                background: "var(--paper-muted)",
+                border: "1px solid var(--ink-danger)",
+                borderRadius: "var(--radius-lg)",
+                fontSize: "var(--text-sm)",
+                color: "var(--ink)",
               }}
             >
               {error}
@@ -340,42 +340,18 @@ export default function AddContractDrawer({ existing, onClose, onSaved }: Props)
             gap: 10,
           }}
         >
-          <button
-            onClick={onClose}
-            style={{
-              flex: 1,
-              padding: "10px 16px",
-              background: "transparent",
-              color: "var(--ink)",
-              border: "1px solid var(--hairline)",
-              borderRadius: "var(--radius-pill)",
-              fontSize: 14,
-              fontWeight: 600,
-              cursor: "pointer",
-              fontFamily: "inherit",
-            }}
-          >
+          <Button variant="secondary" onClick={onClose} style={{ flex: 1 }}>
             Cancel
-          </button>
-          <button
+          </Button>
+          <Button
+            variant="primary"
+            icon={Check}
             onClick={handleSave}
             disabled={!canSave || saving}
-            style={{
-              flex: 2,
-              padding: "10px 16px",
-              background: "var(--imessage-blue)",
-              color: "#fff",
-              border: "none",
-              borderRadius: "var(--radius-pill)",
-              fontSize: 14,
-              fontWeight: 600,
-              cursor: !canSave || saving ? "default" : "pointer",
-              opacity: !canSave || saving ? 0.5 : 1,
-              fontFamily: "inherit",
-            }}
+            style={{ flex: 2, opacity: !canSave || saving ? 0.5 : 1 }}
           >
             {saving ? "Saving…" : existing ? "Save changes" : "Add contract"}
-          </button>
+          </Button>
         </div>
       </div>
     </>

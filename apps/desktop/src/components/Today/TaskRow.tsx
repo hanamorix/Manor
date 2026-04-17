@@ -88,7 +88,7 @@ export default function TaskRow({ task }: TaskRowProps) {
         gap: 10,
         padding: "6px 4px",
         alignItems: "center",
-        background: deleteArmed ? "rgba(255, 59, 48, 0.08)" : "transparent",
+        background: deleteArmed ? "var(--ink-danger)" : "transparent",
         borderRadius: 6,
         transition: "background 100ms ease",
       }}
@@ -100,17 +100,17 @@ export default function TaskRow({ task }: TaskRowProps) {
           width: 18,
           height: 18,
           padding: 0,
-          border: completing ? "1.5px solid var(--imessage-green)" : "1.5px solid rgba(0,0,0,0.35)",
-          background: completing ? "var(--imessage-green)" : "transparent",
-          color: "white",
+          border: completing ? "1.5px solid var(--ink)" : "1.5px solid var(--ink-faint)",
+          background: completing ? "var(--ink)" : "transparent",
+          color: "var(--action-fg)",
           borderRadius: 4,
           cursor: "pointer",
           display: "flex",
           alignItems: "center",
           justifyContent: "center",
           flexShrink: 0,
-          fontSize: 12,
-          fontWeight: 700,
+          fontSize: "var(--text-xs)",
+          fontWeight: 600,
           lineHeight: 1,
         }}
       >
@@ -137,7 +137,7 @@ export default function TaskRow({ task }: TaskRowProps) {
             padding: "2px 6px",
             border: "1px solid var(--hairline)",
             borderRadius: 4,
-            fontSize: 14,
+            fontSize: "var(--text-md)",
             fontFamily: "inherit",
           }}
         />
@@ -146,7 +146,7 @@ export default function TaskRow({ task }: TaskRowProps) {
           onClick={startEdit}
           style={{
             flex: 1,
-            fontSize: 14,
+            fontSize: "var(--text-md)",
             lineHeight: 1.4,
             cursor: "text",
             textDecoration: completing ? "line-through" : "none",
@@ -170,7 +170,7 @@ export default function TaskRow({ task }: TaskRowProps) {
               background: "transparent",
               border: "none",
               cursor: "pointer",
-              fontSize: 14,
+              fontSize: "var(--text-md)",
             }}
           >
             ✎
@@ -185,8 +185,8 @@ export default function TaskRow({ task }: TaskRowProps) {
               background: "transparent",
               border: "none",
               cursor: "pointer",
-              fontSize: 14,
-              color: deleteArmed ? "var(--imessage-red)" : "inherit",
+              fontSize: "var(--text-md)",
+              color: deleteArmed ? "var(--ink)" : "inherit",
             }}
           >
             🗑

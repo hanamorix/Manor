@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { Trash2 } from "lucide-react";
 import { useSafetyStore } from "../../lib/safety/state";
 import {
   trashList,
@@ -12,6 +13,7 @@ import {
   dangerButton,
   settingsListRow,
 } from "../Settings/styles";
+import { SectionLabel } from "../../lib/ui";
 
 function daysAgo(unix: number): string {
   const diff = Date.now() / 1000 - unix;
@@ -91,18 +93,9 @@ export default function TrashView() {
 
       {Object.entries(grouped).map(([type, entries]) => (
         <div key={type} style={{ marginBottom: 16 }}>
-          <h3
-            style={{
-              margin: "8px 0",
-              fontSize: 12,
-              color: TEXT_MUTED,
-              textTransform: "uppercase",
-              letterSpacing: 0.5,
-              fontWeight: 700,
-            }}
-          >
+          <SectionLabel icon={Trash2}>
             {type.replace("_", " ")} ({entries.length})
-          </h3>
+          </SectionLabel>
           <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
             {entries.map((e) => (
               <div

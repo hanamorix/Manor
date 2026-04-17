@@ -31,9 +31,11 @@ export function BankAccountRow({ account, onReconnect }: Props) {
         alignItems: "center",
         gap: 12,
         padding: "12px 16px",
-        background: expired ? "#3a2a12" : "#1a1a2e",
-        border: `1px solid ${expired ? "#b7791f" : "#2d2d4a"}`,
-        borderRadius: 8,
+        background: expired ? "var(--hairline)" : "var(--surface)",
+        border: expired
+          ? "1px solid var(--ink-soft)"
+          : "1px solid var(--hairline-strong)",
+        borderRadius: "var(--radius-lg)",
         marginBottom: 8,
       }}
     >
@@ -41,12 +43,22 @@ export function BankAccountRow({ account, onReconnect }: Props) {
         <img src={account.institution_logo_url} width={32} height={32} alt="" />
       )}
       <div style={{ flex: 1 }}>
-        <div style={{ color: "#e4e4e7", fontWeight: 600 }}>
+        <div style={{ color: "var(--ink)", fontWeight: 600 }}>
           {account.institution_name} · {account.account_name}
         </div>
-        <div style={{ color: "#a1a1aa", fontSize: 12 }}>
+        <div style={{ color: "var(--ink-soft)", fontSize: 12 }}>
           synced {lastSynced}
-          {daysLeft !== null && ` · expires in ${daysLeft} days`}
+          {expired ? (
+            <span style={{ fontWeight: 600, color: "var(--ink-soft)" }}>
+              {" · "}expired
+            </span>
+          ) : (
+            daysLeft !== null && (
+              <span style={{ fontWeight: 400, color: "var(--ink-soft)" }}>
+                {` · expires in ${daysLeft} days`}
+              </span>
+            )
+          )}
         </div>
       </div>
       {expired ? (

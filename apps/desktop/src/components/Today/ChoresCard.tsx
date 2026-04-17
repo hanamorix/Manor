@@ -1,37 +1,17 @@
+import { useState } from "react";
+import { Sparkles, Check, SkipForward } from "lucide-react";
 import { useChoresStore } from "../../lib/chores/state";
 import { completeChore, skipChore } from "../../lib/chores/ipc";
-
-const cardStyle: React.CSSProperties = {
-  background: "var(--paper)",
-  border: "1px solid var(--hairline)",
-  borderRadius: "var(--radius-lg)",
-  boxShadow: "var(--shadow-sm)",
-  padding: "16px 18px",
-};
-
-const sectionHeader: React.CSSProperties = {
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "space-between",
-  margin: 0,
-  marginBottom: 8,
-  fontSize: 11,
-  textTransform: "uppercase",
-  letterSpacing: 0.6,
-  color: "rgba(0,0,0,0.55)",
-  fontWeight: 700,
-};
+import { SectionLabel } from "../../lib/ui";
 
 const manageLink: React.CSSProperties = {
   background: "transparent",
   border: "none",
-  color: "var(--imessage-blue)",
+  color: "var(--ink)",
   fontWeight: 600,
-  fontSize: 12,
+  fontSize: "var(--text-xs)",
   cursor: "pointer",
   padding: 0,
-  letterSpacing: 0,
-  textTransform: "none",
 };
 
 const rowStyle: React.CSSProperties = {
@@ -40,20 +20,21 @@ const rowStyle: React.CSSProperties = {
   gap: 10,
   padding: "10px 4px",
   cursor: "pointer",
-  borderRadius: 8,
+  borderRadius: "var(--radius-lg)",
   transition: "background 0.15s",
 };
 
 const emptyStyle: React.CSSProperties = {
   padding: "10px 4px",
-  fontSize: 13,
-  color: "rgba(20,20,30,0.5)",
+  fontSize: "var(--text-sm)",
+  color: "var(--ink-faint)",
 };
 
 export default function ChoresCard() {
   const chores = useChoresStore((s) => s.choresDueToday);
   const removeFromDueToday = useChoresStore((s) => s.removeFromDueToday);
   const upsertChore = useChoresStore((s) => s.upsertChore);
+  const [hoveredId, setHoveredId] = useState<number | null>(null);
 
   async function onComplete(id: number) {
     const updated = await completeChore(id, null);
@@ -61,42 +42,92 @@ export default function ChoresCard() {
     upsertChore(updated);
   }
 
-  async function onSkip(e: React.MouseEvent, id: number) {
-    e.preventDefault();
+  async function onSkip(id: number, e?: React.MouseEvent) {
+    e?.preventDefault();
     const updated = await skipChore(id);
     removeFromDueToday(id);
     upsertChore(updated);
   }
 
   return (
-    <section style={cardStyle} aria-label="Chores">
-      <header style={sectionHeader}>
-        <span>Chores</span>
-        <button style={manageLink} onClick={() => {}}>
-          Manage →
-        </button>
-      </header>
+    <section style={{ marginBottom: 22 }} aria-label="Chores">
+      <SectionLabel
+        icon={Sparkles}
+        action={
+          <button style={manageLink} onClick={() => {}}>
+            Manage →
+          </button>
+        }
+      >
+        Chores
+      </SectionLabel>
       {chores.length === 0 ? (
         <div style={emptyStyle}>All clear today 🧹</div>
       ) : (
         <ul style={{ listStyle: "none", margin: 0, padding: 0 }}>
-          {chores.map((c) => (
-            <li
-              key={c.id}
-              style={rowStyle}
-              role="button"
-              tabIndex={0}
-              onClick={() => onComplete(c.id)}
-              onContextMenu={(e) => onSkip(e, c.id)}
-              onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") onComplete(c.id); }}
-              onMouseEnter={(e) => { e.currentTarget.style.background = "rgba(20,20,30,0.04)"; }}
-              onMouseLeave={(e) => { e.currentTarget.style.background = "transparent"; }}
-              title="Click to complete · Right-click to skip"
-            >
-              <span style={{ fontSize: 18 }}>{c.emoji}</span>
-              <span style={{ flex: 1, fontSize: 14, color: "var(--ink)" }}>{c.title}</span>
-            </li>
-          ))}
+          {chores.map((c) => {
+            const isHovered = hoveredId === c.id;
+            return (
+              <li
+                key={c.id}
+                style={{
+                  ...rowStyle,
+                  background: isHovered ? "var(--paper-muted)" : "transparent",
+                }}
+                onMouseEnter={() => setHoveredId(c.id)}
+                onMouseLeave={() => setHoveredId(null)}
+                onFocus={() => setHoveredId(c.id)}
+                onBlur={() => setHoveredId(null)}
+                onContextMenu={(e) => onSkip(c.id, e)}
+              >
+                <button
+                  onClick={() => onComplete(c.id)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" || e.key === " ") {
+                      e.preventDefault();
+                      onComplete(c.id);
+                    }
+                  }}
+                  aria-label={`Complete ${c.title}`}
+                  style={{
+                    border: "none",
+                    background: "none",
+                    padding: 0,
+                    cursor: "pointer",
+                    color: "var(--ink-soft)",
+                    display: "inline-flex",
+                    alignItems: "center",
+                    flexShrink: 0,
+                  }}
+                >
+                  <Check size={14} strokeWidth={1.8} />
+                </button>
+                <span style={{ fontSize: 18, flexShrink: 0 }}>{c.emoji}</span>
+                <span style={{ flex: 1, fontSize: "var(--text-md)", color: "var(--ink)" }}>{c.title}</span>
+                {isHovered && (
+                  <button
+                    onClick={(e) => { e.stopPropagation(); onSkip(c.id); }}
+                    aria-label={`Skip ${c.title}`}
+                    style={{
+                      border: "none",
+                      background: "none",
+                      color: "var(--ink-soft)",
+                      fontSize: "var(--text-xs)",
+                      cursor: "pointer",
+                      display: "inline-flex",
+                      alignItems: "center",
+                      gap: 4,
+                      padding: "2px 4px",
+                      flexShrink: 0,
+                    }}
+                  >
+                    <SkipForward size={12} strokeWidth={1.8} />
+                    Skip
+                  </button>
+                )}
+              </li>
+            );
+          })}
         </ul>
       )}
     </section>

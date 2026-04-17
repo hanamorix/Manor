@@ -55,7 +55,7 @@ export default function App() {
   }, [modalOpen, setModalOpen]);
 
   if (checking) {
-    return <div style={{ padding: 40, color: "#888" }}>Loading…</div>;
+    return <div style={{ padding: 40, color: "var(--ink-soft)" }}>Loading…</div>;
   }
 
   if (showWizard) {

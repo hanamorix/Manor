@@ -1,6 +1,8 @@
 import { useState } from "react";
+import { Link } from "lucide-react";
 import { addCalendarAccount } from "../../lib/settings/ipc";
 import { useSettingsStore } from "../../lib/settings/state";
+import { Button } from "../../lib/ui";
 
 interface AddAccountFormProps { onClose: () => void; }
 
@@ -30,24 +32,23 @@ export default function AddAccountForm({ onClose }: AddAccountFormProps) {
   };
 
   const labelStyle: React.CSSProperties = {
-    display: "block", fontSize: 11, fontWeight: 700,
-    textTransform: "uppercase", letterSpacing: 0.6,
-    color: "rgba(0,0,0,0.55)", marginBottom: 4, marginTop: 10,
+    display: "block", fontSize: 11, fontWeight: 600,
+    color: "var(--ink-soft)", marginBottom: 4, marginTop: 10,
   };
 
   const inputStyle: React.CSSProperties = {
     width: "100%", padding: "6px 10px",
     border: "1px solid var(--hairline)", borderRadius: 6,
-    fontSize: 13, fontFamily: "inherit", outline: "none",
+    fontSize: "var(--text-sm)", fontFamily: "inherit",
   };
 
   return (
     <div
       style={{
         padding: 12,
-        background: "rgba(0,0,0,0.02)",
+        background: "var(--paper-muted)",
         border: "1px dashed var(--hairline)",
-        borderRadius: 8,
+        borderRadius: "var(--radius-lg)",
         marginTop: 8,
       }}
     >
@@ -71,7 +72,7 @@ export default function AddAccountForm({ onClose }: AddAccountFormProps) {
         onChange={(e) => setPassword(e.target.value)}
         style={inputStyle}
       />
-      <p style={{ marginTop: 6, marginBottom: 0, fontSize: 11, color: "rgba(0,0,0,0.5)", lineHeight: 1.4 }}>
+      <p style={{ marginTop: 6, marginBottom: 0, fontSize: 11, color: "var(--ink-soft)", lineHeight: 1.4 }}>
         {serverUrl.includes("caldav.icloud.com") ? (
           <>
             iCloud needs an app-specific password — generate one at{" "}
@@ -79,7 +80,7 @@ export default function AddAccountForm({ onClose }: AddAccountFormProps) {
               href="https://appleid.apple.com/account/manage"
               target="_blank"
               rel="noreferrer"
-              style={{ color: "var(--imessage-blue)", textDecoration: "none", fontWeight: 600 }}
+              style={{ color: "var(--ink)", textDecoration: "none", fontWeight: 600 }}
             >
               appleid.apple.com
             </a>
@@ -92,7 +93,7 @@ export default function AddAccountForm({ onClose }: AddAccountFormProps) {
               href="https://www.fastmail.com/settings/security/devicekeys"
               target="_blank"
               rel="noreferrer"
-              style={{ color: "var(--imessage-blue)", textDecoration: "none", fontWeight: 600 }}
+              style={{ color: "var(--ink)", textDecoration: "none", fontWeight: 600 }}
             >
               fastmail.com → Settings → Privacy &amp; Security → App passwords
             </a>.
@@ -103,27 +104,22 @@ export default function AddAccountForm({ onClose }: AddAccountFormProps) {
       </p>
 
       {error && (
-        <div style={{ marginTop: 8, color: "var(--imessage-red)", fontSize: 12 }}>
+        <div style={{ marginTop: 8, color: "var(--ink)", fontSize: 12 }}>
           Connection failed: {error}
         </div>
       )}
 
       <div style={{ marginTop: 12, display: "flex", gap: 8, justifyContent: "flex-end" }}>
-        <button onClick={onClose} style={{
-          padding: "6px 12px", borderRadius: 6, fontSize: 12, fontWeight: 600,
-          border: "1px solid var(--hairline)", background: "white", cursor: "pointer",
-        }}>Cancel</button>
-        <button
+        <Button variant="secondary" onClick={onClose}>Cancel</Button>
+        <Button
+          variant="primary"
+          icon={Link}
           onClick={onConnect}
           disabled={!canSubmit}
-          style={{
-            padding: "6px 12px", borderRadius: 6, fontSize: 12, fontWeight: 700,
-            border: "none", background: canSubmit ? "var(--imessage-blue)" : "rgba(0,0,0,0.15)",
-            color: "white", cursor: canSubmit ? "pointer" : "default",
-          }}
+          style={{ opacity: canSubmit ? 1 : 0.5 }}
         >
           {busy ? "Connecting…" : "Connect"}
-        </button>
+        </Button>
       </div>
     </div>
   );

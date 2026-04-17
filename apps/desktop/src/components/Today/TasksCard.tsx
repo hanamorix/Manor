@@ -1,39 +1,18 @@
 import { useState, useRef, useEffect } from "react";
+import { ListTodo } from "lucide-react";
 import { useTodayStore } from "../../lib/today/state";
 import { addTask } from "../../lib/today/ipc";
+import { SectionLabel } from "../../lib/ui";
 import TaskRow from "./TaskRow";
-
-const cardStyle: React.CSSProperties = {
-  background: "var(--paper)",
-  border: "1px solid var(--hairline)",
-  borderRadius: "var(--radius-lg)",
-  boxShadow: "var(--shadow-sm)",
-  padding: "16px 18px",
-};
-
-const sectionHeader: React.CSSProperties = {
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "space-between",
-  margin: 0,
-  marginBottom: 8,
-  fontSize: 11,
-  textTransform: "uppercase",
-  letterSpacing: 0.6,
-  color: "rgba(0,0,0,0.55)",
-  fontWeight: 700,
-};
 
 const addLink: React.CSSProperties = {
   background: "transparent",
   border: "none",
-  color: "var(--imessage-blue)",
-  fontWeight: 700,
-  fontSize: 12,
+  color: "var(--ink)",
+  fontWeight: 600,
+  fontSize: "var(--text-xs)",
   cursor: "pointer",
   padding: 0,
-  letterSpacing: 0,
-  textTransform: "none",
 };
 
 export default function TasksCard() {
@@ -64,16 +43,20 @@ export default function TasksCard() {
   const headerLabel = headerCount > 0 ? `Tasks · ${headerCount} open` : `Tasks`;
 
   return (
-    <div style={cardStyle}>
-      <div style={sectionHeader}>
-        <span>{headerLabel}</span>
-        <button onClick={() => setAdding(true)} style={addLink}>
-          + Add
-        </button>
-      </div>
+    <section style={{ marginBottom: 22 }}>
+      <SectionLabel
+        icon={ListTodo}
+        action={
+          <button onClick={() => setAdding(true)} style={addLink}>
+            + Add
+          </button>
+        }
+      >
+        {headerLabel}
+      </SectionLabel>
 
       {tasks.length === 0 && !adding && (
-        <p style={{ color: "rgba(0,0,0,0.5)", margin: 0, fontSize: 13 }}>
+        <p style={{ color: "var(--ink-faint)", margin: 0, fontSize: 13 }}>
           Nothing on your plate. Type <code>/task</code> or click + Add to add one.
         </p>
       )}
@@ -111,15 +94,14 @@ export default function TasksCard() {
             marginTop: 8,
             width: "100%",
             padding: "6px 10px",
-            border: "1px dashed rgba(0,0,0,0.2)",
+            border: "1px dashed var(--hairline-strong)",
             borderRadius: 6,
-            fontSize: 14,
+            fontSize: "var(--text-md)",
             fontFamily: "inherit",
-            outline: "none",
-            background: "rgba(0,0,0,0.02)",
+            background: "var(--paper-muted)",
           }}
         />
       )}
-    </div>
+    </section>
   );
 }

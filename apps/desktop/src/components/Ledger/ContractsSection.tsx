@@ -1,8 +1,10 @@
 import { useEffect, useState } from "react";
+import { Plus } from "lucide-react";
 import { listContracts, deleteContract } from "../../lib/ledger/ipc";
 import { useLedgerStore } from "../../lib/ledger/state";
 import type { Contract } from "../../lib/ledger/ipc";
 import AddContractDrawer from "./AddContractDrawer";
+import { Button } from "../../lib/ui";
 
 function formatPence(pence: number): string {
   return `£${(pence / 100).toFixed(2)}`;
@@ -34,19 +36,19 @@ function CountdownPill({ days, alertDays }: PillProps) {
 
   if (days < 0) {
     bg = "var(--paper-muted)";
-    color = "rgba(0,0,0,0.55)";
+    color = "var(--ink-soft)";
     label = "expired";
   } else if (days <= 7) {
-    bg = "rgba(255,59,48,0.2)";
-    color = "var(--imessage-red)";
+    bg = "var(--paper-muted)";
+    color = "var(--ink-danger)";
     label = `${days}d`;
   } else if (days <= alertDays) {
-    bg = "rgba(255,149,0,0.2)";
-    color = "#b36b00";
+    bg = "var(--paper-muted)";
+    color = "var(--ink-soft)";
     label = `${days}d`;
   } else {
     bg = "var(--paper-muted)";
-    color = "rgba(0,0,0,0.45)";
+    color = "var(--ink-faint)";
     label = `${days}d`;
   }
 
@@ -60,8 +62,7 @@ function CountdownPill({ days, alertDays }: PillProps) {
         background: bg,
         color,
         fontSize: 11,
-        fontWeight: 700,
-        letterSpacing: 0.3,
+        fontWeight: 600,
         whiteSpace: "nowrap",
       }}
     >
@@ -119,7 +120,15 @@ export default function ContractsSection() {
           }}
         >
           <div
+            role="button"
+            tabIndex={0}
             onClick={() => setExpanded((v) => !v)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" || e.key === " ") {
+                e.preventDefault();
+                setExpanded((v) => !v);
+              }
+            }}
             style={{
               display: "flex",
               alignItems: "center",
@@ -128,39 +137,26 @@ export default function ContractsSection() {
               userSelect: "none",
             }}
           >
-            <span style={{ fontSize: 13, color: "rgba(0,0,0,0.4)" }}>
+            <span style={{ fontSize: "var(--text-sm)", color: "var(--ink-faint)" }}>
               {expanded ? "▾" : "▸"}
             </span>
             <h3
               style={{
                 margin: 0,
-                fontSize: 14,
-                fontWeight: 700,
+                fontSize: "var(--text-md)",
+                fontWeight: 600,
                 color: "var(--ink)",
               }}
             >
               Contracts{" "}
-              <span style={{ color: "rgba(0,0,0,0.45)", fontWeight: 500 }}>
+              <span style={{ color: "var(--ink-faint)", fontWeight: 500 }}>
                 ({contracts.length})
               </span>
             </h3>
           </div>
-          <button
-            onClick={() => setShowAdd(true)}
-            style={{
-              background: "var(--imessage-blue)",
-              color: "#fff",
-              border: "none",
-              borderRadius: "var(--radius-pill)",
-              padding: "4px 12px",
-              fontSize: 12,
-              fontWeight: 600,
-              cursor: "pointer",
-              fontFamily: "inherit",
-            }}
-          >
-            + Add
-          </button>
+          <Button variant="primary" icon={Plus} onClick={() => setShowAdd(true)}>
+            Add
+          </Button>
         </div>
 
         {/* Row list */}
@@ -171,8 +167,8 @@ export default function ContractsSection() {
                 style={{
                   padding: "12px 0",
                   textAlign: "center",
-                  fontSize: 13,
-                  color: "rgba(0,0,0,0.4)",
+                  fontSize: "var(--text-sm)",
+                  color: "var(--ink-faint)",
                 }}
               >
                 No contracts yet.
@@ -190,7 +186,7 @@ export default function ContractsSection() {
                       justifyContent: "space-between",
                       padding: "8px 10px",
                       borderRadius: "var(--radius-sm)",
-                      background: "#fff",
+                      background: "var(--surface)",
                       border: "1px solid var(--hairline)",
                       cursor: "pointer",
                       transition: "opacity 150ms",
@@ -200,7 +196,7 @@ export default function ContractsSection() {
                     <div style={{ display: "flex", flexDirection: "column", minWidth: 0 }}>
                       <div
                         style={{
-                          fontSize: 13,
+                          fontSize: "var(--text-sm)",
                           fontWeight: 600,
                           color: "var(--ink)",
                           overflow: "hidden",
@@ -213,7 +209,7 @@ export default function ContractsSection() {
                       <div
                         style={{
                           fontSize: 11,
-                          color: "rgba(0,0,0,0.45)",
+                          color: "var(--ink-faint)",
                           marginTop: 1,
                         }}
                       >
@@ -232,7 +228,7 @@ export default function ContractsSection() {
                       }}
                     >
                       <span
-                        style={{ fontSize: 13, fontWeight: 600, color: "var(--ink)" }}
+                        style={{ fontSize: "var(--text-sm)", fontWeight: 600, color: "var(--ink)" }}
                       >
                         {formatPence(c.monthly_cost_pence)}/mo
                       </span>
@@ -243,9 +239,9 @@ export default function ContractsSection() {
                         style={{
                           background: "none",
                           border: "none",
-                          fontSize: 13,
+                          fontSize: "var(--text-sm)",
                           cursor: "pointer",
-                          color: "rgba(0,0,0,0.3)",
+                          color: "var(--ink-faint)",
                           padding: "2px 4px",
                           lineHeight: 1,
                           fontFamily: "inherit",
@@ -259,9 +255,9 @@ export default function ContractsSection() {
                         style={{
                           background: "none",
                           border: "none",
-                          fontSize: 14,
+                          fontSize: "var(--text-md)",
                           cursor: "pointer",
-                          color: "rgba(0,0,0,0.3)",
+                          color: "var(--ink-faint)",
                           padding: "2px 4px",
                           lineHeight: 1,
                           fontFamily: "inherit",

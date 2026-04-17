@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { Wallet } from "lucide-react";
 import { useLedgerStore } from "../../lib/ledger/state";
 import {
   listCategories,
@@ -7,6 +8,7 @@ import {
   getMonthlySummary,
 } from "../../lib/ledger/ipc";
 import { AVATAR_FOOTPRINT_PX } from "../../lib/layout";
+import { PageHeader } from "../../lib/ui";
 import { SyncStatusPill } from "./SyncStatusPill";
 import * as bankIpc from "../../lib/ledger/bank-ipc";
 import MonthReviewPanel from "./MonthReviewPanel";
@@ -65,14 +67,21 @@ export default function LedgerView() {
           gap: 12,
         }}
       >
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-          <h2 style={{ margin: 0, fontSize: 22, fontWeight: 700, color: "var(--ink)" }}>Ledger</h2>
-          <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
-            <SyncStatusPill />
-            <button onClick={() => setShowBudgets(true)}>Budgets</button>
-            <button onClick={() => setShowImport(true)}>Import CSV</button>
-          </div>
-        </div>
+        <PageHeader
+          icon={Wallet}
+          title="Ledger"
+          subtitle={new Date(currentYear, currentMonth - 1).toLocaleDateString(undefined, {
+            month: "long",
+            year: "numeric",
+          })}
+          meta={
+            <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+              <SyncStatusPill />
+              <button onClick={() => setShowBudgets(true)}>Budgets</button>
+              <button onClick={() => setShowImport(true)}>Import CSV</button>
+            </div>
+          }
+        />
         {summary && (
           <MonthReviewPanel year={currentYear} month={currentMonth} summary={summary} />
         )}
@@ -84,7 +93,7 @@ export default function LedgerView() {
           onAdd={() => setShowAdd(true)}
         />
         {importToast && (
-          <div style={{ fontSize: 12, color: "var(--imessage-green)" }}>{importToast}</div>
+          <div style={{ fontSize: "var(--text-xs)", color: "var(--ink)" }}>{importToast}</div>
         )}
       </main>
 

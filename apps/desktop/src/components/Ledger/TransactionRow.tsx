@@ -1,22 +1,26 @@
+import {
+  ShoppingBag, UtensilsCrossed, Bus, Zap, CreditCard,
+  Pill, Shirt, Music, CircleDashed, TrendingUp,
+} from "lucide-react";
+import type { LucideIcon } from "lucide-react";
 import type { Category, Transaction } from "../../lib/ledger/ipc";
 
-// Category → pastel background colour for the emoji icon
-const CATEGORY_COLORS: Record<number, string> = {
-  1: "#E8F4FD",  // Groceries — light blue
-  2: "#FFF0F0",  // Eating Out — light red
-  3: "#F0F0FF",  // Transport — light purple
-  4: "#F5F0FF",  // Utilities — light violet
-  5: "#FFF8E6",  // Subscriptions — light amber
-  6: "#F0FFF4",  // Health — light green
-  7: "#FFF0F8",  // Shopping — light pink
-  8: "#F0FAFF",  // Entertainment — light cyan
-  9: "#F5F5F5",  // Other — neutral
-  10: "#E8FDF0", // Income — green
+const CATEGORY_ICON: Record<string, LucideIcon> = {
+  groceries:     ShoppingBag,
+  "eating out":  UtensilsCrossed,
+  transport:     Bus,
+  utilities:     Zap,
+  subscriptions: CreditCard,
+  health:        Pill,
+  shopping:      Shirt,
+  entertainment: Music,
+  income:        TrendingUp,
 };
 
-function iconBg(categoryId: number | null): string {
-  if (categoryId === null) return "#F5F5F5";
-  return CATEGORY_COLORS[categoryId] ?? "#F5F5F5";
+function categoryIcon(category: Category | undefined): LucideIcon {
+  if (!category) return CircleDashed;
+  if (category.is_income) return TrendingUp;
+  return CATEGORY_ICON[category.name.toLowerCase()] ?? CircleDashed;
 }
 
 function formatAmount(pence: number, currency: string): string {
@@ -33,69 +37,59 @@ interface Props {
 }
 
 export default function TransactionRow({ tx, category, onClick }: Props) {
-  const isIncome = tx.amount_pence > 0;
+  const Icon = categoryIcon(category);
+  const isIncome = category?.is_income ?? tx.amount_pence > 0;
 
   return (
     <div
       role="button"
       tabIndex={0}
       onClick={onClick}
+      onKeyDown={(e) => {
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault();
+          onClick();
+        }
+      }}
       style={{
-        display: "flex",
+        display: "grid",
+        gridTemplateColumns: "14px 1fr auto",
         alignItems: "center",
-        justifyContent: "space-between",
-        padding: "10px 12px",
-        background: "#fafafa",
-        borderRadius: 12,
-        cursor: "pointer",
         gap: 10,
+        padding: "8px 0",
+        borderBottom: "1px solid var(--hairline)",
+        cursor: "pointer",
       }}
     >
-      <div style={{ display: "flex", alignItems: "center", gap: 10, minWidth: 0 }}>
+      <Icon size={14} strokeWidth={1.8} color="var(--ink-soft)" />
+      <div style={{ minWidth: 0 }}>
         <div
           style={{
-            width: 32,
-            height: 32,
-            borderRadius: 9,
-            background: iconBg(tx.category_id),
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            fontSize: 16,
-            flexShrink: 0,
+            fontSize: "var(--text-md, 13px)",
+            overflow: "hidden",
+            textOverflow: "ellipsis",
+            whiteSpace: "nowrap",
+            color: "var(--ink)",
           }}
         >
-          {category?.emoji ?? "💳"}
+          {tx.merchant ?? tx.description}
         </div>
-        <div style={{ minWidth: 0 }}>
-          <div
-            style={{
-              fontSize: 13,
-              fontWeight: 600,
-              overflow: "hidden",
-              textOverflow: "ellipsis",
-              whiteSpace: "nowrap",
-            }}
-          >
-            {tx.merchant ?? tx.description}
-          </div>
-          <div style={{ fontSize: 11, color: "#bbb", marginTop: 1 }}>
-            {category?.name ?? "Uncategorised"}
-            {tx.source === "sync" && " · Synced"}
-          </div>
+        <div style={{ fontSize: "var(--text-xs, 11px)", color: "var(--ink-soft)", marginTop: 1 }}>
+          {category?.name ?? "Uncategorised"}
+          {tx.source === "sync" && " · Synced"}
         </div>
       </div>
-
-      <div
+      <span
+        className="num"
         style={{
-          fontSize: 13,
-          fontWeight: 600,
-          color: isIncome ? "#2BB94A" : "inherit",
+          fontSize: "var(--text-md, 13px)",
+          fontWeight: isIncome ? 600 : 400,
+          color: "var(--ink)",
           flexShrink: 0,
         }}
       >
         {formatAmount(tx.amount_pence, tx.currency)}
-      </div>
+      </span>
     </div>
   );
 }

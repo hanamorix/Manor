@@ -1,13 +1,86 @@
-import { useEffect, useState, useRef, KeyboardEvent } from "react";
+import { useEffect, useState, useRef } from "react";
+import { MessageSquare, User, Send } from "lucide-react";
 import { useAssistantStore } from "../../lib/assistant/state";
 import { listMessages, markSeen, getUnreadCount } from "../../lib/assistant/ipc";
 import { parseSlash } from "../../lib/today/slash";
 import { addTask } from "../../lib/today/ipc";
 import { useTodayStore } from "../../lib/today/state";
+import { Button } from "../../lib/ui";
 
 interface ConversationDrawerProps {
   onSubmit: (content: string) => void;
 }
+
+// ---------------------------------------------------------------------------
+// Sub-components
+// ---------------------------------------------------------------------------
+
+function Message({ role, content }: { role: "user" | "assistant"; content: string }) {
+  const Icon = role === "user" ? User : MessageSquare;
+  const label = role === "user" ? "You" : "Nell";
+
+  return (
+    <div style={{ marginBottom: 18 }}>
+      <div
+        style={{
+          display: "flex",
+          alignItems: "center",
+          gap: 6,
+          color: "var(--ink-soft)",
+          fontSize: "var(--text-xs)",
+          fontWeight: 500,
+          marginBottom: 4,
+        }}
+      >
+        <Icon size={14} strokeWidth={1.8} />
+        <span>{label}</span>
+      </div>
+      <div
+        style={{
+          fontSize: "var(--text-md)",
+          color: "var(--ink)",
+          lineHeight: 1.55,
+          paddingBottom: 14,
+          borderBottom: "1px solid var(--hairline)",
+          whiteSpace: "pre-wrap",
+        }}
+      >
+        {content}
+      </div>
+    </div>
+  );
+}
+
+function TypingDots() {
+  return (
+    <div
+      style={{
+        display: "inline-flex",
+        gap: 4,
+        alignItems: "center",
+        color: "var(--ink-soft)",
+        padding: "6px 0",
+      }}
+    >
+      {[0, 1, 2].map((i) => (
+        <span
+          key={i}
+          style={{
+            width: 5,
+            height: 5,
+            borderRadius: "50%",
+            background: "currentColor",
+            animation: `typingPulse 1.2s ${i * 0.15}s infinite var(--ease-out)`,
+          }}
+        />
+      ))}
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Main drawer
+// ---------------------------------------------------------------------------
 
 export default function ConversationDrawer({ onSubmit }: ConversationDrawerProps) {
   const drawerOpen = useAssistantStore((s) => s.drawerOpen);
@@ -15,9 +88,12 @@ export default function ConversationDrawer({ onSubmit }: ConversationDrawerProps
   const messages = useAssistantStore((s) => s.messages);
   const hydrateMessages = useAssistantStore((s) => s.hydrateMessages);
   const setUnreadCount = useAssistantStore((s) => s.setUnreadCount);
+  const avatarState = useAssistantStore((s) => s.avatarState);
 
-  const [value, setValue] = useState("");
+  const [input, setInput] = useState("");
   const bodyRef = useRef<HTMLDivElement>(null);
+
+  const isGenerating = avatarState === "thinking" || avatarState === "speaking";
 
   // On drawer open: hydrate messages, mark all unread as seen, reset unread count.
   useEffect(() => {
@@ -39,6 +115,7 @@ export default function ConversationDrawer({ onSubmit }: ConversationDrawerProps
     if (el) el.scrollTop = el.scrollHeight;
   }, [drawerOpen, messages]);
 
+  // Escape to close.
   useEffect(() => {
     if (!drawerOpen) return;
     const onKey = (e: globalThis.KeyboardEvent) => {
@@ -50,8 +127,8 @@ export default function ConversationDrawer({ onSubmit }: ConversationDrawerProps
 
   if (!drawerOpen) return null;
 
-  const submit = () => {
-    const t = value.trim();
+  const handleSend = () => {
+    const t = input.trim();
     if (t.length === 0) return;
     const slash = parseSlash(t);
     if (slash?.type === "task") {
@@ -59,18 +136,11 @@ export default function ConversationDrawer({ onSubmit }: ConversationDrawerProps
         useTodayStore.getState().upsertTask(task);
         useTodayStore.getState().showToast(`Added: ${slash.title}`);
       });
-      setValue("");
+      setInput("");
       return;
     }
     onSubmit(t);
-    setValue("");
-  };
-
-  const onInputKey = (e: KeyboardEvent<HTMLTextAreaElement>) => {
-    if (e.key === "Enter" && !e.shiftKey) {
-      e.preventDefault();
-      submit();
-    }
+    setInput("");
   };
 
   return (
@@ -81,7 +151,7 @@ export default function ConversationDrawer({ onSubmit }: ConversationDrawerProps
         style={{
           position: "fixed",
           inset: 0,
-          background: "transparent",
+          background: "var(--scrim)",
           zIndex: 900,
         }}
       />
@@ -93,14 +163,15 @@ export default function ConversationDrawer({ onSubmit }: ConversationDrawerProps
           right: 0,
           bottom: 0,
           width: "min(420px, 45vw)",
-          background: "var(--paper)",
-          boxShadow: "var(--shadow-lg)",
+          background: "var(--surface)",
+          borderLeft: "1px solid var(--hairline-strong)",
           display: "flex",
           flexDirection: "column",
           zIndex: 1001,
           animation: "drawerIn 250ms ease-out",
         }}
       >
+        {/* Header */}
         <header
           style={{
             display: "flex",
@@ -127,98 +198,64 @@ export default function ConversationDrawer({ onSubmit }: ConversationDrawerProps
           </button>
         </header>
 
+        {/* Message list */}
         <div
           ref={bodyRef}
           style={{
             flex: 1,
             overflowY: "auto",
-            padding: 14,
-            display: "flex",
-            flexDirection: "column",
-            gap: 6,
+            padding: "16px 18px",
           }}
         >
           {messages.length === 0 && (
-            <div
-              style={{
-                alignSelf: "flex-start",
-                background: "var(--imessage-green)",
-                color: "white",
-                padding: "8px 12px",
-                borderRadius: "var(--radius-lg) var(--radius-lg) var(--radius-lg) 4px",
-                maxWidth: "80%",
-                fontSize: 14,
-                boxShadow: "var(--shadow-sm)",
-              }}
-            >
-              Hi, I'm Manor. Ask me anything.
-            </div>
+            <Message role="assistant" content="Hi, I'm Nell. Ask me anything." />
           )}
 
           {messages.map((m) => (
-            <div
-              key={m.id}
-              style={{
-                alignSelf: m.role === "user" ? "flex-end" : "flex-start",
-                background:
-                  m.role === "user" ? "var(--imessage-blue)" : "var(--imessage-green)",
-                color: "white",
-                padding: "8px 12px",
-                borderRadius:
-                  m.role === "user"
-                    ? "var(--radius-lg) var(--radius-lg) 4px var(--radius-lg)"
-                    : "var(--radius-lg) var(--radius-lg) var(--radius-lg) 4px",
-                maxWidth: "80%",
-                fontSize: 14,
-                whiteSpace: "pre-wrap",
-                boxShadow: "var(--shadow-sm)",
-              }}
-            >
-              {m.content}
-            </div>
+            <Message key={m.id} role={m.role as "user" | "assistant"} content={m.content} />
           ))}
+
+          {isGenerating && <TypingDots />}
         </div>
 
-        <footer
+        {/* Input composer */}
+        <div
           style={{
-            padding: 10,
-            borderTop: "1px solid var(--hairline)",
             display: "flex",
-            gap: 8,
+            gap: 6,
+            alignItems: "flex-end",
+            padding: "12px 14px",
+            borderTop: "1px solid var(--hairline)",
+            background: "var(--surface)",
           }}
         >
           <textarea
-            value={value}
-            onChange={(e) => setValue(e.target.value)}
-            onKeyDown={onInputKey}
-            placeholder="Say something…"
-            rows={2}
+            value={input}
+            onChange={(e) => setInput(e.target.value)}
+            placeholder="Message Nell…"
+            rows={1}
             style={{
               flex: 1,
-              padding: "8px 12px",
-              borderRadius: "var(--radius-md)",
-              border: "1px solid var(--hairline)",
-              fontFamily: "inherit",
-              fontSize: 14,
               resize: "none",
-              outline: "none",
+              fontFamily: "inherit",
+              fontSize: "var(--text-md)",
+              color: "var(--ink)",
+              background: "var(--paper)",
+              border: "1px solid var(--hairline-strong)",
+              borderRadius: "var(--radius-md)",
+              padding: "8px 10px",
+            }}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" && !e.shiftKey) {
+                e.preventDefault();
+                handleSend();
+              }
             }}
           />
-          <button
-            onClick={submit}
-            style={{
-              padding: "8px 14px",
-              borderRadius: "var(--radius-md)",
-              border: "none",
-              background: "var(--imessage-blue)",
-              color: "white",
-              fontWeight: 600,
-              cursor: "pointer",
-            }}
-          >
+          <Button variant="primary" icon={Send} onClick={handleSend}>
             Send
-          </button>
-        </footer>
+          </Button>
+        </div>
       </aside>
     </>
   );

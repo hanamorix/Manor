@@ -1,5 +1,7 @@
 import { useState } from "react";
+import { BookOpen } from "lucide-react";
 import { aiMonthReview, type MonthlySummary, type StreamChunk } from "../../lib/ledger/ipc";
+import { Button } from "../../lib/ui";
 
 interface Props {
   year: number;
@@ -45,27 +47,27 @@ export default function MonthReviewPanel({ year, month, summary }: Props) {
       {/* Summary row */}
       <div style={{ display: "flex", gap: 24, marginBottom: text ? 16 : 0 }}>
         <div>
-          <div style={{ fontSize: 11, color: "rgba(26, 26, 26, 0.55)", marginBottom: 6 }}>In</div>
-          <div style={{ fontSize: 18, fontWeight: 600, color: "var(--imessage-green)" }}>
-            £{(summary.total_in_pence / 100).toFixed(2)}
+          <div style={{ fontSize: 11, color: "var(--ink-soft)", marginBottom: 6 }}>In</div>
+          <div style={{ fontSize: 18, fontWeight: 600, color: "var(--ink)" }}>
+            {"+ "}£{(summary.total_in_pence / 100).toFixed(2)}
           </div>
         </div>
         <div>
-          <div style={{ fontSize: 11, color: "rgba(26, 26, 26, 0.55)", marginBottom: 6 }}>Out</div>
-          <div style={{ fontSize: 18, fontWeight: 600, color: "var(--imessage-red)" }}>
-            £{(summary.total_out_pence / 100).toFixed(2)}
+          <div style={{ fontSize: 11, color: "var(--ink-soft)", marginBottom: 6 }}>Out</div>
+          <div style={{ fontSize: 18, fontWeight: 600, color: "var(--ink)" }}>
+            {"\u2212 "}£{(summary.total_out_pence / 100).toFixed(2)}
           </div>
         </div>
         <div>
-          <div style={{ fontSize: 11, color: "rgba(26, 26, 26, 0.55)", marginBottom: 6 }}>Net</div>
+          <div style={{ fontSize: 11, color: "var(--ink-soft)", marginBottom: 6 }}>Net</div>
           <div
             style={{
               fontSize: 18,
               fontWeight: 600,
-              color: net >= 0 ? "var(--imessage-green)" : "var(--imessage-red)",
+              color: "var(--ink)",
             }}
           >
-            £{(net / 100).toFixed(2)}
+            {"= "}£{(net / 100).toFixed(2)}
           </div>
         </div>
       </div>
@@ -73,11 +75,11 @@ export default function MonthReviewPanel({ year, month, summary }: Props) {
       {/* Review with AI section */}
       {text ? (
         <>
-          <div style={{ whiteSpace: "pre-wrap", fontSize: 14, color: "var(--ink)", marginBottom: 12 }}>
+          <div style={{ whiteSpace: "pre-wrap", fontSize: "var(--text-md)", color: "var(--ink)", marginBottom: 12 }}>
             {text}
           </div>
           {refreshedAt && (
-            <div style={{ fontSize: 11, color: "rgba(26, 26, 26, 0.55)" }}>
+            <div style={{ fontSize: 11, color: "var(--ink-soft)" }}>
               Refreshed {refreshedAt.toLocaleTimeString()} ·{" "}
               <a
                 href="#"
@@ -86,7 +88,7 @@ export default function MonthReviewPanel({ year, month, summary }: Props) {
                   void run();
                 }}
                 style={{
-                  color: "var(--imessage-blue)",
+                  color: "var(--ink)",
                   textDecoration: "none",
                   fontWeight: 600,
                 }}
@@ -97,23 +99,9 @@ export default function MonthReviewPanel({ year, month, summary }: Props) {
           )}
         </>
       ) : (
-        <button
-          onClick={run}
-          disabled={running}
-          style={{
-            padding: "10px 16px",
-            background: "var(--imessage-blue)",
-            color: "#fff",
-            border: "none",
-            borderRadius: "var(--radius-pill)",
-            fontSize: 14,
-            fontWeight: 600,
-            cursor: running ? "not-allowed" : "pointer",
-            opacity: running ? 0.6 : 1,
-          }}
-        >
+        <Button variant="primary" icon={BookOpen} onClick={run} disabled={running} style={{ opacity: running ? 0.6 : 1 }}>
           {running ? "Thinking…" : "Review with AI"}
-        </button>
+        </Button>
       )}
 
       {error && (
@@ -121,9 +109,9 @@ export default function MonthReviewPanel({ year, month, summary }: Props) {
           style={{
             marginTop: 12,
             padding: "8px 12px",
-            fontSize: 12,
-            color: "var(--imessage-red)",
-            background: "rgba(255, 59, 48, 0.06)",
+            fontSize: "var(--text-xs)",
+            color: "var(--ink)",
+            background: "var(--paper-muted)",
             borderRadius: "var(--radius-sm)",
             display: "flex",
             justifyContent: "space-between",
@@ -136,8 +124,8 @@ export default function MonthReviewPanel({ year, month, summary }: Props) {
             style={{
               background: "none",
               border: "none",
-              color: "rgba(26, 26, 26, 0.55)",
-              fontSize: 16,
+              color: "var(--ink-soft)",
+              fontSize: "var(--text-lg)",
               cursor: "pointer",
               padding: "2px 6px",
               lineHeight: 1,

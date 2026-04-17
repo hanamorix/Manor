@@ -33,7 +33,7 @@ export default function Wizard() {
         }}
       >
         <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-          <div style={{ fontSize: 13, color: "rgba(0,0,0,0.55)", fontWeight: 500 }}>
+          <div style={{ fontSize: "var(--text-sm)", color: "var(--ink-soft)", fontWeight: 500 }}>
             Setting up Manor
           </div>
           <div
@@ -47,18 +47,20 @@ export default function Wizard() {
           >
             <div
               style={{
-                width: `${(step / 4) * 100}%`,
+                width: "100%",
+                transform: `scaleX(${Math.min(step / 4, 1)})`,
+                transformOrigin: "left",
                 height: "100%",
-                background: "var(--imessage-blue)",
+                background: "var(--ink)",
                 borderRadius: 2,
-                transition: "width 200ms",
+                transition: "transform var(--duration-med) var(--ease-out)",
               }}
             />
           </div>
           <div
             style={{
-              fontSize: 13,
-              color: "rgba(0,0,0,0.55)",
+              fontSize: "var(--text-sm)",
+              color: "var(--ink-soft)",
               minWidth: 30,
               textAlign: "right",
             }}
@@ -67,13 +69,13 @@ export default function Wizard() {
           </div>
         </div>
 
-        <h1 style={{ margin: 0, fontSize: 24, fontWeight: 700, color: "var(--ink)" }}>
+        <h1 style={{ margin: 0, fontSize: 24, fontWeight: 600, color: "var(--ink)" }}>
           {TITLES[step - 1]}
         </h1>
 
         <div
           style={{
-            background: "#fff",
+            background: "var(--surface)",
             border: "1px solid var(--hairline)",
             borderRadius: "var(--radius-lg)",
             boxShadow: "var(--shadow-sm)",
