@@ -86,6 +86,55 @@ pub fn delete(conn: &Connection, id: i64) -> Result<()> {
     Ok(())
 }
 
+/// Returns the first default-category id whose keyword substring matches the text
+/// (case-insensitive). Returns None if no rule matches.
+///
+/// This is the shared keyword categorizer promoted from CSV-only to a shared helper
+/// (spec §1.5). The bank sync engine and CSV importer both use this.
+pub fn keyword_classify(_conn: &Connection, text: &str) -> Result<Option<i64>> {
+    let t = text.to_uppercase();
+    const RULES: &[(&str, i64)] = &[
+        ("TESCO", 1),
+        ("SAINSBURY", 1),
+        ("WAITROSE", 1),
+        ("ASDA", 1),
+        ("LIDL", 1),
+        ("ALDI", 1),
+        ("MORRISONS", 1),
+        ("UBER EATS", 2),
+        ("DELIVEROO", 2),
+        ("JUST EAT", 2),
+        ("MCDONALD", 2),
+        ("KFC", 2),
+        ("NANDO", 2),
+        ("TFL", 3),
+        ("NATIONAL RAIL", 3),
+        ("TRAINLINE", 3),
+        ("NETFLIX", 5),
+        ("SPOTIFY", 5),
+        ("AMAZON PRIME", 5),
+        ("DISNEY", 5),
+        ("APPLE", 5),
+        ("O2", 5),
+        ("ICLOUD", 5),
+        ("BOOTS", 6),
+        ("PHARMACY", 6),
+        ("NHS", 6),
+        ("DENTIST", 6),
+        ("PAYROLL", 10),
+        ("SALARY", 10),
+        ("WAGES", 10),
+        // UBER is transport only when not UBER EATS (checked after UBER EATS above)
+        ("UBER", 3),
+    ];
+    for (kw, cat) in RULES {
+        if t.contains(kw) {
+            return Ok(Some(*cat));
+        }
+    }
+    Ok(None)
+}
+
 fn get(conn: &Connection, id: i64) -> Result<Category> {
     let mut stmt = conn.prepare(
         "SELECT id, name, emoji, is_income, sort_order, is_default, deleted_at

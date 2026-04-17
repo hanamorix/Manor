@@ -36,6 +36,8 @@ quick-xml = "0.36"
 base64 = "0.22"
 uuid = { version = "1", features = ["v4"] }
 sha2 = "0.10"
+tiny_http = "0.12"
+urlencoding = "2"
 age = "0.10"
 tar = "0.4"
 flate2 = "1"

@@ -3,6 +3,7 @@ import { useSettingsStore } from "../../lib/settings/state";
 import { listCalendarAccounts } from "../../lib/settings/ipc";
 import AccountRow from "./AccountRow";
 import AddAccountForm from "./AddAccountForm";
+import { BankAccountsSection } from "./BankAccountsSection";
 
 export default function CalendarsTab() {
   const accounts = useSettingsStore((s) => s.accounts);
@@ -42,6 +43,8 @@ export default function CalendarsTab() {
       )}
 
       {adding && <AddAccountForm onClose={() => setAdding(false)} />}
+
+      <BankAccountsSection />
     </div>
   );
 }
