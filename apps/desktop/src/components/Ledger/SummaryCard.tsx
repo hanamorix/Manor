@@ -5,20 +5,6 @@ const MONTH_NAMES = [
   "July","August","September","October","November","December",
 ];
 
-function gradientForSpend(totalOut: number, totalBudget: number | null): string {
-  if (totalBudget === null || totalBudget === 0) return "linear-gradient(135deg, #1a1a2e 0%, #16213e 100%)";
-  const pct = totalOut / totalBudget;
-  if (pct >= 1) return "linear-gradient(135deg, #2d0000 0%, #3d0a0a 100%)";
-  if (pct >= 0.75) return "linear-gradient(135deg, #2d1f00 0%, #3d2900 100%)";
-  return "linear-gradient(135deg, #1a1a2e 0%, #16213e 100%)";
-}
-
-function progressColor(pct: number): string {
-  if (pct >= 1) return "#FF3B30";
-  if (pct >= 0.75) return "#FFB347";
-  return "white";
-}
-
 interface Props {
   summary: MonthlySummary;
   year: number;
@@ -30,6 +16,11 @@ interface Props {
 export default function SummaryCard({ summary, year, month, totalBudget, onBudgetPress }: Props) {
   const pct = totalBudget ? Math.min(summary.total_out_pence / totalBudget, 1.1) : 0;
   const remaining = totalBudget ? totalBudget - summary.total_out_pence : null;
+  const over = pct >= 1;
+  const nearLimit = pct >= 0.75 && !over;
+
+  const cardBg = "var(--action-bg)";
+  const cardFg = "var(--action-fg)";
 
   const alertCategories = summary.by_category.filter(
     (c) => c.budget_pence !== null && c.budget_pence > 0 && c.spent_pence / c.budget_pence >= 0.75
@@ -45,10 +36,10 @@ export default function SummaryCard({ summary, year, month, totalBudget, onBudge
       role="button"
       tabIndex={0}
       style={{
-        background: gradientForSpend(summary.total_out_pence, totalBudget),
+        background: cardBg,
         borderRadius: 14,
         padding: "18px 20px",
-        color: "white",
+        color: cardFg,
         cursor: "pointer",
         marginBottom: 8,
       }}
@@ -57,12 +48,22 @@ export default function SummaryCard({ summary, year, month, totalBudget, onBudge
         {MONTH_NAMES[month - 1].toUpperCase()} {year}
       </div>
 
-      <div style={{ fontSize: 28, fontWeight: 700, marginBottom: 4 }}>
+      <div
+        style={{
+          fontSize: 28,
+          fontWeight: over ? 700 : 600,
+          marginBottom: 4,
+          fontFamily: "var(--font-mono)",
+          fontVariantNumeric: "tabular-nums",
+          color: cardFg,
+          textDecoration: over ? "underline" : "none",
+        }}
+      >
         {formatPounds(summary.total_out_pence)}
       </div>
 
       {totalBudget !== null && (
-        <div style={{ fontSize: 12, opacity: 0.5, marginBottom: 12 }}>
+        <div style={{ fontSize: 12, opacity: 0.5, marginBottom: 12, color: cardFg }}>
           of {formatPounds(totalBudget)} budget
           {remaining !== null && remaining >= 0
             ? ` · ${formatPounds(remaining)} remaining`
@@ -73,7 +74,7 @@ export default function SummaryCard({ summary, year, month, totalBudget, onBudge
       {totalBudget !== null && (
         <div
           style={{
-            background: "rgba(255,255,255,0.12)",
+            background: "rgba(128,128,128,0.2)",
             borderRadius: 6,
             height: 6,
             marginBottom: alertCategories.length > 0 ? 14 : 0,
@@ -81,7 +82,8 @@ export default function SummaryCard({ summary, year, month, totalBudget, onBudge
         >
           <div
             style={{
-              background: progressColor(pct),
+              background: cardFg,
+              opacity: nearLimit ? 0.7 : 1,
               width: `${Math.min(pct * 100, 100)}%`,
               height: 6,
               borderRadius: 6,
@@ -95,21 +97,21 @@ export default function SummaryCard({ summary, year, month, totalBudget, onBudge
         <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
           {alertCategories.map((c) => {
             const catPct = c.budget_pence! > 0 ? c.spent_pence / c.budget_pence! : 0;
-            const over = catPct >= 1;
+            const catOver = catPct >= 1;
             return (
               <div
                 key={c.category_id}
                 style={{
-                  background: over
-                    ? "rgba(255,59,48,0.25)"
-                    : "rgba(255,179,71,0.25)",
-                  border: `1px solid ${over ? "rgba(255,59,48,0.5)" : "rgba(255,179,71,0.5)"}`,
+                  background: "rgba(128,128,128,0.15)",
+                  border: `1px solid ${cardFg}`,
                   borderRadius: 20,
                   padding: "4px 10px",
                   fontSize: 11,
+                  color: cardFg,
+                  opacity: catOver ? 1 : 0.7,
                 }}
               >
-                {over ? "🔴" : "⚠️"} {c.category_name} {Math.round(catPct * 100)}%
+                {c.category_name} {Math.round(catPct * 100)}%
               </div>
             );
           })}
@@ -117,13 +119,13 @@ export default function SummaryCard({ summary, year, month, totalBudget, onBudge
       )}
 
       {totalBudget === null && (
-        <div style={{ fontSize: 12, opacity: 0.4 }}>
+        <div style={{ fontSize: 12, opacity: 0.4, color: cardFg }}>
           Tap to set budgets →
         </div>
       )}
 
       {summary.total_in_pence > 0 && (
-        <div style={{ fontSize: 12, opacity: 0.5, marginTop: 8 }}>
+        <div style={{ fontSize: 12, opacity: 0.5, marginTop: 8, color: cardFg }}>
           +{formatPounds(summary.total_in_pence)} income
         </div>
       )}
