@@ -1,8 +1,26 @@
+import {
+  ShoppingBag, UtensilsCrossed, Bus, Zap, CreditCard,
+  Pill, Shirt, Music, CircleDashed, TrendingUp,
+} from "lucide-react";
+import type { LucideIcon } from "lucide-react";
 import type { Category, Transaction } from "../../lib/ledger/ipc";
 
-// CATEGORY_COLORS placeholder — Task 13 replaces with Lucide icons + deletes this
-function iconBg(_categoryId: number | null): string {
-  return "var(--hairline)";
+const CATEGORY_ICON: Record<string, LucideIcon> = {
+  groceries:     ShoppingBag,
+  "eating out":  UtensilsCrossed,
+  transport:     Bus,
+  utilities:     Zap,
+  subscriptions: CreditCard,
+  health:        Pill,
+  shopping:      Shirt,
+  entertainment: Music,
+  income:        TrendingUp,
+};
+
+function categoryIcon(category: Category | undefined): LucideIcon {
+  if (!category) return CircleDashed;
+  if (category.is_income) return TrendingUp;
+  return CATEGORY_ICON[category.name.toLowerCase()] ?? CircleDashed;
 }
 
 function formatAmount(pence: number, currency: string): string {
@@ -19,67 +37,59 @@ interface Props {
 }
 
 export default function TransactionRow({ tx, category, onClick }: Props) {
+  const Icon = categoryIcon(category);
+  const isIncome = category?.is_income ?? tx.amount_pence > 0;
+
   return (
     <div
       role="button"
       tabIndex={0}
       onClick={onClick}
+      onKeyDown={(e) => {
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault();
+          onClick();
+        }
+      }}
       style={{
-        display: "flex",
+        display: "grid",
+        gridTemplateColumns: "14px 1fr auto",
         alignItems: "center",
-        justifyContent: "space-between",
-        padding: "10px 12px",
-        background: "var(--hairline)",
-        borderRadius: 12,
-        cursor: "pointer",
         gap: 10,
+        padding: "8px 0",
+        borderBottom: "1px solid var(--hairline)",
+        cursor: "pointer",
       }}
     >
-      <div style={{ display: "flex", alignItems: "center", gap: 10, minWidth: 0 }}>
+      <Icon size={14} strokeWidth={1.8} color="var(--ink-soft)" />
+      <div style={{ minWidth: 0 }}>
         <div
           style={{
-            width: 32,
-            height: 32,
-            borderRadius: 9,
-            background: iconBg(tx.category_id),
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            fontSize: 16,
-            flexShrink: 0,
+            fontSize: "var(--text-md, 13px)",
+            overflow: "hidden",
+            textOverflow: "ellipsis",
+            whiteSpace: "nowrap",
+            color: "var(--ink)",
           }}
         >
-          {category?.emoji ?? "💳"}
+          {tx.merchant ?? tx.description}
         </div>
-        <div style={{ minWidth: 0 }}>
-          <div
-            style={{
-              fontSize: 13,
-              fontWeight: 600,
-              overflow: "hidden",
-              textOverflow: "ellipsis",
-              whiteSpace: "nowrap",
-            }}
-          >
-            {tx.merchant ?? tx.description}
-          </div>
-          <div style={{ fontSize: 11, color: "var(--ink-soft)", marginTop: 1 }}>
-            {category?.name ?? "Uncategorised"}
-            {tx.source === "sync" && " · Synced"}
-          </div>
+        <div style={{ fontSize: "var(--text-xs, 11px)", color: "var(--ink-soft)", marginTop: 1 }}>
+          {category?.name ?? "Uncategorised"}
+          {tx.source === "sync" && " · Synced"}
         </div>
       </div>
-
-      <div
+      <span
+        className="num"
         style={{
-          fontSize: 13,
-          fontWeight: 600,
+          fontSize: "var(--text-md, 13px)",
+          fontWeight: isIncome ? 600 : 400,
           color: "var(--ink)",
           flexShrink: 0,
         }}
       >
         {formatAmount(tx.amount_pence, tx.currency)}
-      </div>
+      </span>
     </div>
   );
 }
