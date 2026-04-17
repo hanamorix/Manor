@@ -344,6 +344,154 @@ impl GoCardlessClient {
     }
 }
 
+// ------- Account details -------
+
+#[derive(Debug, Deserialize, Clone)]
+pub struct RawAccountDetails {
+    pub iban: Option<String>,
+    pub name: Option<String>,
+    #[serde(rename = "ownerName")]
+    pub owner_name: Option<String>,
+    pub currency: Option<String>,
+    #[serde(rename = "cashAccountType")]
+    pub cash_account_type: Option<String>,
+}
+
+#[derive(Debug, Deserialize, Clone)]
+pub struct RawInstitutionDetails {
+    pub name: String,
+    #[serde(default)]
+    pub logo: Option<String>,
+}
+
+impl GoCardlessClient {
+    /// `/accounts/{id}/details/` returns account + institution blocks.
+    pub async fn fetch_account_details(
+        &self,
+        external_id: &str,
+    ) -> Result<(RawAccountDetails, RawInstitutionDetails)> {
+        let tok = self.ensure_access_token().await?;
+        let url = format!("{}/api/v2/accounts/{external_id}/details/", self.base);
+        let resp = self.http.get(&url).bearer_auth(&tok).send().await
+            .map_err(|e| BankError::UpstreamTransient(e.to_string()))?;
+        let status = resp.status();
+        if !status.is_success() {
+            let text = resp.text().await.unwrap_or_default();
+            return Err(map_http_error(status, &text).into());
+        }
+        #[derive(Deserialize)]
+        struct Envelope {
+            account: RawAccountDetails,
+            #[serde(default)]
+            institution: Option<RawInstitutionDetails>,
+        }
+        let env: Envelope = resp.json().await?;
+        let inst = env.institution.unwrap_or(RawInstitutionDetails {
+            name: "Bank".into(),
+            logo: None,
+        });
+        Ok((env.account, inst))
+    }
+}
+
+// ------- Transactions -------
+
+#[derive(Debug, Deserialize, Clone)]
+pub struct RawTransaction {
+    #[serde(rename = "transactionId")]
+    pub transaction_id: Option<String>,
+    #[serde(rename = "internalTransactionId")]
+    pub internal_transaction_id: Option<String>,
+    pub booking_date: Option<String>,
+    #[serde(rename = "bookingDate")]
+    pub booking_date_camel: Option<String>,
+    /// Snake-case amount field (some banks / GoCardless sandbox).
+    #[serde(default)]
+    pub transaction_amount: Option<RawAmount>,
+    /// Camel-case amount field (standard GoCardless production API).
+    #[serde(rename = "transactionAmount")]
+    pub transaction_amount_camel: Option<RawAmount>,
+    pub remittance_information_unstructured: Option<String>,
+    #[serde(rename = "remittanceInformationUnstructured")]
+    pub remittance_information_unstructured_camel: Option<String>,
+    pub creditor_name: Option<String>,
+    #[serde(rename = "creditorName")]
+    pub creditor_name_camel: Option<String>,
+    pub debtor_name: Option<String>,
+    #[serde(rename = "debtorName")]
+    pub debtor_name_camel: Option<String>,
+}
+
+#[derive(Debug, Deserialize, Clone)]
+pub struct RawAmount {
+    pub amount: String, // GoCardless returns as string
+    pub currency: String,
+}
+
+impl RawTransaction {
+    /// Canonical merchant name — prefer creditorName, then debtorName.
+    pub fn merchant(&self) -> Option<String> {
+        self.creditor_name.clone()
+            .or_else(|| self.creditor_name_camel.clone())
+            .or_else(|| self.debtor_name.clone())
+            .or_else(|| self.debtor_name_camel.clone())
+    }
+
+    pub fn description(&self) -> String {
+        self.remittance_information_unstructured.clone()
+            .or_else(|| self.remittance_information_unstructured_camel.clone())
+            .unwrap_or_else(|| self.merchant().unwrap_or_else(|| "Unknown".into()))
+    }
+
+    pub fn external_id(&self) -> Option<String> {
+        self.transaction_id.clone()
+            .or_else(|| self.internal_transaction_id.clone())
+    }
+
+    pub fn booking_date_str(&self) -> Option<String> {
+        self.booking_date.clone().or_else(|| self.booking_date_camel.clone())
+    }
+
+    pub fn amount_pence(&self) -> Option<i64> {
+        let amt = self.transaction_amount_camel.as_ref()
+            .or_else(|| self.transaction_amount.as_ref())?;
+        let f: f64 = amt.amount.parse().ok()?;
+        Some((f * 100.0).round() as i64)
+    }
+}
+
+impl GoCardlessClient {
+    /// Fetches booked transactions for an account since `date_from` (YYYY-MM-DD).
+    pub async fn fetch_transactions(
+        &self,
+        external_id: &str,
+        date_from: &str,
+    ) -> Result<Vec<RawTransaction>> {
+        let tok = self.ensure_access_token().await?;
+        let url = format!(
+            "{}/api/v2/accounts/{external_id}/transactions/?date_from={date_from}",
+            self.base
+        );
+        let resp = self.http.get(&url).bearer_auth(&tok).send().await
+            .map_err(|e| BankError::UpstreamTransient(e.to_string()))?;
+        let status = resp.status();
+        if !status.is_success() {
+            let text = resp.text().await.unwrap_or_default();
+            return Err(map_http_error(status, &text).into());
+        }
+        #[derive(Deserialize)]
+        struct Envelope {
+            transactions: Transactions,
+        }
+        #[derive(Deserialize)]
+        struct Transactions {
+            booked: Vec<RawTransaction>,
+        }
+        let env: Envelope = resp.json().await?;
+        Ok(env.transactions.booked)
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -458,5 +606,54 @@ mod tests {
         let (id, granted) = client.create_agreement("BARCLAYS", (180, 180)).await.unwrap();
         assert_eq!(id, "agr-id");
         assert_eq!(granted, 90);
+    }
+
+    #[tokio::test]
+    async fn fetch_transactions_returns_booked_only() {
+        let server = MockServer::start().await;
+
+        Mock::given(method("GET"))
+            .and(path("/api/v2/accounts/acc-1/transactions/"))
+            .respond_with(ResponseTemplate::new(200).set_body_json(serde_json::json!({
+                "transactions": {
+                    "booked": [{
+                        "transactionId": "tx-1",
+                        "bookingDate": "2026-04-10",
+                        "transactionAmount": { "amount": "-12.40", "currency": "GBP" },
+                        "creditorName": "TESCO",
+                        "remittanceInformationUnstructured": "TESCO STORES 4023"
+                    }],
+                    "pending": [{
+                        "transactionId": "tx-2-pending",
+                        "transactionAmount": { "amount": "-5.00", "currency": "GBP" }
+                    }]
+                }
+            })))
+            .mount(&server)
+            .await;
+
+        let client = GoCardlessClient::with_token(server.uri(), "test-token");
+        let txs = client.fetch_transactions("acc-1", "2026-04-01").await.unwrap();
+        assert_eq!(txs.len(), 1);
+        assert_eq!(txs[0].external_id(), Some("tx-1".into()));
+        assert_eq!(txs[0].merchant(), Some("TESCO".into()));
+        assert_eq!(txs[0].amount_pence(), Some(-1240));
+    }
+
+    #[test]
+    fn amount_pence_handles_decimal_strings() {
+        let mk = |amt: &str| RawTransaction {
+            transaction_id: None, internal_transaction_id: None,
+            booking_date: None, booking_date_camel: None,
+            transaction_amount: Some(RawAmount { amount: amt.into(), currency: "GBP".into() }),
+            transaction_amount_camel: None,
+            remittance_information_unstructured: None,
+            remittance_information_unstructured_camel: None,
+            creditor_name: None, creditor_name_camel: None,
+            debtor_name: None, debtor_name_camel: None,
+        };
+        assert_eq!(mk("-12.40").amount_pence(), Some(-1240));
+        assert_eq!(mk("100.00").amount_pence(), Some(10000));
+        assert_eq!(mk("0.01").amount_pence(), Some(1));
     }
 }
