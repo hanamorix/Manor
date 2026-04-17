@@ -4,5 +4,6 @@ pub mod bank_account;
 pub mod budget;
 pub mod category;
 pub mod contract;
+pub mod institution_cache;
 pub mod recurring;
 pub mod transaction;
