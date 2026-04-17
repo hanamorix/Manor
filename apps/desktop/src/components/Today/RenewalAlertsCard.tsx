@@ -26,8 +26,6 @@ export default function RenewalAlertsCard() {
           fontSize: 11,
           color: "#b36b00",
           marginBottom: 8,
-          textTransform: "uppercase",
-          letterSpacing: 0.5,
           fontWeight: 600,
         }}
       >

@@ -87,7 +87,6 @@ export default function ProposalBanner() {
               fontWeight: 600,
               padding: "2px 8px",
               borderRadius: "var(--radius-md)",
-              letterSpacing: 0.6,
               flexShrink: 0,
             }}
           >

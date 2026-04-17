@@ -92,8 +92,6 @@ export default function CsvImportDrawer({ onClose, onImported }: Props) {
   const labelStyle: React.CSSProperties = {
     fontSize: 11,
     fontWeight: 600,
-    textTransform: "uppercase",
-    letterSpacing: 0.5,
     color: "var(--ink-soft)",
     marginBottom: 5,
     display: "block",
@@ -288,8 +286,6 @@ export default function CsvImportDrawer({ onClose, onImported }: Props) {
                                 textAlign: "left",
                                 fontWeight: 600,
                                 fontSize: 11,
-                                textTransform: "uppercase",
-                                letterSpacing: 0.4,
                                 color: "var(--ink-soft)",
                                 whiteSpace: "nowrap",
                               }}

@@ -51,8 +51,6 @@ export default function EditEventDrawer({ event, onClose, onSaved }: Props) {
   const labelStyle: React.CSSProperties = {
     fontSize: 11,
     fontWeight: 600,
-    textTransform: "uppercase",
-    letterSpacing: 0.5,
     color: "var(--scrim)",
     marginBottom: 5,
     display: "block",

@@ -50,7 +50,6 @@ export default function SummaryCard({ summary, year, month, totalBudget, onBudge
         marginBottom: 8,
       }}
     >
-      <div style={{ fontSize: 11, opacity: 0.5, letterSpacing: 0.6, marginBottom: 8 }}>
         {MONTH_NAMES[month - 1].toUpperCase()} {year}
       </div>
 

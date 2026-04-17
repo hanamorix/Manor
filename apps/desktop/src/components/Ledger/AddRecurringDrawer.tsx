@@ -96,8 +96,6 @@ export default function AddRecurringDrawer({ categories, existing, onClose, onSa
   const labelStyle: React.CSSProperties = {
     fontSize: 11,
     fontWeight: 600,
-    textTransform: "uppercase",
-    letterSpacing: 0.5,
     color: "var(--ink-soft)",
     marginBottom: 5,
     display: "block",

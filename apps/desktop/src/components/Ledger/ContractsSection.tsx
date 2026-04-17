@@ -63,7 +63,6 @@ function CountdownPill({ days, alertDays }: PillProps) {
         color,
         fontSize: 11,
         fontWeight: 600,
-        letterSpacing: 0.3,
         whiteSpace: "nowrap",
       }}
     >

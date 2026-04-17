@@ -157,8 +157,6 @@ export default function BackupPanel({ defaultOutDir }: Props) {
           marginTop: 8,
           marginBottom: 4,
           color: TEXT_MUTED,
-          textTransform: "uppercase",
-          letterSpacing: 0.5,
           fontWeight: 600,
         }}
       >
