@@ -1,7 +1,7 @@
 //! Tauri commands for Ledger — categories, transactions, budgets.
 
 use crate::assistant::commands::Db;
-use manor_core::ledger::{budget, category, recurring, transaction};
+use manor_core::ledger::{budget, category, contract, recurring, transaction};
 use tauri::State;
 
 // ── Categories ────────────────────────────────────────────────────────────────
@@ -236,4 +236,89 @@ pub fn ledger_update_recurring(
 pub fn ledger_delete_recurring(state: State<'_, Db>, id: i64) -> Result<(), String> {
     let conn = state.0.lock().map_err(|e| e.to_string())?;
     recurring::delete(&conn, id).map_err(|e| e.to_string())
+}
+
+// ── Contracts ─────────────────────────────────────────────────────────────────
+
+#[tauri::command]
+pub fn ledger_list_contracts(state: State<'_, Db>) -> Result<Vec<contract::Contract>, String> {
+    let conn = state.0.lock().map_err(|e| e.to_string())?;
+    contract::list(&conn).map_err(|e| e.to_string())
+}
+
+#[derive(serde::Deserialize)]
+pub struct ContractArgs {
+    pub provider: String,
+    pub kind: String,
+    pub description: Option<String>,
+    #[serde(rename = "monthlyCostPence")]
+    pub monthly_cost_pence: i64,
+    #[serde(rename = "termStart")]
+    pub term_start: i64,
+    #[serde(rename = "termEnd")]
+    pub term_end: i64,
+    #[serde(rename = "exitFeePence")]
+    pub exit_fee_pence: Option<i64>,
+    #[serde(rename = "renewalAlertDays")]
+    pub renewal_alert_days: i64,
+    #[serde(rename = "recurringPaymentId")]
+    pub recurring_payment_id: Option<i64>,
+    pub note: Option<String>,
+}
+
+impl<'a> ContractArgs {
+    fn as_new(&'a self) -> contract::NewContract<'a> {
+        contract::NewContract {
+            provider: &self.provider,
+            kind: &self.kind,
+            description: self.description.as_deref(),
+            monthly_cost_pence: self.monthly_cost_pence,
+            term_start: self.term_start,
+            term_end: self.term_end,
+            exit_fee_pence: self.exit_fee_pence,
+            renewal_alert_days: self.renewal_alert_days,
+            recurring_payment_id: self.recurring_payment_id,
+            note: self.note.as_deref(),
+        }
+    }
+}
+
+#[tauri::command]
+pub fn ledger_add_contract(
+    state: State<'_, Db>,
+    args: ContractArgs,
+) -> Result<contract::Contract, String> {
+    let conn = state.0.lock().map_err(|e| e.to_string())?;
+    contract::insert(&conn, args.as_new()).map_err(|e| e.to_string())
+}
+
+#[derive(serde::Deserialize)]
+pub struct UpdateContractArgs {
+    pub id: i64,
+    #[serde(flatten)]
+    pub fields: ContractArgs,
+}
+
+#[tauri::command]
+pub fn ledger_update_contract(
+    state: State<'_, Db>,
+    args: UpdateContractArgs,
+) -> Result<contract::Contract, String> {
+    let conn = state.0.lock().map_err(|e| e.to_string())?;
+    contract::update(&conn, args.id, args.fields.as_new()).map_err(|e| e.to_string())
+}
+
+#[tauri::command]
+pub fn ledger_delete_contract(state: State<'_, Db>, id: i64) -> Result<(), String> {
+    let conn = state.0.lock().map_err(|e| e.to_string())?;
+    contract::delete(&conn, id).map_err(|e| e.to_string())
+}
+
+#[tauri::command]
+pub fn ledger_get_renewal_alerts(
+    state: State<'_, Db>,
+) -> Result<Vec<contract::RenewalAlert>, String> {
+    let conn = state.0.lock().map_err(|e| e.to_string())?;
+    let now = chrono::Utc::now().timestamp();
+    contract::check_renewals(&conn, now).map_err(|e| e.to_string())
 }
