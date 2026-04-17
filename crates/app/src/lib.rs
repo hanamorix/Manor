@@ -1,6 +1,7 @@
 //! Tauri command glue for Manor.
 
 pub mod assistant;
+pub mod embedding;
 pub mod foundation;
 pub mod ledger;
 pub mod rhythm;
@@ -113,6 +114,17 @@ pub fn register(builder: Builder<Wry>) -> Builder<Wry> {
                         }
                     }
                     Err(e) => tracing::warn!("trash: empty_older_than failed: {e}"),
+                }
+            });
+
+            // Embeddings: one batch of stale-row indexing on app start.
+            // Runs async so it doesn't block setup; silently no-ops if Ollama is down.
+            let db_arc_embed = app.state::<assistant::commands::Db>().inner().clone_arc();
+            tauri::async_runtime::spawn(async move {
+                let (attempted, succeeded) =
+                    crate::embedding::job::run_embed_job(db_arc_embed).await;
+                if attempted > 0 {
+                    tracing::info!("embed: indexed {succeeded}/{attempted} stale row(s)");
                 }
             });
 
