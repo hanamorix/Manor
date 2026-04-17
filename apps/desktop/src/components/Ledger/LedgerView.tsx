@@ -7,6 +7,8 @@ import {
   getMonthlySummary,
 } from "../../lib/ledger/ipc";
 import { AVATAR_FOOTPRINT_PX } from "../../lib/layout";
+import { SyncStatusPill } from "./SyncStatusPill";
+import * as bankIpc from "../../lib/ledger/bank-ipc";
 import MonthReviewPanel from "./MonthReviewPanel";
 import RecurringSection from "./RecurringSection";
 import ContractsSection from "./ContractsSection";
@@ -31,6 +33,14 @@ export default function LedgerView() {
     void listTransactions(currentYear, currentMonth).then(setTransactions);
     void getMonthlySummary(currentYear, currentMonth).then(setSummary);
   }, [currentYear, currentMonth, setCategories, setBudgets, setTransactions, setSummary]);
+
+  // Debounced autocat trigger: fire 2s after mount so it doesn't block initial render.
+  useEffect(() => {
+    const t = setTimeout(() => {
+      bankIpc.autocatPending().catch(() => {});
+    }, 2000);
+    return () => clearTimeout(t);
+  }, []);
 
   const refreshAfterChange = async () => {
     const [txns, s, bs] = await Promise.all([
@@ -57,7 +67,8 @@ export default function LedgerView() {
       >
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
           <h2 style={{ margin: 0, fontSize: 22, fontWeight: 700, color: "var(--ink)" }}>Ledger</h2>
-          <div style={{ display: "flex", gap: 8 }}>
+          <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+            <SyncStatusPill />
             <button onClick={() => setShowBudgets(true)}>Budgets</button>
             <button onClick={() => setShowImport(true)}>Import CSV</button>
           </div>
