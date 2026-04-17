@@ -4,6 +4,13 @@ import {
   backupScheduleInstall, backupScheduleIsInstalled, backupScheduleUninstall,
   backupSetPassphrase, type BackupEntry,
 } from "../../lib/safety/ipc";
+import {
+  COLOR_DANGER,
+  COLOR_SUCCESS,
+  TEXT_MUTED,
+  settingsListRow,
+  settingsStatusWarn,
+} from "../Settings/styles";
 
 function formatSize(bytes: number): string {
   if (bytes < 1024) return `${bytes} B`;
@@ -74,17 +81,35 @@ export default function BackupPanel({ defaultOutDir }: Props) {
 
   return (
     <section style={{ padding: 16, display: "flex", flexDirection: "column", gap: 12 }}>
-      <h2 style={{ margin: 0 }}>Backups</h2>
-      <label>Backup folder
-        <input value={outDir} onChange={(e) => setOutDir(e.target.value)} style={{ width: "100%" }} />
+      <h2 style={{ margin: 0, fontSize: 15, color: "var(--ink)" }}>Backups</h2>
+      <label style={{ color: "var(--ink)", fontSize: 13 }}>
+        Backup folder
+        <input
+          value={outDir}
+          onChange={(e) => setOutDir(e.target.value)}
+          style={{ width: "100%" }}
+        />
       </label>
 
       {!hasPass && (
-        <div style={{ padding: 10, border: "1px solid #553", borderRadius: 6, background: "#221" }}>
-          <div style={{ fontSize: 13, marginBottom: 6 }}>Set a passphrase to encrypt your backups.</div>
-          <input type="password" value={newPass} onChange={(e) => setNewPass(e.target.value)}
-                 placeholder="Passphrase" style={{ width: "60%" }} />
-          <button onClick={savePass} disabled={newPass.length < 8} style={{ marginLeft: 8 }}>Save</button>
+        <div style={settingsStatusWarn}>
+          <div style={{ fontSize: 13, marginBottom: 6, color: "var(--ink)" }}>
+            Set a passphrase to encrypt your backups.
+          </div>
+          <input
+            type="password"
+            value={newPass}
+            onChange={(e) => setNewPass(e.target.value)}
+            placeholder="Passphrase"
+            style={{ width: "60%" }}
+          />
+          <button
+            onClick={savePass}
+            disabled={newPass.length < 8}
+            style={{ marginLeft: 8 }}
+          >
+            Save
+          </button>
         </div>
       )}
 
@@ -111,16 +136,48 @@ export default function BackupPanel({ defaultOutDir }: Props) {
         </div>
       )}
 
-      {message && <div style={{ fontSize: 12, color: message.includes("failed") ? "#f66" : "#6f6" }}>{message}</div>}
+      {message && (
+        <div
+          style={{
+            fontSize: 12,
+            color: message.includes("failed") ? COLOR_DANGER : COLOR_SUCCESS,
+          }}
+        >
+          {message}
+        </div>
+      )}
 
-      <h3 style={{ fontSize: 14, marginTop: 8, marginBottom: 4 }}>Existing backups</h3>
-      {backups.length === 0 && <div style={{ color: "#666", fontSize: 13 }}>None yet.</div>}
+      <h3
+        style={{
+          fontSize: 12,
+          marginTop: 8,
+          marginBottom: 4,
+          color: TEXT_MUTED,
+          textTransform: "uppercase",
+          letterSpacing: 0.5,
+          fontWeight: 700,
+        }}
+      >
+        Existing backups
+      </h3>
+      {backups.length === 0 && (
+        <div style={{ color: TEXT_MUTED, fontSize: 13 }}>None yet.</div>
+      )}
       {backups.map((b) => (
-        <div key={b.path} style={{ display: "flex", justifyContent: "space-between",
-                                   padding: 6, borderRadius: 4, background: "#151515" }}>
+        <div
+          key={b.path}
+          style={{
+            ...settingsListRow,
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+          }}
+        >
           <div>
-            <div style={{ fontSize: 13 }}>{b.path.split("/").pop()}</div>
-            <div style={{ fontSize: 11, color: "#666" }}>
+            <div style={{ fontSize: 13, color: "var(--ink)" }}>
+              {b.path.split("/").pop()}
+            </div>
+            <div style={{ fontSize: 11, color: TEXT_MUTED }}>
               {new Date(b.mtime * 1000).toLocaleString()} · {formatSize(b.size_bytes)}
             </div>
           </div>
@@ -160,7 +217,16 @@ function RestoreButton({ backupPath }: { backupPath: string }) {
           {working ? "…" : "Decrypt"}
         </button>
       </div>
-      {result && <div style={{ fontSize: 11, color: result.includes("failed") ? "#f66" : "#6f6" }}>{result}</div>}
+      {result && (
+        <div
+          style={{
+            fontSize: 11,
+            color: result.includes("failed") ? COLOR_DANGER : COLOR_SUCCESS,
+          }}
+        >
+          {result}
+        </div>
+      )}
     </div>
   );
 }

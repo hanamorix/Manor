@@ -1,8 +1,17 @@
 import { useEffect, useState } from "react";
 import { useSafetyStore } from "../../lib/safety/state";
 import {
-  trashList, trashRestore, trashPermanentDelete, trashEmptyAll,
+  trashList,
+  trashRestore,
+  trashPermanentDelete,
+  trashEmptyAll,
 } from "../../lib/safety/ipc";
+import {
+  COLOR_DANGER,
+  TEXT_MUTED,
+  dangerButton,
+  settingsListRow,
+} from "../Settings/styles";
 
 function daysAgo(unix: number): string {
   const diff = Date.now() / 1000 - unix;
@@ -27,7 +36,9 @@ export default function TrashView() {
     }
   };
 
-  useEffect(() => { void refresh(); }, []);
+  useEffect(() => {
+    void refresh();
+  }, []);
 
   const grouped = trashEntries.reduce<Record<string, typeof trashEntries>>((acc, e) => {
     (acc[e.entity_type] ??= []).push(e);
@@ -36,61 +47,99 @@ export default function TrashView() {
 
   return (
     <section style={{ padding: 16 }}>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
-        <h2 style={{ margin: 0 }}>Trash ({trashEntries.length})</h2>
-        {trashEntries.length > 0 && (
-          confirmEmpty ? (
+      <div
+        style={{
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+          marginBottom: 12,
+        }}
+      >
+        <h2 style={{ margin: 0, fontSize: 15, color: "var(--ink)" }}>
+          Trash ({trashEntries.length})
+        </h2>
+        {trashEntries.length > 0 &&
+          (confirmEmpty ? (
             <div style={{ display: "flex", gap: 8 }}>
               <button onClick={() => setConfirmEmpty(false)}>Cancel</button>
               <button
                 onClick={async () => {
                   setEmptying(true);
-                  try { await trashEmptyAll(); await refresh(); setConfirmEmpty(false); }
-                  finally { setEmptying(false); }
+                  try {
+                    await trashEmptyAll();
+                    await refresh();
+                    setConfirmEmpty(false);
+                  } finally {
+                    setEmptying(false);
+                  }
                 }}
                 disabled={emptying}
-                style={{ background: "#c33", color: "#fff" }}
+                style={dangerButton}
               >
                 {emptying ? "Erasing…" : "Confirm empty"}
               </button>
             </div>
           ) : (
             <button onClick={() => setConfirmEmpty(true)}>Empty Trash</button>
-          )
-        )}
+          ))}
       </div>
 
-      {loading && <div>Loading…</div>}
+      {loading && <div style={{ color: TEXT_MUTED }}>Loading…</div>}
       {!loading && trashEntries.length === 0 && (
-        <div style={{ color: "#666" }}>Trash is empty.</div>
+        <div style={{ color: TEXT_MUTED }}>Trash is empty.</div>
       )}
 
       {Object.entries(grouped).map(([type, entries]) => (
         <div key={type} style={{ marginBottom: 16 }}>
-          <h3 style={{ margin: "8px 0", fontSize: 14, color: "#888", textTransform: "capitalize" }}>
+          <h3
+            style={{
+              margin: "8px 0",
+              fontSize: 12,
+              color: TEXT_MUTED,
+              textTransform: "uppercase",
+              letterSpacing: 0.5,
+              fontWeight: 700,
+            }}
+          >
             {type.replace("_", " ")} ({entries.length})
           </h3>
           <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
             {entries.map((e) => (
-              <div key={`${e.entity_type}-${e.entity_id}`}
-                   style={{ display: "flex", justifyContent: "space-between", padding: 8,
-                            borderRadius: 6, background: "#1a1a1a" }}>
+              <div
+                key={`${e.entity_type}-${e.entity_id}`}
+                style={{
+                  ...settingsListRow,
+                  display: "flex",
+                  justifyContent: "space-between",
+                  alignItems: "center",
+                }}
+              >
                 <div>
-                  <div>{e.title || "(untitled)"}</div>
-                  <div style={{ fontSize: 11, color: "#666" }}>deleted {daysAgo(e.deleted_at)}</div>
+                  <div style={{ color: "var(--ink)", fontSize: 13 }}>
+                    {e.title || "(untitled)"}
+                  </div>
+                  <div style={{ fontSize: 11, color: TEXT_MUTED }}>
+                    deleted {daysAgo(e.deleted_at)}
+                  </div>
                 </div>
                 <div style={{ display: "flex", gap: 6 }}>
-                  <button onClick={async () => {
-                    await trashRestore(e.entity_type, e.entity_id);
-                    await refresh();
-                  }}>Restore</button>
+                  <button
+                    onClick={async () => {
+                      await trashRestore(e.entity_type, e.entity_id);
+                      await refresh();
+                    }}
+                  >
+                    Restore
+                  </button>
                   <button
                     onClick={async () => {
                       await trashPermanentDelete(e.entity_type, e.entity_id);
                       await refresh();
                     }}
-                    style={{ color: "#f66" }}
-                  >Delete</button>
+                    style={{ color: COLOR_DANGER }}
+                  >
+                    Delete
+                  </button>
                 </div>
               </div>
             ))}

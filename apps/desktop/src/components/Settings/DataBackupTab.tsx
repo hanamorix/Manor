@@ -4,6 +4,7 @@ import BackupPanel from "../Safety/BackupPanel";
 import PanicButton from "../Safety/PanicButton";
 import { dataDirPath } from "../../lib/settings/ipc";
 import { settingGet, settingSet } from "../../lib/foundation/ipc";
+import { TEXT_MUTED, settingsCodeBlock } from "./styles";
 
 const AUTO_EMPTY_OPTIONS: Array<{ value: string; label: string }> = [
   { value: "7",     label: "7 days" },
@@ -29,21 +30,20 @@ export default function DataBackupTab() {
   return (
     <div style={{ display: "flex", flexDirection: "column", padding: "8px 0" }}>
       <section style={{ padding: 16 }}>
-        <h2 style={{ margin: "0 0 8px 0", fontSize: 15 }}>Data directory</h2>
-        <div style={{
-          fontFamily: "var(--mono, monospace)", fontSize: 12, color: "#888",
-          background: "#141414", padding: 8, borderRadius: 4, overflowX: "auto",
-        }}>
-          {dataDir || "…"}
-        </div>
-        <div style={{ fontSize: 11, color: "#666", marginTop: 4 }}>
+        <h2 style={{ margin: "0 0 8px 0", fontSize: 15, color: "var(--ink)" }}>
+          Data directory
+        </h2>
+        <div style={{ ...settingsCodeBlock, fontSize: 12 }}>{dataDir || "…"}</div>
+        <div style={{ fontSize: 11, color: TEXT_MUTED, marginTop: 4 }}>
           Moving the data directory requires quitting Manor and copying the files manually.
         </div>
       </section>
 
       <section style={{ padding: 16, borderTop: "1px solid var(--hairline)" }}>
-        <h2 style={{ margin: "0 0 8px 0", fontSize: 15 }}>Trash auto-empty</h2>
-        <div style={{ fontSize: 13 }}>
+        <h2 style={{ margin: "0 0 8px 0", fontSize: 15, color: "var(--ink)" }}>
+          Trash auto-empty
+        </h2>
+        <div style={{ fontSize: 13, color: "var(--ink)" }}>
           Permanently delete soft-deleted items older than{" "}
           <select value={autoEmpty} onChange={(e) => void onAutoEmptyChange(e.target.value)}>
             {AUTO_EMPTY_OPTIONS.map((o) => (

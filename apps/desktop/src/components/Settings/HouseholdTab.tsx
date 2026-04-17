@@ -5,6 +5,7 @@ import {
   settingGet, settingSet,
   type Household, type Person, type WorkingHours,
 } from "../../lib/foundation/ipc";
+import { COLOR_DANGER, COLOR_SUCCESS, TEXT_MUTED, settingsListRow } from "./styles";
 
 const DAYS = ["mon", "tue", "wed", "thu", "fri", "sat", "sun"];
 
@@ -34,7 +35,7 @@ function WeatherLocationInput() {
     }
   };
 
-  if (!loaded) return <div style={{ fontSize: 12, color: "#666" }}>…</div>;
+  if (!loaded) return <div style={{ fontSize: 12, color: TEXT_MUTED }}>…</div>;
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
@@ -48,9 +49,18 @@ function WeatherLocationInput() {
         <button onClick={save} disabled={saving}>
           {saving ? "Saving…" : "Save location"}
         </button>
-        {message && <span style={{ fontSize: 11, color: message.includes("Failed") ? "#f66" : "#6f6" }}>{message}</span>}
+        {message && (
+          <span
+            style={{
+              fontSize: 11,
+              color: message.includes("Failed") ? COLOR_DANGER : COLOR_SUCCESS,
+            }}
+          >
+            {message}
+          </span>
+        )}
       </div>
-      <div style={{ fontSize: 11, color: "#666" }}>
+      <div style={{ fontSize: 11, color: TEXT_MUTED }}>
         Uses wttr.in — if blank, location is inferred from your IP.
       </div>
     </div>
@@ -155,38 +165,58 @@ export default function HouseholdTab() {
             })}
           </tbody>
         </table>
-        <div style={{ fontSize: 11, color: "#666", marginTop: 4 }}>
+        <div style={{ fontSize: 11, color: TEXT_MUTED, marginTop: 4 }}>
           Leave blank or set start ≥ end to mark a rest day.
         </div>
       </section>
 
       <section>
-        <h2 style={{ margin: "0 0 8px 0", fontSize: 15 }}>People</h2>
+        <h2 style={{ margin: "0 0 8px 0", fontSize: 15, color: "var(--ink)" }}>
+          People
+        </h2>
         <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
           {people.map((p) => (
-            <div key={p.id}
-                 style={{ display: "flex", justifyContent: "space-between",
-                          padding: 6, borderRadius: 4, background: "#151515" }}>
+            <div
+              key={p.id}
+              style={{
+                ...settingsListRow,
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "center",
+              }}
+            >
               <div>
-                <div style={{ fontSize: 13 }}>{p.name}</div>
-                <div style={{ fontSize: 11, color: "#666" }}>{p.kind}</div>
+                <div style={{ fontSize: 13, color: "var(--ink)" }}>{p.name}</div>
+                <div style={{ fontSize: 11, color: TEXT_MUTED }}>{p.kind}</div>
               </div>
-              <button onClick={async () => { await personDelete(p.id); await refresh(); }}
-                      style={{ fontSize: 12 }}>
+              <button
+                onClick={async () => {
+                  await personDelete(p.id);
+                  await refresh();
+                }}
+                style={{ fontSize: 12 }}
+              >
                 Remove
               </button>
             </div>
           ))}
         </div>
         <div style={{ marginTop: 8, display: "flex", gap: 6 }}>
-          <input value={newName} onChange={(e) => setNewName(e.target.value)}
-                 placeholder="Add a member" />
-          <button onClick={onAddPerson} disabled={!newName.trim()}>Add</button>
+          <input
+            value={newName}
+            onChange={(e) => setNewName(e.target.value)}
+            placeholder="Add a member"
+          />
+          <button onClick={onAddPerson} disabled={!newName.trim()}>
+            Add
+          </button>
         </div>
       </section>
 
       <section>
-        <h2 style={{ margin: "0 0 8px 0", fontSize: 15 }}>Weather location</h2>
+        <h2 style={{ margin: "0 0 8px 0", fontSize: 15, color: "var(--ink)" }}>
+          Weather location
+        </h2>
         <WeatherLocationInput />
       </section>
     </div>
