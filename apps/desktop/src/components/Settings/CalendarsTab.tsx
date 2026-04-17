@@ -1,9 +1,11 @@
 import { useEffect, useState } from "react";
+import { Calendar, Plus } from "lucide-react";
 import { useSettingsStore } from "../../lib/settings/state";
 import { listCalendarAccounts } from "../../lib/settings/ipc";
 import AccountRow from "./AccountRow";
 import AddAccountForm from "./AddAccountForm";
 import { BankAccountsSection } from "./BankAccountsSection";
+import { SectionLabel, Button } from "../../lib/ui";
 
 export default function CalendarsTab() {
   const accounts = useSettingsStore((s) => s.accounts);
@@ -16,10 +18,12 @@ export default function CalendarsTab() {
 
   return (
     <div style={{ padding: "14px 16px" }}>
-      <p style={{
-        fontSize: 11, textTransform: "uppercase", letterSpacing: 0.6,
-        color: "var(--ink-soft)", fontWeight: 700, margin: "0 0 10px",
-      }}>Your calendar accounts</p>
+      <SectionLabel
+        icon={Calendar}
+        action={!adding ? <Button variant="secondary" icon={Plus} onClick={() => setAdding(true)}>Add account</Button> : undefined}
+      >
+        Your calendar accounts
+      </SectionLabel>
 
       {accounts.length === 0 && !adding && (
         <p style={{ color: "var(--ink-soft)", fontSize: 13, marginBottom: 12 }}>
@@ -28,19 +32,6 @@ export default function CalendarsTab() {
       )}
 
       {accounts.map((a) => <AccountRow key={a.id} account={a} />)}
-
-      {!adding && (
-        <button
-          onClick={() => setAdding(true)}
-          style={{
-            background: "transparent", border: "none",
-            color: "var(--ink)", fontWeight: 700, fontSize: 12,
-            padding: "6px 0", cursor: "pointer",
-          }}
-        >
-          + Add calendar account
-        </button>
-      )}
 
       {adding && <AddAccountForm onClose={() => setAdding(false)} />}
 

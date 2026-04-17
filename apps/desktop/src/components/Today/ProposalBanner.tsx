@@ -84,7 +84,7 @@ export default function ProposalBanner() {
               background: "var(--ink)",
               color: "var(--action-fg)",
               fontSize: 10,
-              fontWeight: 700,
+              fontWeight: 600,
               padding: "2px 8px",
               borderRadius: 999,
               letterSpacing: 0.6,
@@ -94,7 +94,7 @@ export default function ProposalBanner() {
             PROPOSAL
           </span>
           <div style={{ flex: 1, minWidth: 0 }}>
-            <div style={{ fontWeight: 700, fontSize: 13, color: "var(--ink)" }}>
+            <div style={{ fontWeight: 600, fontSize: 13, color: "var(--ink)" }}>
               {summarise(p)}
             </div>
             <div
@@ -116,7 +116,7 @@ export default function ProposalBanner() {
               padding: "4px 10px",
               borderRadius: 999,
               fontSize: 12,
-              fontWeight: 700,
+              fontWeight: 600,
               border: "none",
               background: "var(--ink)",
               color: "var(--action-fg)",
@@ -132,7 +132,7 @@ export default function ProposalBanner() {
               padding: "4px 10px",
               borderRadius: 999,
               fontSize: 12,
-              fontWeight: 700,
+              fontWeight: 600,
               border: "none",
               background: "var(--surface)",
               color: "var(--ink-soft)",

@@ -126,7 +126,7 @@ export default function AddContractDrawer({ existing, onClose, onSaved }: Props)
 
   const labelStyle: React.CSSProperties = {
     fontSize: 11,
-    fontWeight: 700,
+    fontWeight: 600,
     textTransform: "uppercase",
     letterSpacing: 0.5,
     color: "var(--ink-soft)",
@@ -173,7 +173,7 @@ export default function AddContractDrawer({ existing, onClose, onSaved }: Props)
             borderBottom: "1px solid var(--hairline)",
           }}
         >
-          <div style={{ fontSize: 16, fontWeight: 700, color: "var(--ink)" }}>
+          <div style={{ fontSize: 16, fontWeight: 600, color: "var(--ink)" }}>
             {existing ? "Edit contract" : "Add contract"}
           </div>
           <button

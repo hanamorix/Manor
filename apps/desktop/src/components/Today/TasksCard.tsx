@@ -9,7 +9,7 @@ const addLink: React.CSSProperties = {
   background: "transparent",
   border: "none",
   color: "var(--ink)",
-  fontWeight: 700,
+  fontWeight: 600,
   fontSize: 12,
   cursor: "pointer",
   padding: 0,

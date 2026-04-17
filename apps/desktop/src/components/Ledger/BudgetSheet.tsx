@@ -105,7 +105,7 @@ export default function BudgetSheet({ categories, budgets, onClose, onChanged }:
           }}
         >
           <div>
-            <div style={{ fontSize: 16, fontWeight: 700 }}>Monthly Budgets</div>
+            <div style={{ fontSize: 16, fontWeight: 600 }}>Monthly Budgets</div>
             <div style={{ fontSize: 12, color: "var(--ink-faint)", marginTop: 2 }}>
               Leave blank to skip tracking a category
             </div>
@@ -179,7 +179,7 @@ export default function BudgetSheet({ categories, budgets, onClose, onChanged }:
               border: "none",
               borderRadius: 12,
               fontSize: 15,
-              fontWeight: 700,
+              fontWeight: 600,
               cursor: saving ? "default" : "pointer",
               opacity: saving ? 0.6 : 1,
               fontFamily: "inherit",

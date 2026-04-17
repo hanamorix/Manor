@@ -91,7 +91,7 @@ export default function CsvImportDrawer({ onClose, onImported }: Props) {
 
   const labelStyle: React.CSSProperties = {
     fontSize: 11,
-    fontWeight: 700,
+    fontWeight: 600,
     textTransform: "uppercase",
     letterSpacing: 0.5,
     color: "var(--ink-soft)",
@@ -152,7 +152,7 @@ export default function CsvImportDrawer({ onClose, onImported }: Props) {
             borderBottom: "1px solid var(--hairline)",
           }}
         >
-          <div style={{ fontSize: 16, fontWeight: 700, color: "var(--ink)" }}>
+          <div style={{ fontSize: 16, fontWeight: 600, color: "var(--ink)" }}>
             Import CSV
           </div>
           <button
@@ -286,7 +286,7 @@ export default function CsvImportDrawer({ onClose, onImported }: Props) {
                               style={{
                                 padding: "7px 10px",
                                 textAlign: "left",
-                                fontWeight: 700,
+                                fontWeight: 600,
                                 fontSize: 11,
                                 textTransform: "uppercase",
                                 letterSpacing: 0.4,

@@ -104,7 +104,7 @@ export default function AccountRow({ account, onRefresh }: AccountRowProps) {
             alignItems: "center",
             justifyContent: "center",
             fontSize: 11,
-            fontWeight: 700,
+            fontWeight: 600,
           }}
         >
           {providerBadge(account.server_url)}

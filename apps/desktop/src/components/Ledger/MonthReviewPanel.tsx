@@ -63,7 +63,7 @@ export default function MonthReviewPanel({ year, month, summary }: Props) {
           <div
             style={{
               fontSize: 18,
-              fontWeight: 700,
+              fontWeight: 600,
               color: "var(--ink)",
             }}
           >

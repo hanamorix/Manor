@@ -47,7 +47,7 @@ export default function AddEventDrawer({ accountId, defaultCalendarUrl, calendar
 
   const labelStyle: React.CSSProperties = {
     fontSize: 11,
-    fontWeight: 700,
+    fontWeight: 600,
     textTransform: "uppercase",
     letterSpacing: 0.5,
     color: "rgba(0,0,0,0.5)",
@@ -107,7 +107,7 @@ export default function AddEventDrawer({ accountId, defaultCalendarUrl, calendar
         }}
       >
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "18px 20px 14px", borderBottom: "1px solid var(--hairline)" }}>
-          <div style={{ fontSize: 16, fontWeight: 700 }}>Add Event</div>
+          <div style={{ fontSize: 16, fontWeight: 600 }}>Add Event</div>
           <button onClick={onClose} style={{ background: "none", border: "none", fontSize: 20, cursor: "pointer", color: "rgba(0,0,0,0.4)", lineHeight: 1, padding: 0 }}>✕</button>
         </div>
 
@@ -174,7 +174,7 @@ export default function AddEventDrawer({ accountId, defaultCalendarUrl, calendar
           <button
             onClick={handleSave}
             disabled={saving}
-            style={{ width: "100%", padding: "12px 0", background: "var(--ink)", color: "var(--action-fg)", border: "none", borderRadius: 12, fontSize: 15, fontWeight: 700, cursor: saving ? "default" : "pointer", opacity: saving ? 0.6 : 1, fontFamily: "inherit" }}
+            style={{ width: "100%", padding: "12px 0", background: "var(--ink)", color: "var(--action-fg)", border: "none", borderRadius: 12, fontSize: 15, fontWeight: 600, cursor: saving ? "default" : "pointer", opacity: saving ? 0.6 : 1, fontFamily: "inherit" }}
           >
             {saving ? "Saving…" : "Save"}
           </button>

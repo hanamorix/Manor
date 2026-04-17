@@ -34,7 +34,7 @@ const drawerStyle: React.CSSProperties = {
 const labelStyle: React.CSSProperties = {
   display: "block",
   fontSize: 11,
-  fontWeight: 700,
+  fontWeight: 600,
   textTransform: "uppercase",
   letterSpacing: 0.6,
   color: "var(--ink-soft)",
@@ -143,7 +143,7 @@ export default function ChoreDrawer({ chore, onClose }: Props) {
   return (
     <div style={overlayStyle} onClick={onClose}>
       <aside style={drawerStyle} onClick={(e) => e.stopPropagation()}>
-        <h2 style={{ margin: "0 0 16px", fontSize: 20, fontWeight: 700 }}>
+        <h2 style={{ margin: "0 0 16px", fontSize: 20, fontWeight: 600 }}>
           {chore ? "Edit chore" : "New chore"}
         </h2>
 

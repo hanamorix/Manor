@@ -28,7 +28,7 @@ export default function RenewalAlertsCard() {
           marginBottom: 8,
           textTransform: "uppercase",
           letterSpacing: 0.5,
-          fontWeight: 700,
+          fontWeight: 600,
         }}
       >
         What matters

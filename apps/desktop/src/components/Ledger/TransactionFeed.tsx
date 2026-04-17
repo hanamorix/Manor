@@ -1,4 +1,6 @@
+import { ReceiptText, Plus } from "lucide-react";
 import TransactionRow from "./TransactionRow";
+import { SectionLabel, Button } from "../../lib/ui";
 import type { Category, Transaction } from "../../lib/ledger/ipc";
 
 const MONTH_SHORT = ["Jan","Feb","Mar","Apr","May","Jun",
@@ -10,9 +12,9 @@ function dayLabel(dateTs: number): string {
   const yesterday = new Date(today);
   yesterday.setDate(today.getDate() - 1);
 
-  if (d.toDateString() === today.toDateString()) return "TODAY";
-  if (d.toDateString() === yesterday.toDateString()) return "YESTERDAY";
-  return `${d.getDate()} ${MONTH_SHORT[d.getMonth()]}`.toUpperCase();
+  if (d.toDateString() === today.toDateString()) return "Today";
+  if (d.toDateString() === yesterday.toDateString()) return "Yesterday";
+  return `${d.getDate()} ${MONTH_SHORT[d.getMonth()]}`;
 }
 
 function groupByDay(txns: Transaction[]): [string, Transaction[]][] {
@@ -36,51 +38,13 @@ export default function TransactionFeed({ transactions, categories, onAdd }: Pro
   const groups = groupByDay(transactions);
 
   return (
-    <div
-      style={{
-        background: "var(--paper)",
-        border: "1px solid var(--hairline)",
-        borderRadius: "var(--radius-lg)",
-        boxShadow: "var(--shadow-sm)",
-        padding: "16px 18px",
-      }}
-    >
-      <div
-        style={{
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
-          marginBottom: 12,
-        }}
+    <div>
+      <SectionLabel
+        icon={ReceiptText}
+        action={<Button variant="secondary" icon={Plus} onClick={onAdd}>Add</Button>}
       >
-        <div
-          style={{
-            fontSize: 11,
-            fontWeight: 700,
-            textTransform: "uppercase",
-            letterSpacing: 0.6,
-            color: "var(--ink-soft)",
-          }}
-        >
-          Transactions
-        </div>
-        <button
-          onClick={onAdd}
-          style={{
-            background: "var(--ink)",
-            color: "var(--action-fg)",
-            border: "none",
-            borderRadius: 20,
-            padding: "5px 14px",
-            fontSize: 12,
-            fontWeight: 600,
-            cursor: "pointer",
-            fontFamily: "inherit",
-          }}
-        >
-          + Add
-        </button>
-      </div>
+        Transactions
+      </SectionLabel>
 
       {groups.length === 0 && (
         <div
@@ -101,10 +65,9 @@ export default function TransactionFeed({ transactions, categories, onAdd }: Pro
         <div key={label} style={{ marginBottom: 16 }}>
           <div
             style={{
-              fontSize: 10,
+              fontSize: "var(--text-xs)",
               color: "var(--ink-soft)",
-              fontWeight: 700,
-              letterSpacing: 0.6,
+              fontWeight: 500,
               padding: "0 4px",
               marginBottom: 6,
             }}

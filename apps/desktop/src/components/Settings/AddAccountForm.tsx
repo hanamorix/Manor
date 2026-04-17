@@ -32,7 +32,7 @@ export default function AddAccountForm({ onClose }: AddAccountFormProps) {
   };
 
   const labelStyle: React.CSSProperties = {
-    display: "block", fontSize: 11, fontWeight: 700,
+    display: "block", fontSize: 11, fontWeight: 600,
     textTransform: "uppercase", letterSpacing: 0.6,
     color: "var(--ink-soft)", marginBottom: 4, marginTop: 10,
   };

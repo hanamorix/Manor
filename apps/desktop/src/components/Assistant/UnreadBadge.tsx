@@ -17,7 +17,7 @@ export default function UnreadBadge() {
         background: "var(--ink)",
         color: "var(--action-fg)",
         fontSize: 11,
-        fontWeight: 700,
+        fontWeight: 600,
         display: "flex",
         alignItems: "center",
         justifyContent: "center",

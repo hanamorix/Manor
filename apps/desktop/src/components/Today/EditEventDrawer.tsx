@@ -50,7 +50,7 @@ export default function EditEventDrawer({ event, onClose, onSaved }: Props) {
 
   const labelStyle: React.CSSProperties = {
     fontSize: 11,
-    fontWeight: 700,
+    fontWeight: 600,
     textTransform: "uppercase",
     letterSpacing: 0.5,
     color: "rgba(0,0,0,0.5)",
@@ -117,7 +117,7 @@ export default function EditEventDrawer({ event, onClose, onSaved }: Props) {
         }}
       >
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "18px 20px 14px", borderBottom: "1px solid var(--hairline)" }}>
-          <div style={{ fontSize: 16, fontWeight: 700 }}>Edit Event</div>
+          <div style={{ fontSize: 16, fontWeight: 600 }}>Edit Event</div>
           <button onClick={onClose} style={{ background: "none", border: "none", fontSize: 20, cursor: "pointer", color: "rgba(0,0,0,0.4)", lineHeight: 1, padding: 0 }}>✕</button>
         </div>
 
@@ -200,7 +200,7 @@ export default function EditEventDrawer({ event, onClose, onSaved }: Props) {
                 <button
                   onClick={() => handleDelete(false)}
                   disabled={deleting}
-                  style={{ background: "rgba(255,59,48,0.15)", border: "1px solid rgba(255,59,48,0.6)", borderRadius: 10, padding: "10px 0", color: "var(--ink)", fontSize: 14, fontWeight: 700, cursor: "pointer", fontFamily: "inherit" }}
+                  style={{ background: "rgba(255,59,48,0.15)", border: "1px solid rgba(255,59,48,0.6)", borderRadius: 10, padding: "10px 0", color: "var(--ink)", fontSize: 14, fontWeight: 600, cursor: "pointer", fontFamily: "inherit" }}
                 >
                   {event.is_recurring_occurrence ? "Delete all occurrences" : "Confirm Delete"}
                 </button>
@@ -216,7 +216,7 @@ export default function EditEventDrawer({ event, onClose, onSaved }: Props) {
           <button
             onClick={handleSave}
             disabled={saving}
-            style={{ width: "100%", padding: "12px 0", background: "var(--ink)", color: "var(--action-fg)", border: "none", borderRadius: 12, fontSize: 15, fontWeight: 700, cursor: saving ? "default" : "pointer", opacity: saving ? 0.6 : 1, fontFamily: "inherit" }}
+            style={{ width: "100%", padding: "12px 0", background: "var(--ink)", color: "var(--action-fg)", border: "none", borderRadius: 12, fontSize: 15, fontWeight: 600, cursor: saving ? "default" : "pointer", opacity: saving ? 0.6 : 1, fontFamily: "inherit" }}
           >
             {saving ? "Saving…" : "Save Changes"}
           </button>

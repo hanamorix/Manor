@@ -110,7 +110,7 @@ export default function TaskRow({ task }: TaskRowProps) {
           justifyContent: "center",
           flexShrink: 0,
           fontSize: 12,
-          fontWeight: 700,
+          fontWeight: 600,
           lineHeight: 1,
         }}
       >

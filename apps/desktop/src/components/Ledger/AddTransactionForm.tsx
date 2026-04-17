@@ -86,7 +86,7 @@ export default function AddTransactionForm({ categories, onClose, onSaved }: Pro
 
   const labelStyle: React.CSSProperties = {
     fontSize: 11,
-    fontWeight: 700,
+    fontWeight: 600,
     textTransform: "uppercase",
     letterSpacing: 0.5,
     color: "rgba(0,0,0,0.5)",
@@ -130,7 +130,7 @@ export default function AddTransactionForm({ categories, onClose, onSaved }: Pro
             borderBottom: "1px solid var(--hairline)",
           }}
         >
-          <div style={{ fontSize: 16, fontWeight: 700 }}>Add Transaction</div>
+          <div style={{ fontSize: 16, fontWeight: 600 }}>Add Transaction</div>
           <button
             onClick={onClose}
             style={{
@@ -280,7 +280,7 @@ export default function AddTransactionForm({ categories, onClose, onSaved }: Pro
               border: "none",
               borderRadius: 12,
               fontSize: 15,
-              fontWeight: 700,
+              fontWeight: 600,
               cursor: saving ? "default" : "pointer",
               opacity: saving ? 0.6 : 1,
               fontFamily: "inherit",

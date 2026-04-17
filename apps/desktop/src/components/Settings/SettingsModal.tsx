@@ -59,7 +59,7 @@ export default function SettingsModal() {
             padding: "12px 16px",
             borderBottom: "1px solid var(--hairline)",
             display: "flex", alignItems: "center", justifyContent: "space-between",
-            fontWeight: 700, fontSize: 14,
+            fontWeight: 600, fontSize: 14,
           }}
         >
           <span>Settings</span>
