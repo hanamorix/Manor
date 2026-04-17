@@ -8,12 +8,13 @@ import {
   type ChoreCompletion,
 } from "../../lib/chores/ipc";
 import { useChoresStore } from "../../lib/chores/state";
+import { useOverlay } from "../../lib/overlay/state";
 
 const overlayStyle: React.CSSProperties = {
   position: "fixed",
   inset: 0,
   background: "rgba(20,20,30,0.2)",
-  zIndex: 100,
+  zIndex: 1050,
   display: "flex",
   justifyContent: "flex-end",
 };
@@ -112,6 +113,7 @@ interface Props {
 }
 
 export default function ChoreDrawer({ chore, onClose }: Props) {
+  useOverlay();
   const upsertChore = useChoresStore((s) => s.upsertChore);
   const removeChore = useChoresStore((s) => s.removeChore);
 

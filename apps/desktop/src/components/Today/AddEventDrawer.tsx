@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { createEvent } from "../../lib/today/ipc";
 import type { CalendarInfo } from "../../lib/settings/ipc";
+import { useOverlay } from "../../lib/overlay/state";
 
 interface Props {
   accountId: number;
@@ -19,6 +20,7 @@ function combineDateTime(date: string, time: string): number {
 }
 
 export default function AddEventDrawer({ accountId, defaultCalendarUrl, calendars, onClose, onSaved }: Props) {
+  useOverlay();
   const now = Math.floor(Date.now() / 1000);
   const todayDate = toDateInputValue(now);
   const [title, setTitle] = useState("");
@@ -87,7 +89,7 @@ export default function AddEventDrawer({ accountId, defaultCalendarUrl, calendar
     <>
       <div
         onClick={onClose}
-        style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.25)", zIndex: 700 }}
+        style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.25)", zIndex: 1050 }}
       />
       <div
         style={{
@@ -98,7 +100,7 @@ export default function AddEventDrawer({ accountId, defaultCalendarUrl, calendar
           width: 420,
           background: "var(--paper)",
           boxShadow: "-4px 0 24px rgba(0,0,0,0.12)",
-          zIndex: 800,
+          zIndex: 1100,
           display: "flex",
           flexDirection: "column",
           animation: "drawerIn 200ms ease-out",

@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { deleteBudget, upsertBudget } from "../../lib/ledger/ipc";
 import type { Budget, Category } from "../../lib/ledger/ipc";
+import { useOverlay } from "../../lib/overlay/state";
 
 interface Props {
   categories: Category[];
@@ -20,6 +21,7 @@ function parsePence(raw: string): number | null {
 }
 
 export default function BudgetSheet({ categories, budgets, onClose, onChanged }: Props) {
+  useOverlay();
   const budgetMap = new Map(budgets.map((b) => [b.category_id, b]));
   const [drafts, setDrafts] = useState<Record<number, string>>(() => {
     const init: Record<number, string> = {};
@@ -74,7 +76,7 @@ export default function BudgetSheet({ categories, budgets, onClose, onChanged }:
           position: "fixed",
           inset: 0,
           background: "rgba(0,0,0,0.25)",
-          zIndex: 700,
+          zIndex: 1050,
         }}
       />
       <div
@@ -86,7 +88,7 @@ export default function BudgetSheet({ categories, budgets, onClose, onChanged }:
           width: 420,
           background: "var(--paper)",
           boxShadow: "-4px 0 24px rgba(0,0,0,0.12)",
-          zIndex: 800,
+          zIndex: 1100,
           display: "flex",
           flexDirection: "column",
           animation: "drawerIn 200ms ease-out",

@@ -11,6 +11,8 @@ import { parseSlash } from "../../lib/today/slash";
 import { addTask, listTasks, listProposals } from "../../lib/today/ipc";
 import { addTransaction } from "../../lib/ledger/ipc";
 import { useTodayStore } from "../../lib/today/state";
+import { useOverlayStore } from "../../lib/overlay/state";
+import { useSettingsStore } from "../../lib/settings/state";
 
 function newBubbleId() {
   return Math.random().toString(36).slice(2, 10);
@@ -231,25 +233,33 @@ export default function Assistant() {
     }
   };
 
+  // Minimize when any right-side drawer or the settings modal is open, so we
+  // don't cover content. Conversation drawer has its own z-index above the
+  // avatar so it doesn't need to trigger minimize.
+  const overlayCount = useOverlayStore((s) => s.count);
+  const settingsOpen = useSettingsStore((s) => s.modalOpen);
+  const minimized = overlayCount > 0 || settingsOpen;
+
   return (
     <>
       <ConversationDrawer onSubmit={handleSubmit} />
-      <BubbleLayer />
+      <BubbleLayer minimized={minimized} />
 
       <div
         style={{
           position: "fixed",
-          bottom: 16,
-          right: 16,
+          bottom: minimized ? 8 : 16,
+          right: minimized ? 8 : 16,
           display: "flex",
           flexDirection: "column",
           alignItems: "flex-end",
           gap: 8,
           zIndex: 1000,
+          transition: "bottom 200ms ease-out, right 200ms ease-out",
         }}
       >
-        <UnreadBadgeWithAnchor />
-        {transientBubbles.length === 0 && (
+        {!minimized && <UnreadBadgeWithAnchor />}
+        {!minimized && transientBubbles.length === 0 && (
           <InputPill
             ref={pillRef}
             onSubmit={handleSubmit}
@@ -257,7 +267,10 @@ export default function Assistant() {
             onBlur={() => setAvatarState("idle")}
           />
         )}
-        <Avatar onClick={() => setDrawerOpen(true)} />
+        <Avatar
+          height={minimized ? 40 : 96}
+          onClick={() => setDrawerOpen(true)}
+        />
       </div>
     </>
   );

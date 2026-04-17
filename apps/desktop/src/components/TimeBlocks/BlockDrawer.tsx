@@ -2,12 +2,13 @@ import { useState } from "react";
 import type { TimeBlock, BlockKind } from "../../lib/timeblocks/ipc";
 import { createTimeBlock, updateTimeBlock, deleteTimeBlock } from "../../lib/timeblocks/ipc";
 import { useTimeBlocksStore } from "../../lib/timeblocks/state";
+import { useOverlay } from "../../lib/overlay/state";
 
 const overlayStyle: React.CSSProperties = {
   position: "fixed",
   inset: 0,
   background: "rgba(20,20,30,0.2)",
-  zIndex: 100,
+  zIndex: 1050,
   display: "flex",
   justifyContent: "flex-end",
 };
@@ -88,6 +89,7 @@ interface Props {
 }
 
 export default function BlockDrawer({ block, onClose }: Props) {
+  useOverlay();
   const upsertBlock = useTimeBlocksStore((s) => s.upsertBlock);
   const removeBlock = useTimeBlocksStore((s) => s.removeBlock);
   const setPatternSuggestion = useTimeBlocksStore((s) => s.setPatternSuggestion);

@@ -46,7 +46,12 @@ async function markBubbleSeenIfAssistant(b: TransientBubble, refreshUnread: (n: 
   }
 }
 
-export default function BubbleLayer() {
+interface BubbleLayerProps {
+  /** Suppress bubbles when the avatar is minimized (e.g. a drawer is open). */
+  minimized?: boolean;
+}
+
+export default function BubbleLayer({ minimized = false }: BubbleLayerProps) {
   const bubbles = useAssistantStore((s) => s.transientBubbles);
   const dismissBubble = useAssistantStore((s) => s.dismissBubble);
   const setDrawerOpen = useAssistantStore((s) => s.setDrawerOpen);
@@ -54,7 +59,7 @@ export default function BubbleLayer() {
   const drawerOpen = useAssistantStore((s) => s.drawerOpen);
   const avatarState = useAssistantStore((s) => s.avatarState);
 
-  if (drawerOpen) return null;
+  if (drawerOpen || minimized) return null;
 
   const isGenerating = avatarState === "thinking" || avatarState === "speaking";
 

@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { addTransaction } from "../../lib/ledger/ipc";
+import { useOverlay } from "../../lib/overlay/state";
 import type { Category } from "../../lib/ledger/ipc";
 
 interface Props {
@@ -27,6 +28,7 @@ function parsePence(raw: string): number | null {
 }
 
 export default function AddTransactionForm({ categories, onClose, onSaved }: Props) {
+  useOverlay();
   const [amountRaw, setAmountRaw] = useState("");
   const [description, setDescription] = useState("");
   const [categoryId, setCategoryId] = useState<number | "">("");
@@ -100,7 +102,7 @@ export default function AddTransactionForm({ categories, onClose, onSaved }: Pro
           position: "fixed",
           inset: 0,
           background: "rgba(0,0,0,0.25)",
-          zIndex: 700,
+          zIndex: 1050,
         }}
       />
       <div
@@ -112,7 +114,7 @@ export default function AddTransactionForm({ categories, onClose, onSaved }: Pro
           width: 420,
           background: "var(--paper)",
           boxShadow: "-4px 0 24px rgba(0,0,0,0.12)",
-          zIndex: 800,
+          zIndex: 1100,
           display: "flex",
           flexDirection: "column",
           animation: "drawerIn 200ms ease-out",

@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { updateEvent, deleteEvent } from "../../lib/today/ipc";
 import type { Event } from "../../lib/today/ipc";
+import { useOverlay } from "../../lib/overlay/state";
 
 interface Props {
   event: Event;
@@ -21,6 +22,7 @@ function combineDateTime(date: string, time: string): number {
 }
 
 export default function EditEventDrawer({ event, onClose, onSaved }: Props) {
+  useOverlay();
   const [title, setTitle] = useState(event.title);
   const [date, setDate] = useState(toDateInputValue(event.start_at));
   const [startTime, setStartTime] = useState(toTimeInputValue(event.start_at));
@@ -98,7 +100,7 @@ export default function EditEventDrawer({ event, onClose, onSaved }: Props) {
 
   return (
     <>
-      <div onClick={onClose} style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.25)", zIndex: 700 }} />
+      <div onClick={onClose} style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.25)", zIndex: 1050 }} />
       <div
         style={{
           position: "fixed",
@@ -108,7 +110,7 @@ export default function EditEventDrawer({ event, onClose, onSaved }: Props) {
           width: 420,
           background: "var(--paper)",
           boxShadow: "-4px 0 24px rgba(0,0,0,0.12)",
-          zIndex: 800,
+          zIndex: 1100,
           display: "flex",
           flexDirection: "column",
           animation: "drawerIn 200ms ease-out",
