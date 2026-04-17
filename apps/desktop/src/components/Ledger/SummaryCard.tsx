@@ -43,7 +43,7 @@ export default function SummaryCard({ summary, year, month, totalBudget, onBudge
       tabIndex={0}
       style={{
         background: cardBg,
-        borderRadius: 14,
+        borderRadius: "var(--radius-lg)",
         padding: "18px 20px",
         color: cardFg,
         cursor: "pointer",
@@ -112,7 +112,7 @@ export default function SummaryCard({ summary, year, month, totalBudget, onBudge
                 style={{
                   background: "rgba(128,128,128,0.15)",
                   border: `1px solid ${cardFg}`,
-                  borderRadius: 20,
+                  borderRadius: "var(--radius-lg)",
                   padding: "4px 10px",
                   fontSize: 11,
                   color: cardFg,

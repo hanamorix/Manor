@@ -86,7 +86,7 @@ export default function ProposalBanner() {
               fontSize: 10,
               fontWeight: 600,
               padding: "2px 8px",
-              borderRadius: 999,
+              borderRadius: "var(--radius-md)",
               letterSpacing: 0.6,
               flexShrink: 0,
             }}
@@ -114,7 +114,7 @@ export default function ProposalBanner() {
             aria-label="approve"
             style={{
               padding: "4px 10px",
-              borderRadius: 999,
+              borderRadius: "var(--radius-md)",
               fontSize: 12,
               fontWeight: 600,
               border: "none",
@@ -130,7 +130,7 @@ export default function ProposalBanner() {
             aria-label="reject"
             style={{
               padding: "4px 10px",
-              borderRadius: 999,
+              borderRadius: "var(--radius-md)",
               fontSize: 12,
               fontWeight: 600,
               border: "none",

@@ -43,7 +43,7 @@ function Pill({ color, text }: { color: string; text: string }) {
         padding: "4px 10px",
         background: `${color}22`,
         color,
-        borderRadius: 999,
+        borderRadius: "var(--radius-md)",
         fontSize: 12,
         border: `1px solid ${color}`,
       }}

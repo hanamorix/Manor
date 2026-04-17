@@ -39,7 +39,7 @@ export default function AddEventDrawer({ accountId, defaultCalendarUrl, calendar
     padding: "9px 12px",
     fontSize: 14,
     border: "1px solid var(--hairline)",
-    borderRadius: 10,
+    borderRadius: "var(--radius-lg)",
     background: "#fafafa",
     fontFamily: "inherit",
     boxSizing: "border-box",
@@ -163,7 +163,7 @@ export default function AddEventDrawer({ accountId, defaultCalendarUrl, calendar
             )}
 
             {error && (
-              <div style={{ padding: "10px 12px", background: "var(--paper-muted)", border: "1px solid var(--ink-danger)", borderRadius: 10, fontSize: 13, color: "var(--ink)" }}>
+              <div style={{ padding: "10px 12px", background: "var(--paper-muted)", border: "1px solid var(--ink-danger)", borderRadius: "var(--radius-lg)", fontSize: 13, color: "var(--ink)" }}>
                 {error}
               </div>
             )}
@@ -174,7 +174,7 @@ export default function AddEventDrawer({ accountId, defaultCalendarUrl, calendar
           <button
             onClick={handleSave}
             disabled={saving}
-            style={{ width: "100%", padding: "12px 0", background: "var(--ink)", color: "var(--action-fg)", border: "none", borderRadius: 12, fontSize: 15, fontWeight: 600, cursor: saving ? "default" : "pointer", opacity: saving ? 0.6 : 1, fontFamily: "inherit" }}
+            style={{ width: "100%", padding: "12px 0", background: "var(--ink)", color: "var(--action-fg)", border: "none", borderRadius: "var(--radius-lg)", fontSize: 15, fontWeight: 600, cursor: saving ? "default" : "pointer", opacity: saving ? 0.6 : 1, fontFamily: "inherit" }}
           >
             {saving ? "Saving…" : "Save"}
           </button>

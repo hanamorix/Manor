@@ -40,7 +40,7 @@ const iconWrapStyle: React.CSSProperties = {
   position: "relative",
   width: 38,
   height: 38,
-  borderRadius: 10,
+  borderRadius: "var(--radius-lg)",
   display: "flex",
   alignItems: "center",
   justifyContent: "center",

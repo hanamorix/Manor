@@ -88,7 +88,7 @@ export default function AccountRow({ account, onRefresh }: AccountRowProps) {
         padding: "8px 10px",
         background: removeArmed ? "rgba(255, 59, 48, 0.06)" : "var(--surface)",
         border: "1px solid var(--hairline)",
-        borderRadius: 8,
+        borderRadius: "var(--radius-lg)",
         marginBottom: 6,
       }}
     >
@@ -171,7 +171,7 @@ export default function AccountRow({ account, onRefresh }: AccountRowProps) {
               padding: "5px 8px",
               fontSize: 12,
               border: "1px solid var(--hairline)",
-              borderRadius: 8,
+              borderRadius: "var(--radius-lg)",
               background: "var(--hairline)",
               fontFamily: "inherit",
             }}

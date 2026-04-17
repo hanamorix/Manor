@@ -117,7 +117,7 @@ export default function AddContractDrawer({ existing, onClose, onSaved }: Props)
     padding: "9px 12px",
     fontSize: 14,
     border: "1px solid var(--hairline)",
-    borderRadius: 10,
+    borderRadius: "var(--radius-lg)",
     background: "var(--hairline)",
     fontFamily: "inherit",
     boxSizing: "border-box",
@@ -323,7 +323,7 @@ export default function AddContractDrawer({ existing, onClose, onSaved }: Props)
                 padding: "10px 12px",
                 background: "var(--paper-muted)",
                 border: "1px solid var(--ink-danger)",
-                borderRadius: 10,
+                borderRadius: "var(--radius-lg)",
                 fontSize: 13,
                 color: "var(--ink)",
               }}

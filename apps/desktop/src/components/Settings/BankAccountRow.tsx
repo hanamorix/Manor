@@ -35,7 +35,7 @@ export function BankAccountRow({ account, onReconnect }: Props) {
         border: expired
           ? "1px solid var(--ink-soft)"
           : "1px solid var(--hairline-strong)",
-        borderRadius: 8,
+        borderRadius: "var(--radius-lg)",
         marginBottom: 8,
       }}
     >

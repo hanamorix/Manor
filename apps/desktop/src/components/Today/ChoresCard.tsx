@@ -20,7 +20,7 @@ const rowStyle: React.CSSProperties = {
   gap: 10,
   padding: "10px 4px",
   cursor: "pointer",
-  borderRadius: 8,
+  borderRadius: "var(--radius-lg)",
   transition: "background 0.15s",
 };
 

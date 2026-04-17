@@ -45,7 +45,7 @@ const labelStyle: React.CSSProperties = {
 const inputStyle: React.CSSProperties = {
   width: "100%",
   padding: "8px 12px",
-  borderRadius: 8,
+  borderRadius: "var(--radius-lg)",
   border: "1px solid var(--hairline)",
   fontSize: 14,
   fontFamily: "inherit",

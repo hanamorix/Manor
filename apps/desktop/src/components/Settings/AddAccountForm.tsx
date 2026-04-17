@@ -49,7 +49,7 @@ export default function AddAccountForm({ onClose }: AddAccountFormProps) {
         padding: 12,
         background: "var(--paper-muted)",
         border: "1px dashed var(--hairline)",
-        borderRadius: 8,
+        borderRadius: "var(--radius-lg)",
         marginTop: 8,
       }}
     >

@@ -47,7 +47,7 @@ export default function SettingsModal() {
           transform: "translate(-50%, -50%)",
           width: 540, height: 440,
           background: "var(--paper)",
-          borderRadius: 14,
+          borderRadius: "var(--radius-lg)",
           boxShadow: "var(--shadow-lg)",
           zIndex: 1201,
           display: "flex", flexDirection: "column",

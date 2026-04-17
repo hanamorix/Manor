@@ -78,7 +78,7 @@ export default function AddTransactionForm({ categories, onClose, onSaved }: Pro
     padding: "9px 12px",
     fontSize: 14,
     border: "1px solid var(--hairline)",
-    borderRadius: 10,
+    borderRadius: "var(--radius-lg)",
     background: "#fafafa",
     fontFamily: "inherit",
     boxSizing: "border-box",
@@ -161,7 +161,7 @@ export default function AddTransactionForm({ categories, onClose, onSaved }: Pro
                 style={{
                   flex: 1,
                   padding: "8px 0",
-                  borderRadius: 10,
+                  borderRadius: "var(--radius-lg)",
                   border: "1px solid var(--hairline)",
                   background:
                     (type === "income") === isIncome
@@ -252,7 +252,7 @@ export default function AddTransactionForm({ categories, onClose, onSaved }: Pro
                 padding: "10px 12px",
                 background: "var(--paper-muted)",
                 border: "1px solid var(--ink-danger)",
-                borderRadius: 10,
+                borderRadius: "var(--radius-lg)",
                 fontSize: 13,
                 color: "var(--ink)",
               }}
@@ -278,7 +278,7 @@ export default function AddTransactionForm({ categories, onClose, onSaved }: Pro
               background: "var(--action-bg)",
               color: "white",
               border: "none",
-              borderRadius: 12,
+              borderRadius: "var(--radius-lg)",
               fontSize: 15,
               fontWeight: 600,
               cursor: saving ? "default" : "pointer",

@@ -56,7 +56,7 @@ export default function SampleDataBanner() {
 
   return (
     <div style={{
-      padding: 10, borderRadius: 8, background: "var(--surface)",
+      padding: 10, borderRadius: "var(--radius-lg)", background: "var(--surface)",
       border: "1px solid var(--hairline-strong)", display: "flex", justifyContent: "space-between",
       alignItems: "center", fontSize: 12,
     }}>
