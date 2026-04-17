@@ -15,7 +15,7 @@ import { Button } from "../../lib/ui";
 const overlayStyle: React.CSSProperties = {
   position: "fixed",
   inset: 0,
-  background: "rgba(20,20,30,0.2)",
+  background: "var(--scrim)",
   zIndex: 1050,
   display: "flex",
   justifyContent: "flex-end",
@@ -212,7 +212,7 @@ export default function ChoreDrawer({ chore, onClose }: Props) {
         {tab === "history" && chore && (
           <div>
             {history.length === 0 ? (
-              <p style={{ color: "rgba(20,20,30,0.5)", fontSize: 13 }}>No completions yet.</p>
+              <p style={{ color: "var(--ink-faint)", fontSize: 13 }}>No completions yet.</p>
             ) : (
               <ul style={{ listStyle: "none", padding: 0, margin: 0 }}>
                 {history.map((h) => (
@@ -220,7 +220,7 @@ export default function ChoreDrawer({ chore, onClose }: Props) {
                     <div style={{ color: "var(--ink)" }}>
                       {new Date(h.completed_at).toLocaleString()}
                     </div>
-                    <div style={{ color: "rgba(20,20,30,0.5)", fontSize: 12 }}>
+                    <div style={{ color: "var(--ink-faint)", fontSize: 12 }}>
                       {h.completed_by ? `by person #${h.completed_by}` : "completed"}
                     </div>
                   </li>

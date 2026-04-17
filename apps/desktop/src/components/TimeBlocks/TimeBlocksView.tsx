@@ -23,7 +23,7 @@ const sectionStyle: React.CSSProperties = {
 const dayHeading: React.CSSProperties = {
   fontSize: 12,
   fontWeight: 700,
-  color: "rgba(20,20,30,0.6)",
+  color: "var(--ink-soft)",
   marginTop: 12,
   marginBottom: 4,
 };
@@ -48,7 +48,7 @@ const rowStyle = (kind: BlockKind): React.CSSProperties => ({
   gap: 10,
   padding: "8px 10px",
   borderLeft: `3px solid ${KIND_COLOR[kind]}`,
-  background: "rgba(20,20,30,0.02)",
+  background: "var(--paper-muted)",
   borderRadius: 6,
   marginBottom: 4,
   cursor: "pointer",
@@ -122,7 +122,7 @@ export default function TimeBlocksView() {
       <section style={sectionStyle}>
         <SectionLabel icon={LayoutGrid}>This week</SectionLabel>
         {weekBlocks.length === 0 ? (
-          <p style={{ color: "rgba(20,20,30,0.5)", fontSize: 13, margin: 0 }}>No blocks this week yet.</p>
+          <p style={{ color: "var(--ink-faint)", fontSize: 13, margin: 0 }}>No blocks this week yet.</p>
         ) : (
           DAYS.map((day) => {
             const bs = byDay[day];
@@ -136,7 +136,7 @@ export default function TimeBlocksView() {
                       {KIND_LABEL[b.kind]}
                     </strong>
                     <span style={{ flex: 1 }}>{b.title}</span>
-                    <span style={{ color: "rgba(20,20,30,0.5)", fontSize: 12 }}>
+                    <span style={{ color: "var(--ink-faint)", fontSize: 12 }}>
                       {b.start_time}–{b.end_time}
                     </span>
                   </div>
@@ -150,7 +150,7 @@ export default function TimeBlocksView() {
       <section style={sectionStyle}>
         <SectionLabel icon={RefreshCw}>Recurring patterns</SectionLabel>
         {recurring.length === 0 ? (
-          <p style={{ color: "rgba(20,20,30,0.5)", fontSize: 13, margin: 0 }}>No patterns yet. Nell will suggest one when she notices a repetition.</p>
+          <p style={{ color: "var(--ink-faint)", fontSize: 13, margin: 0 }}>No patterns yet. Nell will suggest one when she notices a repetition.</p>
         ) : (
           recurring.map((b) => (
             <div key={b.id} style={rowStyle(b.kind)} onClick={() => setEditing(b)}>
@@ -158,7 +158,7 @@ export default function TimeBlocksView() {
                 {KIND_LABEL[b.kind]}
               </strong>
               <span style={{ flex: 1 }}>{b.title}</span>
-              <span style={{ color: "rgba(20,20,30,0.5)", fontSize: 12 }}>
+              <span style={{ color: "var(--ink-faint)", fontSize: 12 }}>
                 {b.rrule ? rruleToEnglish(b.rrule) : ""} · {b.start_time}–{b.end_time}
               </span>
             </div>

@@ -50,7 +50,7 @@ const pillStyle: React.CSSProperties = {
 const emptyStyle: React.CSSProperties = {
   padding: "10px 4px",
   fontSize: 13,
-  color: "rgba(20,20,30,0.5)",
+  color: "var(--ink-faint)",
 };
 
 const nudgeStyle: React.CSSProperties = {
@@ -59,7 +59,7 @@ const nudgeStyle: React.CSSProperties = {
   background: "rgba(0,122,255,0.06)",
   borderRadius: 8,
   fontSize: 12,
-  color: "rgba(20,20,30,0.7)",
+  color: "var(--ink-soft)",
   display: "flex",
   alignItems: "center",
   gap: 10,
@@ -78,7 +78,7 @@ const nudgeBtn: React.CSSProperties = {
 
 const nudgeBtnGhost: React.CSSProperties = {
   background: "transparent",
-  color: "rgba(20,20,30,0.55)",
+  color: "var(--ink-soft)",
   border: "none",
   padding: "4px 8px",
   fontSize: 11,
@@ -165,7 +165,7 @@ export default function TimeBlocksCard() {
       )}
 
       {adding && (
-        <div style={{ marginTop: 8, padding: 10, background: "rgba(20,20,30,0.03)", borderRadius: 8 }}>
+        <div style={{ marginTop: 8, padding: 10, background: "var(--paper-muted)", borderRadius: 8 }}>
           <div style={{ display: "flex", gap: 6, marginBottom: 6 }}>
             <input
               autoFocus
@@ -193,7 +193,7 @@ export default function TimeBlocksCard() {
               onChange={(e) => setForm({ ...form, startTime: e.target.value })}
               style={{ padding: "6px 8px", borderRadius: 6, border: "1px solid var(--hairline)", fontSize: 13, fontFamily: "inherit" }}
             />
-            <span style={{ color: "rgba(20,20,30,0.5)" }}>→</span>
+            <span style={{ color: "var(--ink-faint)" }}>→</span>
             <input
               type="time"
               value={form.endTime}

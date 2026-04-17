@@ -7,7 +7,7 @@ import { useOverlay } from "../../lib/overlay/state";
 const overlayStyle: React.CSSProperties = {
   position: "fixed",
   inset: 0,
-  background: "rgba(20,20,30,0.2)",
+  background: "var(--scrim)",
   zIndex: 1050,
   display: "flex",
   justifyContent: "flex-end",

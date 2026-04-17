@@ -35,7 +35,7 @@ const rowStyle: React.CSSProperties = {
 const emptyStyle: React.CSSProperties = {
   padding: "10px 4px",
   fontSize: 13,
-  color: "rgba(20,20,30,0.5)",
+  color: "var(--ink-faint)",
 };
 
 export default function ChoresCard() {
@@ -80,7 +80,7 @@ export default function ChoresCard() {
                 key={c.id}
                 style={{
                   ...rowStyle,
-                  background: isHovered ? "rgba(20,20,30,0.04)" : "transparent",
+                  background: isHovered ? "var(--paper-muted)" : "transparent",
                 }}
                 onMouseEnter={() => setHoveredId(c.id)}
                 onMouseLeave={() => setHoveredId(null)}
