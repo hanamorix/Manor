@@ -23,7 +23,7 @@ const headerStyle: React.CSSProperties = {
   fontWeight: 700,
   textTransform: "uppercase",
   letterSpacing: 0.6,
-  color: "rgba(0,0,0,0.55)",
+  color: "var(--ink-soft)",
   marginBottom: 10,
 };
 
@@ -41,13 +41,13 @@ const dueBadge = (daysAway: number): React.CSSProperties => ({
   padding: "2px 8px",
   borderRadius: 999,
   background: daysAway <= 0 ? "rgba(255,59,48,0.1)" : "rgba(20,20,30,0.05)",
-  color: daysAway <= 0 ? "var(--imessage-red)" : "rgba(20,20,30,0.55)",
+  color: daysAway <= 0 ? "var(--ink)" : "var(--ink-soft)",
   fontWeight: 600,
 });
 
 const addBtn: React.CSSProperties = {
-  background: "var(--imessage-blue)",
-  color: "white",
+  background: "var(--ink)",
+  color: "var(--action-fg)",
   border: "none",
   borderRadius: 999,
   padding: "10px 20px",

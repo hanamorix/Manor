@@ -35,7 +35,7 @@ const labelStyle: React.CSSProperties = {
   fontWeight: 700,
   textTransform: "uppercase",
   letterSpacing: 0.6,
-  color: "rgba(0,0,0,0.55)",
+  color: "var(--ink-soft)",
   marginBottom: 6,
   marginTop: 14,
 };
@@ -61,17 +61,17 @@ const tabStyle = (active: boolean): React.CSSProperties => ({
   fontSize: 13,
   fontWeight: 600,
   cursor: "pointer",
-  color: active ? "var(--imessage-blue)" : "rgba(20,20,30,0.55)",
+  color: active ? "var(--ink)" : "var(--ink-soft)",
   background: "transparent",
   border: "none",
   borderBottomStyle: "solid",
   borderBottomWidth: 2,
-  borderBottomColor: active ? "var(--imessage-blue)" : "transparent",
+  borderBottomColor: active ? "var(--ink)" : "transparent",
 });
 
 const btnPrimary: React.CSSProperties = {
-  background: "var(--imessage-blue)",
-  color: "white",
+  background: "var(--ink)",
+  color: "var(--action-fg)",
   border: "none",
   borderRadius: 999,
   padding: "8px 18px",
@@ -82,7 +82,7 @@ const btnPrimary: React.CSSProperties = {
 
 const btnGhost: React.CSSProperties = {
   background: "transparent",
-  color: "rgba(20,20,30,0.55)",
+  color: "var(--ink-soft)",
   border: "1px solid var(--hairline)",
   borderRadius: 999,
   padding: "8px 18px",
@@ -92,7 +92,7 @@ const btnGhost: React.CSSProperties = {
 
 const btnDanger: React.CSSProperties = {
   background: "transparent",
-  color: "var(--imessage-red)",
+  color: "var(--ink)",
   border: "none",
   fontSize: 12,
   cursor: "pointer",

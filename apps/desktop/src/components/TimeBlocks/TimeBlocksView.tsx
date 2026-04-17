@@ -23,7 +23,7 @@ const headerStyle: React.CSSProperties = {
   fontWeight: 700,
   textTransform: "uppercase",
   letterSpacing: 0.6,
-  color: "rgba(0,0,0,0.55)",
+  color: "var(--ink-soft)",
   marginBottom: 10,
 };
 
@@ -63,8 +63,8 @@ const rowStyle = (kind: BlockKind): React.CSSProperties => ({
 });
 
 const addBtn: React.CSSProperties = {
-  background: "var(--imessage-blue)",
-  color: "white",
+  background: "var(--ink)",
+  color: "var(--action-fg)",
   border: "none",
   borderRadius: 999,
   padding: "10px 20px",
