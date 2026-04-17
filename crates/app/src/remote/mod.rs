@@ -2,6 +2,7 @@
 //! See `docs/superpowers/specs/2026-04-17-remote-llm-design.md`.
 
 pub mod claude;
+pub mod keychain;
 pub mod provider;
 
 pub const PROVIDER_CLAUDE: &str = "claude";
