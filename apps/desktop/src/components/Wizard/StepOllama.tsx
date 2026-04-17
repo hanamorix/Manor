@@ -33,7 +33,7 @@ export default function StepOllama() {
         <h2 style={{ margin: "0 0 8px 0", fontSize: 16, color: "var(--ink)" }}>
           Meet your brain
         </h2>
-        <p style={{ fontSize: 13, color: "rgba(0,0,0,0.65)", lineHeight: 1.5, margin: 0 }}>
+        <p style={{ fontSize: 13, color: "var(--ink-soft)", lineHeight: 1.5, margin: 0 }}>
           Manor runs a language model locally via <strong>Ollama</strong> — for chat,
           calendar summaries, ledger narratives, and semantic search. Nothing leaves
           your Mac unless you opt in to a remote provider later.
@@ -41,17 +41,17 @@ export default function StepOllama() {
       </div>
 
       {checking && (
-        <div style={{ fontSize: 13, color: "rgba(0,0,0,0.55)" }}>Checking for Ollama…</div>
+        <div style={{ fontSize: 13, color: "var(--ink-soft)" }}>Checking for Ollama…</div>
       )}
 
       {!checking &&
         status &&
         (status.reachable ? (
           <div style={wizardStatusCardGood}>
-            <div style={{ color: "var(--imessage-green)", fontWeight: 600, fontSize: 13 }}>
+            <div style={{ color: "var(--ink)", fontWeight: 600, fontSize: 13 }}>
               ● Ollama is reachable
             </div>
-            <div style={{ fontSize: 12, color: "rgba(0,0,0,0.65)", marginTop: 4 }}>
+            <div style={{ fontSize: 12, color: "var(--ink-soft)", marginTop: 4 }}>
               {status.models.length === 0
                 ? "No models installed — pull one via "
                 : `${status.models.length} model(s) ready: ${status.models.slice(0, 3).join(", ")}${status.models.length > 3 ? "…" : ""}`}
@@ -79,7 +79,7 @@ export default function StepOllama() {
             <div
               style={{
                 fontSize: 12,
-                color: "rgba(0,0,0,0.65)",
+                color: "var(--ink-soft)",
                 marginTop: 6,
                 lineHeight: 1.5,
               }}
@@ -89,7 +89,7 @@ export default function StepOllama() {
                 href="https://ollama.com/download"
                 target="_blank"
                 rel="noreferrer"
-                style={{ color: "var(--imessage-blue)" }}
+                style={{ color: "var(--ink)" }}
               >
                 ollama.com/download
               </a>

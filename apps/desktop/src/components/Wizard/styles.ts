@@ -5,8 +5,8 @@ import type { CSSProperties } from "react";
 
 export const wizardPrimaryButton: CSSProperties = {
   padding: "8px 18px",
-  background: "var(--imessage-blue)",
-  color: "#fff",
+  background: "var(--ink)",
+  color: "var(--action-fg)",
   border: "none",
   borderRadius: "var(--radius-pill)",
   fontSize: 13,

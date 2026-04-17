@@ -33,7 +33,7 @@ export default function Wizard() {
         }}
       >
         <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-          <div style={{ fontSize: 13, color: "rgba(0,0,0,0.55)", fontWeight: 500 }}>
+          <div style={{ fontSize: 13, color: "var(--ink-soft)", fontWeight: 500 }}>
             Setting up Manor
           </div>
           <div
@@ -49,7 +49,7 @@ export default function Wizard() {
               style={{
                 width: `${(step / 4) * 100}%`,
                 height: "100%",
-                background: "var(--imessage-blue)",
+                background: "var(--ink)",
                 borderRadius: 2,
                 transition: "width 200ms",
               }}
@@ -58,7 +58,7 @@ export default function Wizard() {
           <div
             style={{
               fontSize: 13,
-              color: "rgba(0,0,0,0.55)",
+              color: "var(--ink-soft)",
               minWidth: 30,
               textAlign: "right",
             }}
@@ -73,7 +73,7 @@ export default function Wizard() {
 
         <div
           style={{
-            background: "#fff",
+            background: "var(--surface)",
             border: "1px solid var(--hairline)",
             borderRadius: "var(--radius-lg)",
             boxShadow: "var(--shadow-sm)",

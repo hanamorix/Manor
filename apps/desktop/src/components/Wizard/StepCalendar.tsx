@@ -24,7 +24,7 @@ export default function StepCalendar() {
         <h2 style={{ margin: "0 0 8px 0", fontSize: 16, color: "var(--ink)" }}>
           Your calendar
         </h2>
-        <p style={{ fontSize: 13, color: "rgba(0,0,0,0.65)", lineHeight: 1.5, margin: 0 }}>
+        <p style={{ fontSize: 13, color: "var(--ink-soft)", lineHeight: 1.5, margin: 0 }}>
           Manor talks to your calendar over <strong>CalDAV</strong> — works with iCloud,
           Fastmail, Proton, Nextcloud, and most self-hosted servers. Google Calendar is
           not supported (by design: Google's servers in the loop contradicts local-first).
@@ -39,7 +39,7 @@ export default function StepCalendar() {
           <div
             style={{
               fontSize: 12,
-              color: "rgba(0,0,0,0.65)",
+              color: "var(--ink-soft)",
               marginTop: 6,
               lineHeight: 1.5,
             }}
@@ -53,7 +53,7 @@ export default function StepCalendar() {
 
       {count !== null && count > 0 && (
         <div style={wizardStatusCardGood}>
-          <div style={{ color: "var(--imessage-green)", fontWeight: 600, fontSize: 13 }}>
+          <div style={{ color: "var(--ink)", fontWeight: 600, fontSize: 13 }}>
             ● {count} calendar account(s) already connected
           </div>
         </div>

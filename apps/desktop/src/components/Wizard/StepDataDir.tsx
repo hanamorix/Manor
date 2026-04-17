@@ -17,7 +17,7 @@ export default function StepDataDir() {
         <h2 style={{ margin: "0 0 8px 0", fontSize: 16, color: "var(--ink)" }}>
           Where your life lives
         </h2>
-        <p style={{ fontSize: 13, color: "rgba(0,0,0,0.65)", lineHeight: 1.5, margin: 0 }}>
+        <p style={{ fontSize: 13, color: "var(--ink-soft)", lineHeight: 1.5, margin: 0 }}>
           Manor stores everything — tasks, events, money, chores, attachments — in one
           folder on this Mac. You can change it later, back it up to iCloud Drive, Dropbox,
           or anywhere you like.

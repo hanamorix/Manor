@@ -65,7 +65,7 @@ export default function StepSample() {
         <h2 style={{ margin: "0 0 8px 0", fontSize: 16, color: "var(--ink)" }}>
           Explore with sample data
         </h2>
-        <p style={{ fontSize: 13, color: "rgba(0,0,0,0.65)", lineHeight: 1.5, margin: 0 }}>
+        <p style={{ fontSize: 13, color: "var(--ink-soft)", lineHeight: 1.5, margin: 0 }}>
           Want a sample task and chore so you can see how Manor feels? They'll be
           tagged{" "}
           <code
@@ -87,7 +87,7 @@ export default function StepSample() {
         <div
           style={{
             fontSize: 12,
-            color: message.includes("Failed") ? "var(--imessage-red)" : "var(--imessage-green)",
+            color: message.includes("Failed") ? "var(--ink)" : "var(--ink)",
           }}
         >
           {message}
