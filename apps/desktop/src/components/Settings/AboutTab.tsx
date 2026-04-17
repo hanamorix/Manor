@@ -26,7 +26,7 @@ export default function AboutTab() {
             href="https://github.com/hanamorix/Manor"
             target="_blank"
             rel="noreferrer"
-            style={{ color: "var(--imessage-blue)" }}
+            style={{ color: "var(--ink)" }}
           >
             GitHub repository
           </a>
@@ -34,7 +34,7 @@ export default function AboutTab() {
             href="https://github.com/sponsors/hanamorix"
             target="_blank"
             rel="noreferrer"
-            style={{ color: "var(--imessage-blue)" }}
+            style={{ color: "var(--ink)" }}
           >
             Support development (GitHub Sponsors)
           </a>

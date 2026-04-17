@@ -3,11 +3,11 @@
 
 import type { CSSProperties } from "react";
 
-export const TEXT_MUTED = "rgba(0,0,0,0.55)";
-export const TEXT_SECONDARY = "rgba(0,0,0,0.65)";
+export const TEXT_MUTED = "var(--ink-soft)";
+export const TEXT_SECONDARY = "var(--ink-soft)";
 
 export const settingsCard: CSSProperties = {
-  background: "#fff",
+  background: "var(--surface)",
   border: "1px solid var(--hairline)",
   borderRadius: "var(--radius-sm)",
   padding: 12,
@@ -23,7 +23,7 @@ export const settingsCardMuted: CSSProperties = {
 export const settingsListRow: CSSProperties = {
   padding: 8,
   borderRadius: "var(--radius-sm)",
-  background: "#fff",
+  background: "var(--surface)",
   border: "1px solid var(--hairline)",
 };
 
@@ -61,10 +61,10 @@ export const settingsStatusDanger: CSSProperties = {
 };
 
 export const dangerButton: CSSProperties = {
-  background: "var(--imessage-red)",
-  color: "#fff",
+  background: "var(--ink)",
+  color: "var(--action-fg)",
   border: "none",
-  borderRadius: "var(--radius-pill)",
+  borderRadius: "var(--radius-md)",
   padding: "6px 14px",
   fontSize: 12,
   fontWeight: 600,
@@ -74,5 +74,5 @@ export const dangerButton: CSSProperties = {
 
 // Semantic color tokens (hex kept where CSS vars don't exist)
 export const COLOR_AMBER = "#b36b00";
-export const COLOR_SUCCESS = "var(--imessage-green)";
-export const COLOR_DANGER = "var(--imessage-red)";
+export const COLOR_SUCCESS = "var(--ink)";
+export const COLOR_DANGER = "var(--ink)";

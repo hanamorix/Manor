@@ -91,7 +91,7 @@ export function ConnectBankDrawer({ mode, onClose }: Props) {
       style={{
         position: "fixed",
         inset: 0,
-        background: "rgba(0,0,0,.5)",
+        background: "var(--scrim)",
         display: "flex",
         justifyContent: "flex-end",
         zIndex: 1000,
@@ -101,9 +101,9 @@ export function ConnectBankDrawer({ mode, onClose }: Props) {
         onClick={(e) => e.stopPropagation()}
         style={{
           width: 480,
-          background: "#16213e",
+          background: "var(--paper)",
           padding: 24,
-          color: "#e4e4e7",
+          color: "var(--ink)",
           overflowY: "auto",
         }}
       >
@@ -143,7 +143,7 @@ export function ConnectBankDrawer({ mode, onClose }: Props) {
         {stage.kind === "authorizing" && (
           <div>
             <p>Waiting for {stage.institution.name} authorisation…</p>
-            <p style={{ color: "#a1a1aa", fontSize: 13 }}>
+            <p style={{ color: "var(--ink-soft)", fontSize: 13 }}>
               Complete the login in your browser. Manor will take over automatically.
             </p>
           </div>
@@ -166,7 +166,7 @@ export function ConnectBankDrawer({ mode, onClose }: Props) {
             <pre
               style={{
                 whiteSpace: "pre-wrap",
-                background: "#2d2d4a",
+                background: "var(--hairline)",
                 padding: 12,
                 borderRadius: 4,
               }}
@@ -196,13 +196,13 @@ function ByokForm({
         Manor connects to your bank through <b>GoCardless</b>, a free EU/UK service.
         You'll need a GoCardless account and API keys. Takes about 3 minutes, one time.
       </p>
-      <ol style={{ color: "#a1a1aa", fontSize: 14 }}>
+      <ol style={{ color: "var(--ink-soft)", fontSize: 14 }}>
         <li>
           <button
             style={{
               background: "none",
               border: "none",
-              color: "#5b9df9",
+              color: "var(--ink)",
               padding: 0,
               cursor: "pointer",
             }}
@@ -224,8 +224,8 @@ function ByokForm({
             width: "100%",
             padding: 8,
             marginTop: 4,
-            background: "#0a0a1e",
-            color: "#e4e4e7",
+            background: "var(--paper)",
+            color: "var(--ink)",
             border: "1px solid #2d2d4a",
           }}
         />
@@ -240,13 +240,13 @@ function ByokForm({
             width: "100%",
             padding: 8,
             marginTop: 4,
-            background: "#0a0a1e",
-            color: "#e4e4e7",
+            background: "var(--paper)",
+            color: "var(--ink)",
             border: "1px solid #2d2d4a",
           }}
         />
       </label>
-      <p style={{ color: "#a1a1aa", fontSize: 12, marginTop: 12 }}>
+      <p style={{ color: "var(--ink-soft)", fontSize: 12, marginTop: 12 }}>
         Your keys are stored in macOS Keychain. They never leave this device.
       </p>
       <div
@@ -321,8 +321,8 @@ function PickForm({
           width: "100%",
           padding: 8,
           marginBottom: 12,
-          background: "#0a0a1e",
-          color: "#e4e4e7",
+          background: "var(--paper)",
+          color: "var(--ink)",
           border: "1px solid #2d2d4a",
         }}
       />
@@ -339,7 +339,7 @@ function PickForm({
               background: "none",
               border: "none",
               padding: "10px 12px",
-              color: "#e4e4e7",
+              color: "var(--ink)",
               textAlign: "left",
               cursor: "pointer",
               borderBottom: "1px solid #2d2d4a",
@@ -351,8 +351,8 @@ function PickForm({
               <span
                 style={{
                   marginLeft: "auto",
-                  background: "#ca8a04",
-                  color: "#000",
+                  background: "var(--hairline-strong)",
+                  color: "var(--ink)",
                   padding: "2px 6px",
                   borderRadius: 3,
                   fontSize: 10,

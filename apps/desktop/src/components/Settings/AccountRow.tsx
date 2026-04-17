@@ -86,7 +86,7 @@ export default function AccountRow({ account, onRefresh }: AccountRowProps) {
         display: "flex",
         flexDirection: "column",
         padding: "8px 10px",
-        background: removeArmed ? "rgba(255, 59, 48, 0.06)" : "white",
+        background: removeArmed ? "rgba(255, 59, 48, 0.06)" : "var(--surface)",
         border: "1px solid var(--hairline)",
         borderRadius: 8,
         marginBottom: 6,
@@ -98,8 +98,8 @@ export default function AccountRow({ account, onRefresh }: AccountRowProps) {
             width: 28,
             height: 28,
             borderRadius: 6,
-            background: "var(--imessage-blue)",
-            color: "white",
+            background: "var(--ink)",
+            color: "var(--action-fg)",
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
@@ -114,7 +114,7 @@ export default function AccountRow({ account, onRefresh }: AccountRowProps) {
           <div
             style={{
               fontSize: 11,
-              color: account.last_error ? "var(--imessage-red)" : "rgba(0,0,0,0.5)",
+              color: account.last_error ? "var(--ink)" : "var(--ink-soft)",
               whiteSpace: "nowrap",
               overflow: "hidden",
               textOverflow: "ellipsis",
@@ -133,7 +133,7 @@ export default function AccountRow({ account, onRefresh }: AccountRowProps) {
             fontSize: 11,
             fontWeight: 600,
             border: "1px solid var(--hairline)",
-            background: "white",
+            background: "var(--surface)",
             cursor: syncing ? "default" : "pointer",
             opacity: syncing ? 0.5 : 1,
           }}
@@ -148,9 +148,9 @@ export default function AccountRow({ account, onRefresh }: AccountRowProps) {
             fontSize: 11,
             fontWeight: 600,
             border: "1px solid var(--hairline)",
-            background: "white",
+            background: "var(--surface)",
             cursor: "pointer",
-            color: removeArmed ? "var(--imessage-red)" : "inherit",
+            color: removeArmed ? "var(--ink)" : "inherit",
           }}
         >
           {removeArmed ? "Yes?" : "Remove"}
@@ -159,7 +159,7 @@ export default function AccountRow({ account, onRefresh }: AccountRowProps) {
 
       {calendars.length > 0 && (
         <div style={{ marginTop: 10, display: "flex", alignItems: "center", gap: 8 }}>
-          <span style={{ fontSize: 11, color: "rgba(0,0,0,0.5)", minWidth: 100 }}>Default calendar</span>
+          <span style={{ fontSize: 11, color: "var(--ink-soft)", minWidth: 100 }}>Default calendar</span>
           <select
             value={account.default_calendar_url ?? ""}
             onChange={async (e) => {
@@ -172,7 +172,7 @@ export default function AccountRow({ account, onRefresh }: AccountRowProps) {
               fontSize: 12,
               border: "1px solid var(--hairline)",
               borderRadius: 8,
-              background: "#fafafa",
+              background: "var(--hairline)",
               fontFamily: "inherit",
             }}
           >

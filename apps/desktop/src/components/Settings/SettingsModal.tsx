@@ -33,8 +33,8 @@ export default function SettingsModal() {
       <div
         onClick={() => setModalOpen(false)}
         style={{
-          position: "fixed", inset: 0, background: "rgba(0,0,0,0.25)",
-          backdropFilter: "blur(2px)", zIndex: 1200,
+          position: "fixed", inset: 0, background: "var(--scrim)",
+          zIndex: 1200,
         }}
       />
       <div
@@ -69,10 +69,10 @@ export default function SettingsModal() {
             aria-label="Close"
             style={{
               width: 22, height: 22, borderRadius: "50%",
-              background: "rgba(0,0,0,0.06)",
+              background: "var(--hairline)",
               border: "none",
               fontSize: 14, lineHeight: 1, cursor: "pointer",
-              color: "rgba(0,0,0,0.55)",
+              color: "var(--ink-soft)",
               display: "flex", alignItems: "center", justifyContent: "center",
             }}
           >

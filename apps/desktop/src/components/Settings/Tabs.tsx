@@ -31,7 +31,7 @@ export default function Tabs() {
               fontWeight: active ? 700 : 500,
               background: "transparent",
               border: "none",
-              borderBottom: active ? "2px solid var(--imessage-blue)" : "2px solid transparent",
+              borderBottom: active ? "2px solid var(--ink)" : "2px solid transparent",
               color: "var(--ink)",
               cursor: "pointer",
               fontFamily: "inherit",

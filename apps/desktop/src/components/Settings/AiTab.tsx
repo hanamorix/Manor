@@ -446,7 +446,7 @@ export default function AiTab() {
                   href="https://ollama.com/download"
                   target="_blank"
                   rel="noreferrer"
-                  style={{ color: "var(--imessage-blue)" }}
+                  style={{ color: "var(--ink)" }}
                 >
                   Install Ollama →
                 </a>
