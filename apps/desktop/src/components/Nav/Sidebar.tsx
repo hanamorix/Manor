@@ -20,12 +20,12 @@ const manorButtonStyle: React.CSSProperties = {
   width: 32,
   height: 32,
   borderRadius: "50%",
-  background: "linear-gradient(135deg, #FFC15C 0%, #FF8800 100%)",
+  background: "var(--ink)",
   display: "flex",
   alignItems: "center",
   justifyContent: "center",
   fontSize: 16,
-  boxShadow: "0 2px 6px rgba(255,136,0,0.3)",
+  boxShadow: "none",
   marginBottom: 10,
   border: "none",
   cursor: "pointer",
@@ -44,7 +44,7 @@ const iconStyle = (active: boolean): React.CSSProperties => ({
   cursor: "pointer",
   background: active ? "var(--paper)" : "transparent",
   boxShadow: active ? "0 1px 4px rgba(20,20,30,0.1)" : "none",
-  color: active ? "var(--imessage-blue)" : "rgba(20,20,30,0.35)",
+  color: active ? "var(--ink)" : "var(--ink-faint)",
   transition: "background 0.15s, color 0.15s",
 });
 
