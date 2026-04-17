@@ -30,6 +30,17 @@ export function ConnectBankDrawer({ mode, onClose }: Props) {
   const [stage, setStage] = useState<Stage>({ kind: "loading" });
   const replacesAccountId = mode.kind === "reconnect" ? mode.account_id : null;
 
+  // If the user closes the drawer while the loopback server is still
+  // listening (authorizing stage), tell the Rust side to release the port
+  // immediately rather than leaking it for ~10 minutes.
+  useEffect(() => {
+    if (stage.kind !== "authorizing") return;
+    const reference = stage.reference;
+    return () => {
+      ipc.cancelConnect(reference).catch(() => {});
+    };
+  }, [stage]);
+
   useEffect(() => {
     (async () => {
       try {

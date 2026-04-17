@@ -365,6 +365,27 @@ pub async fn ledger_bank_reconnect(
     ledger_bank_begin_connect(callbacks, BeginConnectArgs { institution_id: inst_id }).await
 }
 
+#[derive(Deserialize)]
+pub struct CancelConnectArgs {
+    pub reference: String,
+}
+
+#[tauri::command]
+pub async fn ledger_bank_cancel_connect(
+    callbacks: State<'_, PendingCallbacks>,
+    args: CancelConnectArgs,
+) -> CmdResult<()> {
+    // Signal the listener thread to release the port within ~500ms, then
+    // drop the callback entry so a subsequent begin_connect gets a fresh
+    // slot. The resolved-Err on the receiver is discarded — nobody is
+    // awaiting it once the drawer has dismissed.
+    let mut map = callbacks.lock().await;
+    if let Some(cb) = map.remove(&args.reference) {
+        cb.cancel();
+    }
+    Ok(())
+}
+
 #[tauri::command]
 pub async fn ledger_bank_autocat_pending(
     state: State<'_, Db>,

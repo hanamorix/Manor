@@ -102,6 +102,10 @@ export async function reconnect(account_id: number): Promise<BeginConnectRespons
   });
 }
 
+export async function cancelConnect(reference: string): Promise<void> {
+  await invoke("ledger_bank_cancel_connect", { args: { reference } });
+}
+
 export async function autocatPending(): Promise<number> {
   return await invoke<number>("ledger_bank_autocat_pending");
 }
