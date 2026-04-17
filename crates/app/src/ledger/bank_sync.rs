@@ -2,6 +2,7 @@
 
 use anyhow::Result;
 use chrono::{NaiveDate, Utc};
+use manor_core::assistant::proposal::{self, NewProposal};
 use manor_core::ledger::{bank_account, category};
 use rusqlite::{params, Connection};
 use serde::Serialize;
@@ -10,6 +11,7 @@ use crate::ledger::gocardless::{BankError, GoCardlessClient};
 
 const OVERLAP_DAYS: i64 = 3;
 const MIN_SYNC_INTERVAL_SECS: i64 = 5 * 60 * 60; // 5h — leaves headroom under GoCardless 4/day limit
+const NUDGE_DEDUP_SECS: i64 = 24 * 60 * 60; // no more than one bank_reconnect bubble per 24h
 
 #[derive(Debug, Serialize, Clone)]
 pub struct SyncAccountReport {
@@ -59,6 +61,7 @@ pub async fn sync_one(
     if let Some(expires) = acct.requisition_expires_at {
         if expires < now {
             bank_account::set_sync_paused(conn, account_id, "requisition_expired")?;
+            maybe_nudge_reconnect(conn, &acct, now)?;
             return Ok(SyncAccountReport {
                 account_id,
                 inserted: 0,
@@ -183,6 +186,44 @@ pub async fn sync_one(
         skipped: false,
         error: None,
     })
+}
+
+/// Inserts a `bank_reconnect` proposal so the assistant bubble flow can
+/// surface it. Dedups via `bank_account.last_nudge_at` — at most one nudge
+/// per 24h so a stuck expired account doesn't spam on every sync tick.
+fn maybe_nudge_reconnect(
+    conn: &Connection,
+    acct: &bank_account::BankAccount,
+    now: i64,
+) -> Result<()> {
+    if let Some(last) = acct.last_nudge_at {
+        if now - last < NUDGE_DEDUP_SECS {
+            return Ok(());
+        }
+    }
+
+    let rationale = format!(
+        "Your {} link has expired — reconnect to resume sync.",
+        acct.institution_name
+    );
+    let diff_json = serde_json::json!({
+        "action": "bank_reconnect",
+        "account_id": acct.id,
+        "institution_name": acct.institution_name,
+    })
+    .to_string();
+
+    proposal::insert(
+        conn,
+        NewProposal {
+            kind: "bank_reconnect",
+            rationale: &rationale,
+            diff_json: &diff_json,
+            skill: "bank_sync",
+        },
+    )?;
+    bank_account::set_last_nudge_at(conn, acct.id, now)?;
+    Ok(())
 }
 
 /// Runs once per account on first sync. Finds manual rows with matching
@@ -398,5 +439,39 @@ mod tests {
             [], |r| r.get(0),
         ).unwrap();
         assert_eq!(cat, Some(1)); // bank_category_id wins since it was set
+    }
+
+    #[test]
+    fn nudge_inserts_proposal_and_dedups_within_24h() {
+        let (_dir, conn) = test_conn();
+        let acct_id = insert_test_account(&conn, None);
+        let acct = bank_account::get(&conn, acct_id).unwrap();
+        let now = Utc::now().timestamp();
+
+        // First nudge — inserts.
+        maybe_nudge_reconnect(&conn, &acct, now).unwrap();
+        let count1: i64 = conn.query_row(
+            "SELECT COUNT(*) FROM proposal WHERE kind = 'bank_reconnect'",
+            [], |r| r.get(0),
+        ).unwrap();
+        assert_eq!(count1, 1);
+
+        // Second nudge <24h later — deduped.
+        let acct_after = bank_account::get(&conn, acct_id).unwrap();
+        maybe_nudge_reconnect(&conn, &acct_after, now + 3600).unwrap();
+        let count2: i64 = conn.query_row(
+            "SELECT COUNT(*) FROM proposal WHERE kind = 'bank_reconnect'",
+            [], |r| r.get(0),
+        ).unwrap();
+        assert_eq!(count2, 1);
+
+        // Third nudge >24h later — fires again.
+        let acct_after = bank_account::get(&conn, acct_id).unwrap();
+        maybe_nudge_reconnect(&conn, &acct_after, now + NUDGE_DEDUP_SECS + 1).unwrap();
+        let count3: i64 = conn.query_row(
+            "SELECT COUNT(*) FROM proposal WHERE kind = 'bank_reconnect'",
+            [], |r| r.get(0),
+        ).unwrap();
+        assert_eq!(count3, 2);
     }
 }

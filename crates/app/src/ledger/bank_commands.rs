@@ -191,6 +191,10 @@ pub struct CompleteConnectArgs {
     pub institution_name: String,
     pub institution_logo_url: Option<String>,
     pub max_historical_days_granted: i64,
+    /// When set, soft-delete this account after the new rows are inserted.
+    /// Used by the reconnect flow to replace an expired account cleanly.
+    #[serde(default)]
+    pub replaces_account_id: Option<i64>,
 }
 
 #[derive(Serialize)]
@@ -248,6 +252,15 @@ pub async fn ledger_bank_complete_connect(
             }).map_err(map_anyhow)?
         };
         ids.push(inserted.id);
+    }
+
+    // If this was a reconnect, soft-delete the old account row now that
+    // replacement rows are in place. Fails softly — we don't want a stale
+    // row to block the happy path if the delete errors.
+    if let Some(old_id) = args.replaces_account_id {
+        if let Ok(conn) = state.0.lock() {
+            let _ = bank_account::soft_delete(&conn, old_id);
+        }
     }
 
     // Clone the Arc so the background sync task owns it; no lock held across .await.

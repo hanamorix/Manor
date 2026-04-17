@@ -24,8 +24,9 @@ interface Props {
   onClose: () => void;
 }
 
-export function ConnectBankDrawer({ mode: _mode, onClose }: Props) {
+export function ConnectBankDrawer({ mode, onClose }: Props) {
   const [stage, setStage] = useState<Stage>({ kind: "loading" });
+  const replacesAccountId = mode.kind === "reconnect" ? mode.account_id : null;
 
   useEffect(() => {
     (async () => {
@@ -76,6 +77,7 @@ export function ConnectBankDrawer({ mode: _mode, onClose }: Props) {
         institution_name: inst.name,
         institution_logo_url: inst.logo_url,
         max_historical_days_granted: begin.max_historical_days_granted,
+        replaces_account_id: replacesAccountId,
       });
       setStage({ kind: "syncing", account_ids: resp.account_ids });
     } catch (e: unknown) {

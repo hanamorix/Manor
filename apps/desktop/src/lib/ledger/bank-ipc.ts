@@ -77,6 +77,7 @@ export async function completeConnect(args: {
   institution_name: string;
   institution_logo_url: string | null;
   max_historical_days_granted: number;
+  replaces_account_id?: number | null;
 }): Promise<{ account_ids: number[] }> {
   return await invoke("ledger_bank_complete_connect", { args });
 }

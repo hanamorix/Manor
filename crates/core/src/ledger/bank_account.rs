@@ -158,6 +158,14 @@ pub fn set_sync_paused(conn: &Connection, id: i64, reason: &str) -> Result<()> {
     Ok(())
 }
 
+pub fn set_last_nudge_at(conn: &Connection, id: i64, ts: i64) -> Result<()> {
+    conn.execute(
+        "UPDATE bank_account SET last_nudge_at = ?1 WHERE id = ?2",
+        params![ts, id],
+    )?;
+    Ok(())
+}
+
 pub fn soft_delete(conn: &Connection, id: i64) -> Result<()> {
     conn.execute(
         "UPDATE bank_account SET deleted_at = ?1 WHERE id = ?2",
