@@ -268,7 +268,7 @@ export default function Assistant() {
           />
         )}
         <Avatar
-          height={minimized ? 40 : 96}
+          height={minimized ? 40 : 72}
           onClick={() => setDrawerOpen(true)}
         />
       </div>

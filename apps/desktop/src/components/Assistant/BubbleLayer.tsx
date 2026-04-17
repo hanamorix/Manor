@@ -67,13 +67,13 @@ export default function BubbleLayer({ minimized = false }: BubbleLayerProps) {
     <div
       style={{
         position: "fixed",
-        bottom: 130,
+        bottom: 105,
         right: 16,
         display: "flex",
         flexDirection: "column",
         gap: 4,
         alignItems: "flex-end",
-        maxWidth: 460,
+        maxWidth: 380,
         pointerEvents: "none",
         zIndex: 500,
       }}
@@ -108,11 +108,11 @@ interface BubbleProps {
   onClick: () => void;
 }
 
-const MAX_BUBBLE_LINES = 6;
+const MAX_BUBBLE_LINES = 4;
 
 const DOT_BASE: React.CSSProperties = {
-  width: 8,
-  height: 8,
+  width: 6,
+  height: 6,
   borderRadius: "50%",
   background: "rgba(255,255,255,0.9)",
   display: "inline-block",
@@ -175,10 +175,10 @@ function Bubble({ bubble, isLoading, onDismiss, onClick }: BubbleProps) {
         alignSelf: c.alignSelf,
         borderRadius: c.borderRadius,
         border: c.border,
-        padding: "10px 14px",
-        fontSize: 15,
-        lineHeight: 1.35,
-        maxWidth: 420,
+        padding: "8px 12px",
+        fontSize: 13,
+        lineHeight: 1.4,
+        maxWidth: 340,
         whiteSpace: "pre-wrap",
         wordBreak: "break-word",
         boxShadow: "var(--shadow-md)",
