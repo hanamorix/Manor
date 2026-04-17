@@ -37,6 +37,8 @@
   --scrim:             rgba(0, 0, 0, 0.25);
 
   --paper-muted:       #f4f4f4;
+  --ink-danger:        #7a1f1f;
+  --ink-success:       #1f5a2e;
 
   --action-bg:               #1f1f1f;
   --action-fg:               #ffffff;
@@ -56,6 +58,8 @@
     --scrim:             rgba(0, 0, 0, 0.55);
 
     --paper-muted:       #141414;
+    --ink-danger:        #e8a8a8;
+    --ink-success:       #a8e8b8;
 
     --action-bg:               #e8e8e8;
     --action-fg:               #191919;
@@ -74,6 +78,8 @@
   --hairline-strong:   #3a3a3a;
   --scrim:             rgba(0, 0, 0, 0.55);
   --paper-muted:       #141414;
+  --ink-danger:        #e8a8a8;
+  --ink-success:       #a8e8b8;
 
   --action-bg:               #e8e8e8;
   --action-fg:               #191919;

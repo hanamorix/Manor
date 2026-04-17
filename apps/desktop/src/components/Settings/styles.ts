@@ -72,7 +72,7 @@ export const dangerButton: CSSProperties = {
   fontFamily: "inherit",
 };
 
-// Semantic color tokens (hex kept where CSS vars don't exist)
-export const COLOR_AMBER = "#b36b00";
-export const COLOR_SUCCESS = "var(--ink)";
-export const COLOR_DANGER = "var(--ink)";
+// Semantic color tokens
+export const COLOR_AMBER   = "#b36b00";
+export const COLOR_SUCCESS = "var(--ink-success)";
+export const COLOR_DANGER  = "var(--ink-danger)";
