@@ -101,6 +101,12 @@ html, body {
 
 #root { min-height: 100vh; }
 
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
 .num, time, [data-num] {
   font-family: var(--font-mono);
   font-variant-numeric: tabular-nums;
