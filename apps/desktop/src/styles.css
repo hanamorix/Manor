@@ -74,19 +74,12 @@
   --action-secondary-border: #3a3a3a;
 }
 
-/* ============================================ */
-/* SHIM — legacy iMessage token aliases.        */
-/* Allows unmigrated components to keep         */
-/* compiling during Phase 2. Removed in Task 9. */
-/* ============================================ */
+/* Shadows, radii, kept tokens */
 :root {
-  --imessage-blue:  var(--action-bg);
-  --imessage-green: var(--action-bg);
-  --imessage-red:   var(--ink);
-  --radius-pill:    999px;
-  --shadow-sm: 0 1px 2px rgba(20, 20, 30, 0.06), 0 1px 3px rgba(20, 20, 30, 0.04);
-  --shadow-md: 0 4px 10px rgba(20, 20, 30, 0.08), 0 2px 6px rgba(20, 20, 30, 0.05);
-  --shadow-lg: 0 12px 28px rgba(20, 20, 30, 0.12), 0 4px 10px rgba(20, 20, 30, 0.08);
+  --radius-pill: 999px;
+  --shadow-sm: 0 1px 2px rgba(31, 31, 31, 0.06), 0 1px 3px rgba(31, 31, 31, 0.04);
+  --shadow-md: 0 4px 10px rgba(31, 31, 31, 0.08), 0 2px 6px rgba(31, 31, 31, 0.05);
+  --shadow-lg: 0 12px 28px rgba(31, 31, 31, 0.12), 0 4px 10px rgba(31, 31, 31, 0.08);
 }
 
 html, body {
