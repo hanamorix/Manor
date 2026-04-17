@@ -3,6 +3,7 @@
 
 pub mod claude;
 pub mod keychain;
+pub mod orchestrator;
 pub mod provider;
 
 pub const PROVIDER_CLAUDE: &str = "claude";
