@@ -33,9 +33,10 @@ pub async fn sync_all(
     let accounts = bank_account::list_active_for_sync(conn)?;
     let mut reports = Vec::with_capacity(accounts.len());
     for acct in accounts {
-        let r = sync_one(conn, ctx, acct.id).await;
+        let aid = acct.id;
+        let r = sync_one(conn, ctx, aid).await;
         reports.push(r.unwrap_or_else(|e| SyncAccountReport {
-            account_id: 0,
+            account_id: aid,
             inserted: 0,
             categorized: 0,
             merged: 0,
@@ -147,7 +148,7 @@ pub async fn sync_one(
                 acct.id,
                 ext_id,
                 amount_pence,
-                "GBP",
+                acct.currency,
                 description,
                 merchant,
                 kw_category,
