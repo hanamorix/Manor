@@ -1,7 +1,7 @@
 //! Tauri commands for Ledger — categories, transactions, budgets.
 
 use crate::assistant::commands::Db;
-use manor_core::ledger::{budget, category, transaction};
+use manor_core::ledger::{budget, category, recurring, transaction};
 use tauri::State;
 
 // ── Categories ────────────────────────────────────────────────────────────────
@@ -156,4 +156,84 @@ pub fn ledger_monthly_summary(
 ) -> Result<budget::MonthlySummary, String> {
     let conn = state.0.lock().map_err(|e| e.to_string())?;
     budget::monthly_summary(&conn, year, month).map_err(|e| e.to_string())
+}
+
+// ── Recurring payments ────────────────────────────────────────────────────────
+
+#[tauri::command]
+pub fn ledger_list_recurring(
+    state: State<'_, Db>,
+) -> Result<Vec<recurring::RecurringPayment>, String> {
+    let conn = state.0.lock().map_err(|e| e.to_string())?;
+    recurring::list(&conn).map_err(|e| e.to_string())
+}
+
+#[derive(serde::Deserialize)]
+pub struct AddRecurringArgs {
+    pub description: String,
+    #[serde(rename = "amountPence")]
+    pub amount_pence: i64,
+    pub currency: String,
+    #[serde(rename = "categoryId")]
+    pub category_id: Option<i64>,
+    #[serde(rename = "dayOfMonth")]
+    pub day_of_month: i64,
+    pub note: Option<String>,
+}
+
+#[tauri::command]
+pub fn ledger_add_recurring(
+    state: State<'_, Db>,
+    args: AddRecurringArgs,
+) -> Result<recurring::RecurringPayment, String> {
+    let conn = state.0.lock().map_err(|e| e.to_string())?;
+    recurring::insert(
+        &conn,
+        &args.description,
+        args.amount_pence,
+        &args.currency,
+        args.category_id,
+        args.day_of_month,
+        args.note.as_deref(),
+    )
+    .map_err(|e| e.to_string())
+}
+
+#[derive(serde::Deserialize)]
+pub struct UpdateRecurringArgs {
+    pub id: i64,
+    pub description: String,
+    #[serde(rename = "amountPence")]
+    pub amount_pence: i64,
+    #[serde(rename = "categoryId")]
+    pub category_id: Option<i64>,
+    #[serde(rename = "dayOfMonth")]
+    pub day_of_month: i64,
+    pub active: bool,
+    pub note: Option<String>,
+}
+
+#[tauri::command]
+pub fn ledger_update_recurring(
+    state: State<'_, Db>,
+    args: UpdateRecurringArgs,
+) -> Result<recurring::RecurringPayment, String> {
+    let conn = state.0.lock().map_err(|e| e.to_string())?;
+    recurring::update(
+        &conn,
+        args.id,
+        &args.description,
+        args.amount_pence,
+        args.category_id,
+        args.day_of_month,
+        args.active,
+        args.note.as_deref(),
+    )
+    .map_err(|e| e.to_string())
+}
+
+#[tauri::command]
+pub fn ledger_delete_recurring(state: State<'_, Db>, id: i64) -> Result<(), String> {
+    let conn = state.0.lock().map_err(|e| e.to_string())?;
+    recurring::delete(&conn, id).map_err(|e| e.to_string())
 }
