@@ -236,6 +236,9 @@ pub fn register(builder: Builder<Wry>) -> Builder<Wry> {
             safety::snapshot_commands::backup_schedule_uninstall,
             safety::snapshot_commands::backup_schedule_is_installed,
             weather::commands::weather_current,
+            embedding::commands::embeddings_status,
+            embedding::commands::embeddings_search,
+            embedding::commands::embeddings_rebuild,
         ])
 }
 

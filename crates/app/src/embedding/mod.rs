@@ -1,5 +1,6 @@
 //! Embeddings — Ollama-backed semantic index + Tauri commands.
 
+pub mod commands;
 pub mod job;
 
 pub const EMBED_MODEL_DEFAULT: &str = "nomic-embed-text";
