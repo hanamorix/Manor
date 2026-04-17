@@ -185,9 +185,71 @@ pub async fn sync_one(
     })
 }
 
-// Body filled in Task 10. Stub returns 0.
-fn soft_merge_manual_duplicates(_conn: &Connection, _account_id: i64) -> Result<usize> {
-    Ok(0)
+/// Runs once per account on first sync. Finds manual rows with matching
+/// amount + date (±1 day) and:
+///   - copies manual.category_id to bank row if bank has none,
+///   - copies manual.note to bank row (appending if both exist),
+///   - soft-deletes the manual row.
+fn soft_merge_manual_duplicates(conn: &Connection, account_id: i64) -> Result<usize> {
+    #[derive(Debug)]
+    struct Pair {
+        manual_id: i64,
+        bank_id: i64,
+        manual_category_id: Option<i64>,
+        manual_note: Option<String>,
+        bank_category_id: Option<i64>,
+        bank_note: Option<String>,
+    }
+    let mut stmt = conn.prepare(
+        "SELECT m.id AS manual_id, b.id AS bank_id,
+                m.category_id AS manual_category_id, m.note AS manual_note,
+                b.category_id AS bank_category_id, b.note AS bank_note
+         FROM ledger_transaction m
+         JOIN ledger_transaction b ON (
+               b.bank_account_id = ?1
+           AND b.source = 'sync'
+           AND m.bank_account_id IS NULL
+           AND m.source = 'manual'
+           AND m.amount_pence = b.amount_pence
+           AND ABS(m.date - b.date) <= 86400
+         )
+         WHERE m.deleted_at IS NULL AND b.deleted_at IS NULL",
+    )?;
+    let pairs: Vec<Pair> = stmt
+        .query_map(params![account_id], |row| {
+            Ok(Pair {
+                manual_id: row.get("manual_id")?,
+                bank_id: row.get("bank_id")?,
+                manual_category_id: row.get("manual_category_id")?,
+                manual_note: row.get("manual_note")?,
+                bank_category_id: row.get("bank_category_id")?,
+                bank_note: row.get("bank_note")?,
+            })
+        })?
+        .collect::<rusqlite::Result<_>>()?;
+
+    let now = Utc::now().timestamp();
+    let mut merged = 0usize;
+    for p in pairs {
+        let new_category = p.bank_category_id.or(p.manual_category_id);
+        let new_note = match (p.bank_note, p.manual_note) {
+            (None, None) => None,
+            (Some(b), None) => Some(b),
+            (None, Some(m)) => Some(m),
+            (Some(b), Some(m)) if b == m => Some(b),
+            (Some(b), Some(m)) => Some(format!("{b}\n{m}")),
+        };
+        conn.execute(
+            "UPDATE ledger_transaction SET category_id = ?1, note = ?2 WHERE id = ?3",
+            params![new_category, new_note, p.bank_id],
+        )?;
+        conn.execute(
+            "UPDATE ledger_transaction SET deleted_at = ?1 WHERE id = ?2",
+            params![now, p.manual_id],
+        )?;
+        merged += 1;
+    }
+    Ok(merged)
 }
 
 fn parse_date_to_ts(s: &str) -> Option<i64> {
@@ -265,5 +327,76 @@ mod tests {
             Ok(r) => assert!(!r.skipped),
             Err(_) => { /* expected — network unreachable */ }
         }
+    }
+
+    #[test]
+    fn soft_merge_preserves_manual_category_and_note() {
+        let (_dir, conn) = test_conn();
+        let acct_id = insert_test_account(&conn, None);
+
+        // Insert a manual row: £12.40 on 2026-04-10, category 3, note "on the way".
+        let date = NaiveDate::from_ymd_opt(2026, 4, 10).unwrap()
+            .and_hms_opt(0, 0, 0).unwrap().and_utc().timestamp();
+        conn.execute(
+            "INSERT INTO ledger_transaction
+                (bank_account_id, amount_pence, currency, description, category_id, date, source, note)
+             VALUES (NULL, -1240, 'GBP', 'tesco', 3, ?1, 'manual', 'on the way')",
+            params![date],
+        ).unwrap();
+
+        // Insert the bank-synced row: same amount, same day, no category, no note.
+        conn.execute(
+            "INSERT INTO ledger_transaction
+                (bank_account_id, external_id, amount_pence, currency, description, merchant, date, source)
+             VALUES (?1, 'tx-1', -1240, 'GBP', 'TESCO STORES 4023', 'TESCO', ?2, 'sync')",
+            params![acct_id, date],
+        ).unwrap();
+
+        let merged = soft_merge_manual_duplicates(&conn, acct_id).unwrap();
+        assert_eq!(merged, 1);
+
+        // Manual row soft-deleted.
+        let manual_deleted: i64 = conn.query_row(
+            "SELECT deleted_at IS NOT NULL FROM ledger_transaction
+             WHERE source = 'manual' AND bank_account_id IS NULL",
+            [], |r| r.get(0),
+        ).unwrap();
+        assert_eq!(manual_deleted, 1);
+
+        // Bank row carries category 3 and note "on the way".
+        let (cat, note): (Option<i64>, Option<String>) = conn.query_row(
+            "SELECT category_id, note FROM ledger_transaction WHERE external_id = 'tx-1'",
+            [], |r| Ok((r.get(0)?, r.get(1)?)),
+        ).unwrap();
+        assert_eq!(cat, Some(3));
+        assert_eq!(note, Some("on the way".into()));
+    }
+
+    #[test]
+    fn soft_merge_keeps_bank_category_when_set() {
+        let (_dir, conn) = test_conn();
+        let acct_id = insert_test_account(&conn, None);
+        let date = Utc::now().timestamp();
+
+        conn.execute(
+            "INSERT INTO ledger_transaction
+                (bank_account_id, amount_pence, currency, description, category_id, date, source, note)
+             VALUES (NULL, -500, 'GBP', 'coffee', 2, ?1, 'manual', NULL)",
+            params![date],
+        ).unwrap();
+        conn.execute(
+            "INSERT INTO ledger_transaction
+                (bank_account_id, external_id, amount_pence, currency, description, category_id, date, source)
+             VALUES (?1, 'tx-2', -500, 'GBP', 'COSTA', 1, ?2, 'sync')",
+            params![acct_id, date],
+        ).unwrap();
+
+        soft_merge_manual_duplicates(&conn, acct_id).unwrap();
+
+        let cat: Option<i64> = conn.query_row(
+            "SELECT category_id FROM ledger_transaction WHERE external_id = 'tx-2'",
+            [], |r| r.get(0),
+        ).unwrap();
+        assert_eq!(cat, Some(1)); // bank_category_id wins since it was set
     }
 }
