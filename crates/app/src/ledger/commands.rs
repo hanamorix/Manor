@@ -322,3 +322,44 @@ pub fn ledger_get_renewal_alerts(
     let now = chrono::Utc::now().timestamp();
     contract::check_renewals(&conn, now).map_err(|e| e.to_string())
 }
+
+// ── CSV Import ────────────────────────────────────────────────────────────────
+
+use crate::ledger::csv_import::{self, BankPreset, GenericCols, ImportResult, PreviewRow};
+
+#[derive(serde::Deserialize)]
+pub struct ImportCsvArgs {
+    pub preset: String,
+    #[serde(rename = "csvBytes")]
+    pub csv_bytes: Vec<u8>,
+    #[serde(rename = "genericCols")]
+    pub generic_cols: Option<GenericCols>,
+}
+
+#[derive(serde::Serialize)]
+pub struct PreviewResponse {
+    pub rows: Vec<PreviewRow>,
+}
+
+#[tauri::command]
+pub fn ledger_preview_csv(
+    state: State<'_, Db>,
+    args: ImportCsvArgs,
+) -> Result<PreviewResponse, String> {
+    let preset = BankPreset::from_str(&args.preset).ok_or("unknown preset")?;
+    let conn = state.0.lock().map_err(|e| e.to_string())?;
+    let rows = csv_import::parse_preview(&conn, preset, &args.csv_bytes, args.generic_cols)
+        .map_err(|e| e.to_string())?;
+    Ok(PreviewResponse { rows })
+}
+
+#[derive(serde::Deserialize)]
+pub struct DoImportArgs {
+    pub rows: Vec<PreviewRow>,
+}
+
+#[tauri::command]
+pub fn ledger_import_csv(state: State<'_, Db>, args: DoImportArgs) -> Result<ImportResult, String> {
+    let mut conn = state.0.lock().map_err(|e| e.to_string())?;
+    csv_import::do_import(&mut conn, args.rows).map_err(|e| e.to_string())
+}
