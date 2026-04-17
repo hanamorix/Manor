@@ -94,11 +94,11 @@ export default function TasksCard() {
             marginTop: 8,
             width: "100%",
             padding: "6px 10px",
-            border: "1px dashed rgba(0,0,0,0.2)",
+            border: "1px dashed var(--hairline-strong)",
             borderRadius: 6,
             fontSize: 14,
             fontFamily: "inherit",
-            background: "rgba(0,0,0,0.02)",
+            background: "var(--paper-muted)",
           }}
         />
       )}

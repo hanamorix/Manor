@@ -87,7 +87,7 @@ export default function BudgetSheet({ categories, budgets, onClose, onChanged }:
           bottom: 0,
           width: 420,
           background: "var(--paper)",
-          boxShadow: "-4px 0 24px rgba(0,0,0,0.12)",
+          boxShadow: "var(--shadow-lg)",
           zIndex: 1100,
           display: "flex",
           flexDirection: "column",
@@ -144,7 +144,7 @@ export default function BudgetSheet({ categories, budgets, onClose, onChanged }:
                 <span style={{ fontSize: 14, fontWeight: 500 }}>{cat.name}</span>
               </div>
               <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                <span style={{ fontSize: 13, color: "rgba(0,0,0,0.4)" }}>£</span>
+                <span style={{ fontSize: 13, color: "var(--ink-faint)" }}>£</span>
                 <input
                   style={inputStyle}
                   type="number"

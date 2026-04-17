@@ -77,7 +77,7 @@ export default function RecurringSection({ categories }: Props) {
               userSelect: "none",
             }}
           >
-            <span style={{ fontSize: 13, color: "rgba(0,0,0,0.4)" }}>
+            <span style={{ fontSize: 13, color: "var(--ink-faint)" }}>
               {expanded ? "▾" : "▸"}
             </span>
             <h3

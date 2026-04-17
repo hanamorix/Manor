@@ -53,7 +53,7 @@ export default function EditEventDrawer({ event, onClose, onSaved }: Props) {
     fontWeight: 600,
     textTransform: "uppercase",
     letterSpacing: 0.5,
-    color: "rgba(0,0,0,0.5)",
+    color: "var(--scrim)",
     marginBottom: 5,
     display: "block",
   };
@@ -100,7 +100,7 @@ export default function EditEventDrawer({ event, onClose, onSaved }: Props) {
 
   return (
     <>
-      <div onClick={onClose} style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.25)", zIndex: 1050 }} />
+      <div onClick={onClose} style={{ position: "fixed", inset: 0, background: "var(--ink-faint)", zIndex: 1050 }} />
       <div
         style={{
           position: "fixed",
@@ -109,7 +109,7 @@ export default function EditEventDrawer({ event, onClose, onSaved }: Props) {
           bottom: 0,
           width: 420,
           background: "var(--paper)",
-          boxShadow: "-4px 0 24px rgba(0,0,0,0.12)",
+          boxShadow: "var(--shadow-lg)",
           zIndex: 1100,
           display: "flex",
           flexDirection: "column",
@@ -118,12 +118,12 @@ export default function EditEventDrawer({ event, onClose, onSaved }: Props) {
       >
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "18px 20px 14px", borderBottom: "1px solid var(--hairline)" }}>
           <div style={{ fontSize: 16, fontWeight: 600 }}>Edit Event</div>
-          <button onClick={onClose} style={{ background: "none", border: "none", fontSize: 20, cursor: "pointer", color: "rgba(0,0,0,0.4)", lineHeight: 1, padding: 0 }}>✕</button>
+          <button onClick={onClose} style={{ background: "none", border: "none", fontSize: 20, cursor: "pointer", color: "var(--ink-faint)", lineHeight: 1, padding: 0 }}>✕</button>
         </div>
 
         <div style={{ flex: 1, overflow: "auto", padding: "20px" }}>
           {isManual && (
-            <div style={{ marginBottom: 16, padding: "8px 12px", background: "rgba(0,0,0,0.04)", borderRadius: 8, fontSize: 12, color: "rgba(0,0,0,0.5)" }}>
+            <div style={{ marginBottom: 16, padding: "8px 12px", background: "var(--paper-muted)", borderRadius: 8, fontSize: 12, color: "var(--ink-soft)" }}>
               Manual event — changes are local only
             </div>
           )}
@@ -204,7 +204,7 @@ export default function EditEventDrawer({ event, onClose, onSaved }: Props) {
                 >
                   {event.is_recurring_occurrence ? "Delete all occurrences" : "Confirm Delete"}
                 </button>
-                <button onClick={() => setConfirmDelete(false)} style={{ background: "none", border: "none", fontSize: 13, color: "rgba(0,0,0,0.4)", cursor: "pointer", fontFamily: "inherit" }}>
+                <button onClick={() => setConfirmDelete(false)} style={{ background: "none", border: "none", fontSize: 13, color: "var(--ink-faint)", cursor: "pointer", fontFamily: "inherit" }}>
                   Cancel
                 </button>
               </div>

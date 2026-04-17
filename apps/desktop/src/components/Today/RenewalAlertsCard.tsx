@@ -55,7 +55,7 @@ export default function RenewalAlertsCard() {
             >
               <div style={{ fontSize: 13, color: "var(--ink)" }}>
                 {a.provider}{" "}
-                <span style={{ fontSize: 11, color: "rgba(0,0,0,0.55)" }}>
+                <span style={{ fontSize: 11, color: "var(--ink-soft)" }}>
                   ({a.kind})
                 </span>{" "}
                 renewing soon

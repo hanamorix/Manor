@@ -47,7 +47,7 @@ export default function AddAccountForm({ onClose }: AddAccountFormProps) {
     <div
       style={{
         padding: 12,
-        background: "rgba(0,0,0,0.02)",
+        background: "var(--paper-muted)",
         border: "1px dashed var(--hairline)",
         borderRadius: 8,
         marginTop: 8,

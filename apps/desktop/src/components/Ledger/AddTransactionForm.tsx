@@ -89,7 +89,7 @@ export default function AddTransactionForm({ categories, onClose, onSaved }: Pro
     fontWeight: 600,
     textTransform: "uppercase",
     letterSpacing: 0.5,
-    color: "rgba(0,0,0,0.5)",
+    color: "var(--scrim)",
     marginBottom: 5,
     display: "block",
   };
@@ -101,7 +101,7 @@ export default function AddTransactionForm({ categories, onClose, onSaved }: Pro
         style={{
           position: "fixed",
           inset: 0,
-          background: "rgba(0,0,0,0.25)",
+          background: "var(--ink-faint)",
           zIndex: 1050,
         }}
       />
@@ -113,7 +113,7 @@ export default function AddTransactionForm({ categories, onClose, onSaved }: Pro
           bottom: 0,
           width: 420,
           background: "var(--paper)",
-          boxShadow: "-4px 0 24px rgba(0,0,0,0.12)",
+          boxShadow: "var(--shadow-lg)",
           zIndex: 1100,
           display: "flex",
           flexDirection: "column",
@@ -138,7 +138,7 @@ export default function AddTransactionForm({ categories, onClose, onSaved }: Pro
               border: "none",
               fontSize: 20,
               cursor: "pointer",
-              color: "rgba(0,0,0,0.4)",
+              color: "var(--ink-faint)",
               lineHeight: 1,
               padding: 0,
             }}
@@ -169,7 +169,7 @@ export default function AddTransactionForm({ categories, onClose, onSaved }: Pro
                         ? "#2BB94A"
                         : "#0866EF"
                       : "transparent",
-                  color: (type === "income") === isIncome ? "white" : "rgba(0,0,0,0.5)",
+                  color: (type === "income") === isIncome ? "white" : "var(--scrim)",
                   fontWeight: 600,
                   fontSize: 13,
                   cursor: "pointer",

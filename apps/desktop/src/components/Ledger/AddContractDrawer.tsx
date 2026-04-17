@@ -156,7 +156,7 @@ export default function AddContractDrawer({ existing, onClose, onSaved }: Props)
           bottom: 0,
           width: 420,
           background: "var(--paper)",
-          boxShadow: "-4px 0 24px rgba(0,0,0,0.12)",
+          boxShadow: "var(--shadow-lg)",
           zIndex: 1100,
           display: "flex",
           flexDirection: "column",

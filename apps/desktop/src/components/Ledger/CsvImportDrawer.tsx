@@ -135,7 +135,7 @@ export default function CsvImportDrawer({ onClose, onImported }: Props) {
           bottom: 0,
           width: 600,
           background: "var(--paper)",
-          boxShadow: "-4px 0 24px rgba(0,0,0,0.12)",
+          boxShadow: "var(--shadow-lg)",
           zIndex: 1100,
           display: "flex",
           flexDirection: "column",
@@ -314,7 +314,7 @@ export default function CsvImportDrawer({ onClose, onImported }: Props) {
                               borderTop: i > 0 ? "1px solid var(--hairline)" : undefined,
                               opacity: row.duplicate ? 0.4 : 1,
                               background:
-                                i % 2 === 0 ? "transparent" : "rgba(0,0,0,0.015)",
+                                i % 2 === 0 ? "transparent" : "var(--hairline)",
                             }}
                           >
                             <td
