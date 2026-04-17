@@ -108,3 +108,144 @@ export async function getMonthlySummary(
 ): Promise<MonthlySummary> {
   return invoke<MonthlySummary>("ledger_monthly_summary", { year, month });
 }
+
+// Recurring payments
+export interface RecurringPayment {
+  id: number;
+  description: string;
+  amount_pence: number;
+  currency: string;
+  category_id: number | null;
+  day_of_month: number;
+  active: boolean;
+  note: string | null;
+  created_at: number;
+}
+
+export async function listRecurring(): Promise<RecurringPayment[]> {
+  return invoke<RecurringPayment[]>("ledger_list_recurring");
+}
+export async function addRecurring(args: {
+  description: string;
+  amountPence: number;
+  currency: string;
+  categoryId?: number;
+  dayOfMonth: number;
+  note?: string;
+}): Promise<RecurringPayment> {
+  return invoke<RecurringPayment>("ledger_add_recurring", { args });
+}
+export async function updateRecurring(args: {
+  id: number;
+  description: string;
+  amountPence: number;
+  categoryId?: number;
+  dayOfMonth: number;
+  active: boolean;
+  note?: string;
+}): Promise<RecurringPayment> {
+  return invoke<RecurringPayment>("ledger_update_recurring", { args });
+}
+export async function deleteRecurring(id: number): Promise<void> {
+  return invoke<void>("ledger_delete_recurring", { id });
+}
+
+// Contracts
+export interface Contract {
+  id: number;
+  provider: string;
+  kind: "phone" | "broadband" | "insurance" | "energy" | "other";
+  description: string | null;
+  monthly_cost_pence: number;
+  term_start: number;
+  term_end: number;
+  exit_fee_pence: number | null;
+  renewal_alert_days: number;
+  recurring_payment_id: number | null;
+  note: string | null;
+  created_at: number;
+}
+
+export interface RenewalAlert {
+  contract_id: number;
+  provider: string;
+  kind: string;
+  term_end: number;
+  days_remaining: number;
+  exit_fee_pence: number | null;
+  severity: "amber" | "red";
+}
+
+export interface ContractArgs {
+  provider: string;
+  kind: string;
+  description?: string;
+  monthlyCostPence: number;
+  termStart: number;
+  termEnd: number;
+  exitFeePence?: number;
+  renewalAlertDays: number;
+  recurringPaymentId?: number;
+  note?: string;
+}
+
+export async function listContracts(): Promise<Contract[]> {
+  return invoke<Contract[]>("ledger_list_contracts");
+}
+export async function addContract(args: ContractArgs): Promise<Contract> {
+  return invoke<Contract>("ledger_add_contract", { args });
+}
+export async function updateContract(args: ContractArgs & { id: number }): Promise<Contract> {
+  const { id, ...fields } = args;
+  return invoke<Contract>("ledger_update_contract", { args: { id, fields } });
+}
+export async function deleteContract(id: number): Promise<void> {
+  return invoke<void>("ledger_delete_contract", { id });
+}
+export async function getRenewalAlerts(): Promise<RenewalAlert[]> {
+  return invoke<RenewalAlert[]>("ledger_get_renewal_alerts");
+}
+
+// CSV Import
+export interface PreviewRow {
+  date: number;
+  amount_pence: number;
+  description: string;
+  suggested_category_id: number | null;
+  duplicate: boolean;
+}
+export interface ImportResult {
+  inserted: number;
+  skipped_duplicates: number;
+  skipped_errors: number;
+}
+export interface GenericCols { date: number; amount: number; description: number; }
+
+export async function previewCsv(args: {
+  preset: string;
+  csvBytes: number[];
+  genericCols?: GenericCols;
+}): Promise<{ rows: PreviewRow[] }> {
+  return invoke("ledger_preview_csv", { args });
+}
+export async function importCsv(rows: PreviewRow[]): Promise<ImportResult> {
+  return invoke<ImportResult>("ledger_import_csv", { args: { rows } });
+}
+
+// AI Month Review — streams via Channel
+import { Channel } from "@tauri-apps/api/core";
+export type StreamChunk =
+  | { type: "Token"; data: string }
+  | { type: "Started"; data: number }
+  | { type: "Done" }
+  | { type: "Error"; data: string }
+  | { type: "Proposal"; data: number };
+
+export function aiMonthReview(
+  args: { year: number; month: number },
+  onEvent: (c: StreamChunk) => void
+): Promise<void> {
+  const ch = new Channel<StreamChunk>();
+  ch.onmessage = onEvent;
+  return invoke<void>("ledger_ai_month_review", { args, onEvent: ch });
+}
