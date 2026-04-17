@@ -367,8 +367,147 @@ pub async fn ledger_bank_reconnect(
 
 #[tauri::command]
 pub async fn ledger_bank_autocat_pending(
-    _state: State<'_, Db>,
+    state: State<'_, Db>,
 ) -> CmdResult<usize> {
-    // Stub — real Ollama batch call is a follow-up. See spec §4.5.
-    Ok(0)
+    use crate::assistant::ollama::{OllamaClient, DEFAULT_ENDPOINT, DEFAULT_MODEL};
+
+    // 1. Collect uncategorised sync rows < 7 days old (hot window), limit 50.
+    #[derive(Clone)]
+    struct Pending {
+        id: i64,
+        description: String,
+        merchant: Option<String>,
+        amount_pence: i64,
+    }
+
+    let (pendings, categories) = {
+        let conn = state.0.lock().map_err(|e| err("lock_poisoned", e))?;
+        let cutoff = chrono::Utc::now().timestamp() - 7 * 86_400;
+        let mut stmt = conn
+            .prepare(
+                "SELECT id, description, merchant, amount_pence
+                 FROM ledger_transaction
+                 WHERE source = 'sync'
+                   AND category_id IS NULL
+                   AND deleted_at IS NULL
+                   AND date >= ?1
+                 ORDER BY date DESC
+                 LIMIT 50",
+            )
+            .map_err(|e| err("db", e))?;
+        let rows: Vec<Pending> = stmt
+            .query_map([cutoff], |r| {
+                Ok(Pending {
+                    id: r.get(0)?,
+                    description: r.get(1)?,
+                    merchant: r.get(2)?,
+                    amount_pence: r.get(3)?,
+                })
+            })
+            .map_err(|e| err("db", e))?
+            .collect::<rusqlite::Result<Vec<_>>>()
+            .map_err(|e| err("db", e))?;
+
+        let cats = manor_core::ledger::category::list(&conn).map_err(map_anyhow)?;
+        (rows, cats)
+    };
+
+    if pendings.is_empty() {
+        return Ok(0);
+    }
+
+    // 2. Build a single prompt listing the transactions + category options.
+    let cat_list: String = categories
+        .iter()
+        .filter(|c| c.deleted_at.is_none())
+        .map(|c| format!("{}={}", c.id, c.name))
+        .collect::<Vec<_>>()
+        .join(", ");
+
+    let tx_list: String = pendings
+        .iter()
+        .map(|p| {
+            let merchant = p.merchant.as_deref().unwrap_or("");
+            let amount = format!("£{:.2}", (p.amount_pence as f64).abs() / 100.0);
+            format!(
+                "  {} | merchant: {:?} | desc: {:?} | amount: {}",
+                p.id, merchant, p.description, amount
+            )
+        })
+        .collect::<Vec<_>>()
+        .join("\n");
+
+    let prompt = format!(
+        "You are categorising bank transactions for a UK personal ledger.\n\
+         Categories (id=name): {cat_list}\n\
+         \n\
+         For each transaction below, pick the single best category id. \
+         If nothing fits, use the 'Other' category id. Reply ONLY with a \
+         compact JSON object mapping transaction id → category id, e.g. \
+         {{\"123\":4,\"124\":2}}. No prose, no markdown.\n\
+         \n\
+         Transactions:\n{tx_list}\n"
+    );
+
+    // 3. Call Ollama (non-streaming). If Ollama is unreachable, no-op.
+    let client = OllamaClient::new(DEFAULT_ENDPOINT, DEFAULT_MODEL);
+    let response = match client.complete(&prompt).await {
+        Ok(r) => r,
+        Err(_) => return Ok(0),
+    };
+
+    // 4. Extract the JSON object (model may wrap it in prose despite our
+    //    instructions). Greedy: find the first { and its matching }.
+    let json_slice = extract_json_object(&response).unwrap_or("");
+    if json_slice.is_empty() {
+        return Ok(0);
+    }
+    let mapping: std::collections::HashMap<String, serde_json::Value> =
+        match serde_json::from_str(json_slice) {
+            Ok(m) => m,
+            Err(_) => return Ok(0),
+        };
+
+    // 5. Write categories back.
+    let valid_ids: std::collections::HashSet<i64> =
+        categories.iter().map(|c| c.id).collect();
+    let conn = state.0.lock().map_err(|e| err("lock_poisoned", e))?;
+    let mut updated = 0usize;
+    for (tx_id_str, cat_val) in mapping {
+        let Ok(tx_id) = tx_id_str.parse::<i64>() else { continue };
+        let Some(cat_id) = cat_val.as_i64() else { continue };
+        if !valid_ids.contains(&cat_id) {
+            continue;
+        }
+        let rows = conn
+            .execute(
+                "UPDATE ledger_transaction
+                 SET category_id = ?1
+                 WHERE id = ?2 AND category_id IS NULL AND source = 'sync'",
+                rusqlite::params![cat_id, tx_id],
+            )
+            .unwrap_or(0);
+        updated += rows as usize;
+    }
+    Ok(updated)
+}
+
+/// Greedy matched-braces JSON-object extractor — tolerates model prose
+/// around the payload ("Here's the mapping: { ... }").
+fn extract_json_object(s: &str) -> Option<&str> {
+    let start = s.find('{')?;
+    let mut depth = 0i32;
+    for (i, c) in s[start..].char_indices() {
+        match c {
+            '{' => depth += 1,
+            '}' => {
+                depth -= 1;
+                if depth == 0 {
+                    return Some(&s[start..=start + i]);
+                }
+            }
+            _ => {}
+        }
+    }
+    None
 }

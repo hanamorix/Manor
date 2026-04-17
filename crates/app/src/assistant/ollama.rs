@@ -234,6 +234,47 @@ impl OllamaClient {
         anyhow::ensure!(!parsed.embedding.is_empty(), "empty embedding returned");
         Ok(parsed.embedding)
     }
+
+    /// Non-streaming completion — POST /api/generate with stream:false.
+    /// Returns the full response string in one shot. Use for short batch
+    /// calls that don't benefit from streaming (autocat, categorisation,
+    /// single-turn classification). The model is the one configured on
+    /// this client (typically a chat model).
+    pub async fn complete(&self, prompt: &str) -> anyhow::Result<String> {
+        #[derive(Serialize)]
+        struct Req<'a> {
+            model: &'a str,
+            prompt: &'a str,
+            stream: bool,
+        }
+        #[derive(Deserialize)]
+        struct Resp {
+            response: String,
+        }
+        let url = format!("{}/api/generate", self.endpoint);
+        let body = Req {
+            model: &self.model,
+            prompt,
+            stream: false,
+        };
+        let resp = self
+            .http
+            .post(&url)
+            .json(&body)
+            .send()
+            .await
+            .map_err(|e| anyhow::anyhow!("complete http: {e}"))?;
+        anyhow::ensure!(
+            resp.status().is_success(),
+            "ollama /api/generate returned {}",
+            resp.status()
+        );
+        let parsed: Resp = resp
+            .json()
+            .await
+            .map_err(|e| anyhow::anyhow!("complete parse: {e}"))?;
+        Ok(parsed.response)
+    }
 }
 
 #[cfg(test)]
