@@ -118,13 +118,13 @@ function RemoteProvidersSection() {
   if (loading)
     return (
       <section>
-        <div style={{ fontSize: 13, color: TEXT_MUTED }}>Loading remote providers…</div>
+        <div style={{ fontSize: "var(--text-sm)", color: TEXT_MUTED }}>Loading remote providers…</div>
       </section>
     );
   if (!status)
     return (
       <section>
-        <div style={{ fontSize: 13, color: COLOR_DANGER }}>Failed to load remote status.</div>
+        <div style={{ fontSize: "var(--text-sm)", color: COLOR_DANGER }}>Failed to load remote status.</div>
       </section>
     );
 
@@ -143,14 +143,14 @@ function RemoteProvidersSection() {
 
       <div style={{ ...settingsCard, marginBottom: 10 }}>
         <div
-          style={{ fontSize: 13, fontWeight: 600, marginBottom: 4, color: "var(--ink)" }}
+          style={{ fontSize: "var(--text-sm)", fontWeight: 600, marginBottom: 4, color: "var(--ink)" }}
         >
           Claude
         </div>
         {status.has_key ? (
           <div
             style={{
-              fontSize: 12,
+              fontSize: "var(--text-xs)",
               color: COLOR_SUCCESS,
               display: "flex",
               alignItems: "center",
@@ -178,7 +178,7 @@ function RemoteProvidersSection() {
       </div>
 
       <div style={{ marginBottom: 10 }}>
-        <div style={{ fontSize: 12, color: TEXT_MUTED, marginBottom: 4 }}>
+        <div style={{ fontSize: "var(--text-xs)", color: TEXT_MUTED, marginBottom: 4 }}>
           Monthly budget: £{(status.spent_month_pence / 100).toFixed(2)} spent of £
           {(status.budget_pence / 100).toFixed(2)}
         </div>
@@ -202,7 +202,7 @@ function RemoteProvidersSection() {
           />
         </div>
         <div style={{ display: "flex", gap: 6, marginTop: 4, alignItems: "center" }}>
-          <span style={{ fontSize: 12, color: TEXT_SECONDARY }}>£</span>
+          <span style={{ fontSize: "var(--text-xs)", color: TEXT_SECONDARY }}>£</span>
           <input
             type="number"
             step="0.01"
@@ -222,7 +222,7 @@ function RemoteProvidersSection() {
           display: "flex",
           alignItems: "center",
           gap: 6,
-          fontSize: 13,
+          fontSize: "var(--text-sm)",
           marginBottom: 8,
           color: "var(--ink)",
         }}
@@ -299,7 +299,7 @@ function CallLogSection() {
         )}
       </div>
       {entries.length === 0 && (
-        <div style={{ fontSize: 12, color: TEXT_MUTED, marginTop: 6 }}>
+        <div style={{ fontSize: "var(--text-xs)", color: TEXT_MUTED, marginTop: 6 }}>
           No remote calls yet. Enable Claude for ledger review + run a review to see entries
           here.
         </div>
@@ -320,7 +320,7 @@ function CallLogSection() {
                 style={{
                   display: "flex",
                   justifyContent: "space-between",
-                  fontSize: 12,
+                  fontSize: "var(--text-xs)",
                   color: "var(--ink)",
                 }}
               >
@@ -401,12 +401,12 @@ export default function AiTab() {
         <h2 style={{ margin: "0 0 8px 0", fontSize: 15, color: "var(--ink)" }}>
           Local brain (Ollama)
         </h2>
-        {loading && <div style={{ fontSize: 13, color: TEXT_MUTED }}>Checking…</div>}
+        {loading && <div style={{ fontSize: "var(--text-sm)", color: TEXT_MUTED }}>Checking…</div>}
         {!loading &&
           status &&
           (status.reachable ? (
             <div style={settingsStatusGood}>
-              <div style={{ fontSize: 13, color: COLOR_SUCCESS, fontWeight: 600 }}>
+              <div style={{ fontSize: "var(--text-sm)", color: COLOR_SUCCESS, fontWeight: 600 }}>
                 ● Ready
                 <span
                   style={{ color: TEXT_SECONDARY, fontWeight: 400, marginLeft: 6 }}
@@ -418,7 +418,7 @@ export default function AiTab() {
                 style={{
                   display: "block",
                   marginTop: 8,
-                  fontSize: 13,
+                  fontSize: "var(--text-sm)",
                   color: "var(--ink)",
                 }}
               >
@@ -439,10 +439,10 @@ export default function AiTab() {
             </div>
           ) : (
             <div style={settingsStatusWarn}>
-              <div style={{ fontSize: 13, color: COLOR_AMBER, fontWeight: 600 }}>
+              <div style={{ fontSize: "var(--text-sm)", color: COLOR_AMBER, fontWeight: 600 }}>
                 ● Unreachable
               </div>
-              <div style={{ fontSize: 12, color: TEXT_SECONDARY, marginTop: 4 }}>
+              <div style={{ fontSize: "var(--text-xs)", color: TEXT_SECONDARY, marginTop: 4 }}>
                 Start Ollama to enable chat, CalDAV AI review, and embeddings.{" "}
                 <a
                   href="https://ollama.com/download"
@@ -486,7 +486,7 @@ function DeveloperSection() {
   return (
     <section>
       <h2 style={{ margin: "0 0 8px 0", fontSize: 15, color: "var(--ink)" }}>Developer</h2>
-      <label style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 13, color: "var(--ink)" }}>
+      <label style={{ display: "flex", alignItems: "center", gap: 8, fontSize: "var(--text-sm)", color: "var(--ink)" }}>
         <input
           type="checkbox"
           checked={sandboxEnabled}
@@ -494,7 +494,7 @@ function DeveloperSection() {
         />
         Enable GoCardless sandbox institution
       </label>
-      <p style={{ fontSize: 12, color: TEXT_MUTED, marginTop: 4 }}>
+      <p style={{ fontSize: "var(--text-xs)", color: TEXT_MUTED, marginTop: 4 }}>
         When on, the institution picker includes a SANDBOX test bank that returns
         deterministic fake transactions. For development only.
       </p>
@@ -540,13 +540,13 @@ function EmbeddingsSection() {
   return (
     <section>
       <h2 style={{ margin: "0 0 8px 0", fontSize: 15, color: "var(--ink)" }}>Embeddings</h2>
-      {!status && <div style={{ fontSize: 12, color: TEXT_MUTED }}>Loading…</div>}
+      {!status && <div style={{ fontSize: "var(--text-xs)", color: TEXT_MUTED }}>Loading…</div>}
       {status && (
         <>
-          <div style={{ fontSize: 13, color: "var(--ink)" }}>
+          <div style={{ fontSize: "var(--text-sm)", color: "var(--ink)" }}>
             <span style={{ color: TEXT_MUTED }}>Model:</span> {status.model}
           </div>
-          <div style={{ fontSize: 13, marginTop: 4, color: "var(--ink)" }}>
+          <div style={{ fontSize: "var(--text-sm)", marginTop: 4, color: "var(--ink)" }}>
             <span style={{ color: TEXT_MUTED }}>Indexed:</span> {status.total} vector(s)
             {status.by_entity_type.length > 0 && " ("}
             {status.by_entity_type.map(([t, n], i) => (

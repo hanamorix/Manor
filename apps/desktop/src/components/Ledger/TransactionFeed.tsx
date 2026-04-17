@@ -51,7 +51,7 @@ export default function TransactionFeed({ transactions, categories, onAdd }: Pro
           style={{
             textAlign: "center",
             padding: "24px 0",
-            fontSize: 13,
+            fontSize: "var(--text-sm)",
             color: "var(--ink-faint)",
           }}
         >

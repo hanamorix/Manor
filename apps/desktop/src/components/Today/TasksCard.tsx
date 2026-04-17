@@ -10,7 +10,7 @@ const addLink: React.CSSProperties = {
   border: "none",
   color: "var(--ink)",
   fontWeight: 600,
-  fontSize: 12,
+  fontSize: "var(--text-xs)",
   cursor: "pointer",
   padding: 0,
 };
@@ -96,7 +96,7 @@ export default function TasksCard() {
             padding: "6px 10px",
             border: "1px dashed var(--hairline-strong)",
             borderRadius: 6,
-            fontSize: 14,
+            fontSize: "var(--text-md)",
             fontFamily: "inherit",
             background: "var(--paper-muted)",
           }}

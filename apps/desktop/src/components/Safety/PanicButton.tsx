@@ -32,7 +32,7 @@ export default function PanicButton() {
     return (
       <div style={{ ...settingsStatusDanger, padding: 16 }}>
         <strong style={{ color: COLOR_DANGER }}>Everything erased.</strong>
-        <div style={{ fontSize: 13, marginTop: 4, color: "var(--ink)" }}>
+        <div style={{ fontSize: "var(--text-sm)", marginTop: 4, color: "var(--ink)" }}>
           Quit Manor and reopen to start fresh.
         </div>
       </div>
@@ -42,7 +42,7 @@ export default function PanicButton() {
   return (
     <section style={{ ...settingsStatusDanger, padding: 16 }}>
       <h2 style={{ margin: 0, color: COLOR_DANGER, fontSize: 15 }}>Erase everything</h2>
-      <p style={{ fontSize: 13, color: TEXT_SECONDARY, marginTop: 4, marginBottom: 8 }}>
+      <p style={{ fontSize: "var(--text-sm)", color: TEXT_SECONDARY, marginTop: 4, marginBottom: 8 }}>
         Deletes the Manor database and every attachment on this Mac. Backup files elsewhere
         are not affected. There is no undo.
       </p>
@@ -58,12 +58,12 @@ export default function PanicButton() {
       )}
       {phase === "confirming" && (
         <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-          <label style={{ fontSize: 13, color: "var(--ink)" }}>
+          <label style={{ fontSize: "var(--text-sm)", color: "var(--ink)" }}>
             Type{" "}
             <code
               style={{
                 fontFamily: "ui-monospace, SFMono-Regular, Menlo, monospace",
-                fontSize: 12,
+                fontSize: "var(--text-xs)",
                 background: "var(--paper-muted)",
                 padding: "1px 4px",
                 borderRadius: 3,

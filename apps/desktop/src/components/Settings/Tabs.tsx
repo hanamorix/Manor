@@ -27,7 +27,7 @@ export default function Tabs() {
             onClick={() => setActiveTab(t.id)}
             style={{
               padding: "10px 14px",
-              fontSize: 13,
+              fontSize: "var(--text-sm)",
               fontWeight: active ? 700 : 500,
               background: "transparent",
               border: "none",

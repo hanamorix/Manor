@@ -30,10 +30,10 @@ export default function StepOllama() {
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
       <div>
-        <h2 style={{ margin: "0 0 8px 0", fontSize: 16, color: "var(--ink)" }}>
+        <h2 style={{ margin: "0 0 8px 0", fontSize: "var(--text-lg)", color: "var(--ink)" }}>
           Meet your brain
         </h2>
-        <p style={{ fontSize: 13, color: "var(--ink-soft)", lineHeight: 1.5, margin: 0 }}>
+        <p style={{ fontSize: "var(--text-sm)", color: "var(--ink-soft)", lineHeight: 1.5, margin: 0 }}>
           Manor runs a language model locally via <strong>Ollama</strong> — for chat,
           calendar summaries, ledger narratives, and semantic search. Nothing leaves
           your Mac unless you opt in to a remote provider later.
@@ -41,7 +41,7 @@ export default function StepOllama() {
       </div>
 
       {checking && (
-        <div style={{ fontSize: 13, color: "var(--ink-soft)" }}>Checking for Ollama…</div>
+        <div style={{ fontSize: "var(--text-sm)", color: "var(--ink-soft)" }}>Checking for Ollama…</div>
       )}
 
       {!checking &&
@@ -51,7 +51,7 @@ export default function StepOllama() {
             <div style={{ color: "var(--ink)", fontWeight: 600, fontSize: 13 }}>
               ● Ollama is reachable
             </div>
-            <div style={{ fontSize: 12, color: "var(--ink-soft)", marginTop: 4 }}>
+            <div style={{ fontSize: "var(--text-xs)", color: "var(--ink-soft)", marginTop: 4 }}>
               {status.models.length === 0
                 ? "No models installed — pull one via "
                 : `${status.models.length} model(s) ready: ${status.models.slice(0, 3).join(", ")}${status.models.length > 3 ? "…" : ""}`}
@@ -78,7 +78,7 @@ export default function StepOllama() {
             </div>
             <div
               style={{
-                fontSize: 12,
+                fontSize: "var(--text-xs)",
                 color: "var(--ink-soft)",
                 marginTop: 6,
                 lineHeight: 1.5,

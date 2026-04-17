@@ -39,7 +39,7 @@ const inputStyle: React.CSSProperties = {
   padding: "8px 12px",
   borderRadius: "var(--radius-lg)",
   border: "1px solid var(--hairline)",
-  fontSize: 14,
+  fontSize: "var(--text-md)",
   fontFamily: "inherit",
 };
 
@@ -49,7 +49,7 @@ const btnPrimary: React.CSSProperties = {
   border: "none",
   borderRadius: "var(--radius-md)",
   padding: "8px 18px",
-  fontSize: 13,
+  fontSize: "var(--text-sm)",
   fontWeight: 600,
   cursor: "pointer",
 };
@@ -60,7 +60,7 @@ const btnGhost: React.CSSProperties = {
   border: "1px solid var(--hairline)",
   borderRadius: "var(--radius-md)",
   padding: "8px 18px",
-  fontSize: 13,
+  fontSize: "var(--text-sm)",
   cursor: "pointer",
 };
 
@@ -68,7 +68,7 @@ const btnDanger: React.CSSProperties = {
   background: "transparent",
   color: "var(--ink)",
   border: "none",
-  fontSize: 12,
+  fontSize: "var(--text-xs)",
   cursor: "pointer",
   padding: "6px 0",
   marginTop: 12,

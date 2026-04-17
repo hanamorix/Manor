@@ -59,7 +59,7 @@ export default function SettingsModal() {
             padding: "12px 16px",
             borderBottom: "1px solid var(--hairline)",
             display: "flex", alignItems: "center", justifyContent: "space-between",
-            fontWeight: 600, fontSize: 14,
+            fontWeight: 600, fontSize: "var(--text-md)",
           }}
         >
           <span>Settings</span>
@@ -70,7 +70,7 @@ export default function SettingsModal() {
               width: 22, height: 22, borderRadius: "50%",
               background: "var(--hairline)",
               border: "none",
-              fontSize: 14, lineHeight: 1, cursor: "pointer",
+              fontSize: "var(--text-md)", lineHeight: 1, cursor: "pointer",
               color: "var(--ink-soft)",
               display: "flex", alignItems: "center", justifyContent: "center",
             }}

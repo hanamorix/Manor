@@ -37,7 +37,7 @@ export default function AddEventDrawer({ accountId, defaultCalendarUrl, calendar
   const inputStyle: React.CSSProperties = {
     width: "100%",
     padding: "9px 12px",
-    fontSize: 14,
+    fontSize: "var(--text-md)",
     border: "1px solid var(--hairline)",
     borderRadius: "var(--radius-lg)",
     background: "#fafafa",
@@ -107,7 +107,7 @@ export default function AddEventDrawer({ accountId, defaultCalendarUrl, calendar
         }}
       >
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "18px 20px 14px", borderBottom: "1px solid var(--hairline)" }}>
-          <div style={{ fontSize: 16, fontWeight: 600 }}>Add Event</div>
+          <div style={{ fontSize: "var(--text-lg)", fontWeight: 600 }}>Add Event</div>
           <button onClick={onClose} style={{ background: "none", border: "none", fontSize: 20, cursor: "pointer", color: "var(--ink-faint)", lineHeight: 1, padding: 0 }}>✕</button>
         </div>
 
@@ -163,7 +163,7 @@ export default function AddEventDrawer({ accountId, defaultCalendarUrl, calendar
             )}
 
             {error && (
-              <div style={{ padding: "10px 12px", background: "var(--paper-muted)", border: "1px solid var(--ink-danger)", borderRadius: "var(--radius-lg)", fontSize: 13, color: "var(--ink)" }}>
+              <div style={{ padding: "10px 12px", background: "var(--paper-muted)", border: "1px solid var(--ink-danger)", borderRadius: "var(--radius-lg)", fontSize: "var(--text-sm)", color: "var(--ink)" }}>
                 {error}
               </div>
             )}

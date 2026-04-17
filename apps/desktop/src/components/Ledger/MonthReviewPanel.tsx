@@ -75,7 +75,7 @@ export default function MonthReviewPanel({ year, month, summary }: Props) {
       {/* Review with AI section */}
       {text ? (
         <>
-          <div style={{ whiteSpace: "pre-wrap", fontSize: 14, color: "var(--ink)", marginBottom: 12 }}>
+          <div style={{ whiteSpace: "pre-wrap", fontSize: "var(--text-md)", color: "var(--ink)", marginBottom: 12 }}>
             {text}
           </div>
           {refreshedAt && (
@@ -109,7 +109,7 @@ export default function MonthReviewPanel({ year, month, summary }: Props) {
           style={{
             marginTop: 12,
             padding: "8px 12px",
-            fontSize: 12,
+            fontSize: "var(--text-xs)",
             color: "var(--ink)",
             background: "rgba(255, 59, 48, 0.06)",
             borderRadius: "var(--radius-sm)",
@@ -125,7 +125,7 @@ export default function MonthReviewPanel({ year, month, summary }: Props) {
               background: "none",
               border: "none",
               color: "var(--ink-soft)",
-              fontSize: 16,
+              fontSize: "var(--text-lg)",
               cursor: "pointer",
               padding: "2px 6px",
               lineHeight: 1,

@@ -9,7 +9,7 @@ const manageLink: React.CSSProperties = {
   border: "none",
   color: "var(--ink)",
   fontWeight: 600,
-  fontSize: 12,
+  fontSize: "var(--text-xs)",
   cursor: "pointer",
   padding: 0,
 };
@@ -26,7 +26,7 @@ const rowStyle: React.CSSProperties = {
 
 const emptyStyle: React.CSSProperties = {
   padding: "10px 4px",
-  fontSize: 13,
+  fontSize: "var(--text-sm)",
   color: "var(--ink-faint)",
 };
 
@@ -103,7 +103,7 @@ export default function ChoresCard() {
                   <Check size={14} strokeWidth={1.8} />
                 </button>
                 <span style={{ fontSize: 18, flexShrink: 0 }}>{c.emoji}</span>
-                <span style={{ flex: 1, fontSize: 14, color: "var(--ink)" }}>{c.title}</span>
+                <span style={{ flex: 1, fontSize: "var(--text-md)", color: "var(--ink)" }}>{c.title}</span>
                 {isHovered && (
                   <button
                     onClick={(e) => { e.stopPropagation(); onSkip(c.id); }}

@@ -47,7 +47,7 @@ const rowStyle = (_kind: BlockKind): React.CSSProperties => ({
   borderRadius: 6,
   marginBottom: 4,
   cursor: "pointer",
-  fontSize: 13,
+  fontSize: "var(--text-sm)",
 });
 
 
@@ -106,7 +106,7 @@ export default function TimeBlocksView() {
       <section style={sectionStyle}>
         <SectionLabel icon={LayoutGrid}>This week</SectionLabel>
         {weekBlocks.length === 0 ? (
-          <p style={{ color: "var(--ink-faint)", fontSize: 13, margin: 0 }}>No blocks this week yet.</p>
+          <p style={{ color: "var(--ink-faint)", fontSize: "var(--text-sm)", margin: 0 }}>No blocks this week yet.</p>
         ) : (
           DAYS.map((day) => {
             const bs = byDay[day];
@@ -132,7 +132,7 @@ export default function TimeBlocksView() {
       <section style={sectionStyle}>
         <SectionLabel icon={RefreshCw}>Recurring patterns</SectionLabel>
         {recurring.length === 0 ? (
-          <p style={{ color: "var(--ink-faint)", fontSize: 13, margin: 0 }}>No patterns yet. Nell will suggest one when she notices a repetition.</p>
+          <p style={{ color: "var(--ink-faint)", fontSize: "var(--text-sm)", margin: 0 }}>No patterns yet. Nell will suggest one when she notices a repetition.</p>
         ) : (
           recurring.map((b) => (
             <div key={b.id} style={rowStyle(b.kind)} onClick={() => setEditing(b)}>

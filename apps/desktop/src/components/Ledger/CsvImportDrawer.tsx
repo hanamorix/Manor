@@ -102,7 +102,7 @@ export default function CsvImportDrawer({ onClose, onImported }: Props) {
   const inputStyle: React.CSSProperties = {
     width: "100%",
     padding: "9px 12px",
-    fontSize: 14,
+    fontSize: "var(--text-md)",
     border: "1px solid var(--hairline)",
     borderRadius: "var(--radius-lg)",
     background: "var(--hairline)",
@@ -152,7 +152,7 @@ export default function CsvImportDrawer({ onClose, onImported }: Props) {
             borderBottom: "1px solid var(--hairline)",
           }}
         >
-          <div style={{ fontSize: 16, fontWeight: 600, color: "var(--ink)" }}>
+          <div style={{ fontSize: "var(--text-lg)", fontWeight: 600, color: "var(--ink)" }}>
             Import CSV
           </div>
           <button
@@ -211,7 +211,7 @@ export default function CsvImportDrawer({ onClose, onImported }: Props) {
             {loading && (
               <div
                 style={{
-                  fontSize: 13,
+                  fontSize: "var(--text-sm)",
                   color: "var(--paper-muted)",
                   textAlign: "center",
                   padding: "8px 0",
@@ -229,7 +229,7 @@ export default function CsvImportDrawer({ onClose, onImported }: Props) {
                   background: "var(--paper-muted)",
                   border: "1px solid var(--ink-danger)",
                   borderRadius: "var(--radius-lg)",
-                  fontSize: 13,
+                  fontSize: "var(--text-sm)",
                   color: "var(--ink)",
                 }}
               >
@@ -243,7 +243,7 @@ export default function CsvImportDrawer({ onClose, onImported }: Props) {
                 {/* Summary line */}
                 <div
                   style={{
-                    fontSize: 12,
+                    fontSize: "var(--text-xs)",
                     color: "var(--ink-soft)",
                     marginBottom: 8,
                   }}
@@ -268,7 +268,7 @@ export default function CsvImportDrawer({ onClose, onImported }: Props) {
                   <table
                     style={{
                       width: "100%",
-                      fontSize: 12,
+                      fontSize: "var(--text-xs)",
                       borderCollapse: "collapse",
                     }}
                   >

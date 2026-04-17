@@ -95,7 +95,7 @@ export default function BackupPanel({ defaultOutDir }: Props) {
 
       {!hasPass && (
         <div style={settingsStatusWarn}>
-          <div style={{ fontSize: 13, marginBottom: 6, color: "var(--ink)" }}>
+          <div style={{ fontSize: "var(--text-sm)", marginBottom: 6, color: "var(--ink)" }}>
             Set a passphrase to encrypt your backups.
           </div>
           <input
@@ -143,7 +143,7 @@ export default function BackupPanel({ defaultOutDir }: Props) {
       {message && (
         <div
           style={{
-            fontSize: 12,
+            fontSize: "var(--text-xs)",
             color: message.includes("failed") ? COLOR_DANGER : COLOR_SUCCESS,
           }}
         >
@@ -153,7 +153,7 @@ export default function BackupPanel({ defaultOutDir }: Props) {
 
       <h3
         style={{
-          fontSize: 12,
+          fontSize: "var(--text-xs)",
           marginTop: 8,
           marginBottom: 4,
           color: TEXT_MUTED,
@@ -178,7 +178,7 @@ export default function BackupPanel({ defaultOutDir }: Props) {
           }}
         >
           <div>
-            <div style={{ fontSize: 13, color: "var(--ink)" }}>
+            <div style={{ fontSize: "var(--text-sm)", color: "var(--ink)" }}>
               {b.path.split("/").pop()}
             </div>
             <div style={{ fontSize: 11, color: TEXT_MUTED }}>

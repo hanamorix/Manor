@@ -43,7 +43,7 @@ export default function DataBackupTab() {
         <h2 style={{ margin: "0 0 8px 0", fontSize: 15, color: "var(--ink)" }}>
           Trash auto-empty
         </h2>
-        <div style={{ fontSize: 13, color: "var(--ink)" }}>
+        <div style={{ fontSize: "var(--text-sm)", color: "var(--ink)" }}>
           Permanently delete soft-deleted items older than{" "}
           <select value={autoEmpty} onChange={(e) => void onAutoEmptyChange(e.target.value)}>
             {AUTO_EMPTY_OPTIONS.map((o) => (

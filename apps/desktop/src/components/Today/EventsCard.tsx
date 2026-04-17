@@ -65,7 +65,7 @@ export default function EventsCard() {
             <div
               key={e.id}
               onClick={() => setEditingEvent(e)}
-              style={{ display: "flex", gap: 10, padding: "4px 0", fontSize: 13, cursor: "pointer" }}
+              style={{ display: "flex", gap: 10, padding: "4px 0", fontSize: "var(--text-sm)", cursor: "pointer" }}
             >
               <span style={{ fontWeight: 600, minWidth: 48, color: "var(--ink)", fontFamily: "var(--font-mono)" }}>
                 {formatTime(e.start_at)}

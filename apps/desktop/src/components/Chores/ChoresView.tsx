@@ -38,7 +38,7 @@ const fairnessBanner: React.CSSProperties = {
   borderRadius: "var(--radius-md)",
   padding: "10px 14px",
   marginBottom: 12,
-  fontSize: 13,
+  fontSize: "var(--text-sm)",
   color: "var(--ink-soft)",
 };
 
@@ -94,7 +94,7 @@ export default function ChoresView() {
       <section style={sectionStyle}>
         <SectionLabel icon={Sparkles}>Due soon</SectionLabel>
         {dueSoon.length === 0 ? (
-          <p style={{ color: "var(--ink-faint)", fontSize: 13, margin: 0 }}>Nothing in the next 7 days.</p>
+          <p style={{ color: "var(--ink-faint)", fontSize: "var(--text-sm)", margin: 0 }}>Nothing in the next 7 days.</p>
         ) : (
           <ul style={{ listStyle: "none", padding: 0, margin: 0 }}>
             {dueSoon.map((c) => {
@@ -114,7 +114,7 @@ export default function ChoresView() {
       <section style={sectionStyle}>
         <SectionLabel icon={Sparkles}>All chores</SectionLabel>
         {allChores.length === 0 ? (
-          <p style={{ color: "var(--ink-faint)", fontSize: 13, margin: 0 }}>No chores yet — add your first one.</p>
+          <p style={{ color: "var(--ink-faint)", fontSize: "var(--text-sm)", margin: 0 }}>No chores yet — add your first one.</p>
         ) : (
           <ul style={{ listStyle: "none", padding: 0, margin: 0 }}>
             {[...allChores].sort((a, b) => a.title.localeCompare(b.title)).map((c) => (

@@ -69,7 +69,7 @@ export default function SummaryCard({ summary, year, month, totalBudget, onBudge
       </div>
 
       {totalBudget !== null && (
-        <div style={{ fontSize: 12, opacity: 0.5, marginBottom: 12, color: cardFg }}>
+        <div style={{ fontSize: "var(--text-xs)", opacity: 0.5, marginBottom: 12, color: cardFg }}>
           of {formatPounds(totalBudget)} budget
           {remaining !== null && remaining >= 0
             ? ` · ${formatPounds(remaining)} remaining`
@@ -127,13 +127,13 @@ export default function SummaryCard({ summary, year, month, totalBudget, onBudge
       )}
 
       {totalBudget === null && (
-        <div style={{ fontSize: 12, opacity: 0.4, color: cardFg }}>
+        <div style={{ fontSize: "var(--text-xs)", opacity: 0.4, color: cardFg }}>
           Tap to set budgets →
         </div>
       )}
 
       {summary.total_in_pence > 0 && (
-        <div style={{ fontSize: 12, opacity: 0.5, marginTop: 8, color: cardFg }}>
+        <div style={{ fontSize: "var(--text-xs)", opacity: 0.5, marginTop: 8, color: cardFg }}>
           +{formatPounds(summary.total_in_pence)} income
         </div>
       )}

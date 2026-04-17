@@ -35,13 +35,13 @@ const pillStyle: React.CSSProperties = {
   gap: 8,
   padding: "6px 0",
   borderBottom: "1px solid var(--hairline)",
-  fontSize: 13,
+  fontSize: "var(--text-sm)",
   color: "var(--ink)",
 };
 
 const emptyStyle: React.CSSProperties = {
   padding: "10px 4px",
-  fontSize: 13,
+  fontSize: "var(--text-sm)",
   color: "var(--ink-faint)",
 };
 
@@ -50,7 +50,7 @@ const nudgeStyle: React.CSSProperties = {
   padding: "10px 12px",
   background: "var(--paper-muted)",
   borderRadius: "var(--radius-lg)",
-  fontSize: 12,
+  fontSize: "var(--text-xs)",
   color: "var(--ink-soft)",
   display: "flex",
   alignItems: "center",
@@ -164,13 +164,13 @@ export default function TimeBlocksCard() {
               value={form.title}
               onChange={(e) => setForm({ ...form, title: e.target.value })}
               placeholder="Block title…"
-              style={{ flex: 1, padding: "6px 10px", borderRadius: 6, border: "1px solid var(--hairline)", fontSize: 13, fontFamily: "inherit" }}
+              style={{ flex: 1, padding: "6px 10px", borderRadius: 6, border: "1px solid var(--hairline)", fontSize: "var(--text-sm)", fontFamily: "inherit" }}
               onKeyDown={(e) => { if (e.key === "Enter") onAdd(); }}
             />
             <select
               value={form.kind}
               onChange={(e) => setForm({ ...form, kind: e.target.value as BlockKind })}
-              style={{ padding: "6px 8px", borderRadius: 6, border: "1px solid var(--hairline)", fontSize: 13, fontFamily: "inherit" }}
+              style={{ padding: "6px 8px", borderRadius: 6, border: "1px solid var(--hairline)", fontSize: "var(--text-sm)", fontFamily: "inherit" }}
             >
               <option value="focus">Focus</option>
               <option value="errands">Errands</option>
@@ -183,14 +183,14 @@ export default function TimeBlocksCard() {
               type="time"
               value={form.startTime}
               onChange={(e) => setForm({ ...form, startTime: e.target.value })}
-              style={{ padding: "6px 8px", borderRadius: 6, border: "1px solid var(--hairline)", fontSize: 13, fontFamily: "inherit" }}
+              style={{ padding: "6px 8px", borderRadius: 6, border: "1px solid var(--hairline)", fontSize: "var(--text-sm)", fontFamily: "inherit" }}
             />
             <span style={{ color: "var(--ink-faint)" }}>→</span>
             <input
               type="time"
               value={form.endTime}
               onChange={(e) => setForm({ ...form, endTime: e.target.value })}
-              style={{ padding: "6px 8px", borderRadius: 6, border: "1px solid var(--hairline)", fontSize: 13, fontFamily: "inherit" }}
+              style={{ padding: "6px 8px", borderRadius: 6, border: "1px solid var(--hairline)", fontSize: "var(--text-sm)", fontFamily: "inherit" }}
             />
             <button onClick={onAdd} style={{ marginLeft: "auto", ...nudgeBtn }}>Save</button>
             <button onClick={() => setAdding(false)} style={nudgeBtnGhost}>Cancel</button>

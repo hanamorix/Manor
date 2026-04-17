@@ -60,7 +60,7 @@ export default function BudgetSheet({ categories, budgets, onClose, onChanged }:
   const inputStyle: React.CSSProperties = {
     width: 100,
     padding: "7px 10px",
-    fontSize: 14,
+    fontSize: "var(--text-md)",
     border: "1px solid var(--hairline)",
     borderRadius: "var(--radius-lg)",
     background: "var(--hairline)",
@@ -105,8 +105,8 @@ export default function BudgetSheet({ categories, budgets, onClose, onChanged }:
           }}
         >
           <div>
-            <div style={{ fontSize: 16, fontWeight: 600 }}>Monthly Budgets</div>
-            <div style={{ fontSize: 12, color: "var(--ink-faint)", marginTop: 2 }}>
+            <div style={{ fontSize: "var(--text-lg)", fontWeight: 600 }}>Monthly Budgets</div>
+            <div style={{ fontSize: "var(--text-xs)", color: "var(--ink-faint)", marginTop: 2 }}>
               Leave blank to skip tracking a category
             </div>
           </div>
@@ -141,10 +141,10 @@ export default function BudgetSheet({ categories, budgets, onClose, onChanged }:
             >
               <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
                 <span style={{ fontSize: 18 }}>{cat.emoji}</span>
-                <span style={{ fontSize: 14, fontWeight: 500 }}>{cat.name}</span>
+                <span style={{ fontSize: "var(--text-md)", fontWeight: 500 }}>{cat.name}</span>
               </div>
               <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                <span style={{ fontSize: 13, color: "var(--ink-faint)" }}>£</span>
+                <span style={{ fontSize: "var(--text-sm)", color: "var(--ink-faint)" }}>£</span>
                 <input
                   style={inputStyle}
                   type="number"
@@ -155,7 +155,7 @@ export default function BudgetSheet({ categories, budgets, onClose, onChanged }:
                     setDrafts((d) => ({ ...d, [cat.id]: e.target.value }))
                   }
                 />
-                <span style={{ fontSize: 12, color: "var(--ink-faint)" }}>/mo</span>
+                <span style={{ fontSize: "var(--text-xs)", color: "var(--ink-faint)" }}>/mo</span>
               </div>
             </div>
           ))}

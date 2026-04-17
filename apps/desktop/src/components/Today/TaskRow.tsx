@@ -109,7 +109,7 @@ export default function TaskRow({ task }: TaskRowProps) {
           alignItems: "center",
           justifyContent: "center",
           flexShrink: 0,
-          fontSize: 12,
+          fontSize: "var(--text-xs)",
           fontWeight: 600,
           lineHeight: 1,
         }}
@@ -137,7 +137,7 @@ export default function TaskRow({ task }: TaskRowProps) {
             padding: "2px 6px",
             border: "1px solid var(--hairline)",
             borderRadius: 4,
-            fontSize: 14,
+            fontSize: "var(--text-md)",
             fontFamily: "inherit",
           }}
         />
@@ -146,7 +146,7 @@ export default function TaskRow({ task }: TaskRowProps) {
           onClick={startEdit}
           style={{
             flex: 1,
-            fontSize: 14,
+            fontSize: "var(--text-md)",
             lineHeight: 1.4,
             cursor: "text",
             textDecoration: completing ? "line-through" : "none",
@@ -170,7 +170,7 @@ export default function TaskRow({ task }: TaskRowProps) {
               background: "transparent",
               border: "none",
               cursor: "pointer",
-              fontSize: 14,
+              fontSize: "var(--text-md)",
             }}
           >
             ✎
@@ -185,7 +185,7 @@ export default function TaskRow({ task }: TaskRowProps) {
               background: "transparent",
               border: "none",
               cursor: "pointer",
-              fontSize: 14,
+              fontSize: "var(--text-md)",
               color: deleteArmed ? "var(--ink)" : "inherit",
             }}
           >

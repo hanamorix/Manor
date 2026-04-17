@@ -77,13 +77,13 @@ export default function RecurringSection({ categories }: Props) {
               userSelect: "none",
             }}
           >
-            <span style={{ fontSize: 13, color: "var(--ink-faint)" }}>
+            <span style={{ fontSize: "var(--text-sm)", color: "var(--ink-faint)" }}>
               {expanded ? "▾" : "▸"}
             </span>
             <h3
               style={{
                 margin: 0,
-                fontSize: 14,
+                fontSize: "var(--text-md)",
                 fontWeight: 600,
                 color: "var(--ink)",
               }}
@@ -107,7 +107,7 @@ export default function RecurringSection({ categories }: Props) {
                 style={{
                   padding: "12px 0",
                   textAlign: "center",
-                  fontSize: 13,
+                  fontSize: "var(--text-sm)",
                   color: "var(--ink-faint)",
                 }}
               >
@@ -139,7 +139,7 @@ export default function RecurringSection({ categories }: Props) {
                       <div style={{ minWidth: 0 }}>
                         <div
                           style={{
-                            fontSize: 13,
+                            fontSize: "var(--text-sm)",
                             fontWeight: 600,
                             color: "var(--ink)",
                             overflow: "hidden",
@@ -167,7 +167,7 @@ export default function RecurringSection({ categories }: Props) {
                       style={{ display: "flex", alignItems: "center", gap: 8, flexShrink: 0 }}
                     >
                       <span
-                        style={{ fontSize: 13, fontWeight: 600, color: "var(--ink)" }}
+                        style={{ fontSize: "var(--text-sm)", fontWeight: 600, color: "var(--ink)" }}
                       >
                         {formatPence(r.amount_pence)}
                       </span>
@@ -177,7 +177,7 @@ export default function RecurringSection({ categories }: Props) {
                         style={{
                           background: "none",
                           border: "none",
-                          fontSize: 14,
+                          fontSize: "var(--text-md)",
                           cursor: "pointer",
                           color: "var(--ink-faint)",
                           padding: "2px 4px",

@@ -44,7 +44,7 @@ function Pill({ color, text }: { color: string; text: string }) {
         background: `${color}22`,
         color,
         borderRadius: "var(--radius-md)",
-        fontSize: 12,
+        fontSize: "var(--text-xs)",
         border: `1px solid ${color}`,
       }}
     >

@@ -248,7 +248,7 @@ function ByokForm({
           }}
         />
       </label>
-      <p style={{ color: "var(--ink-soft)", fontSize: 12, marginTop: 12 }}>
+      <p style={{ color: "var(--ink-soft)", fontSize: "var(--text-xs)", marginTop: 12 }}>
         Your keys are stored in macOS Keychain. They never leave this device.
       </p>
       <div

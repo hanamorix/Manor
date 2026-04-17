@@ -35,7 +35,7 @@ function WeatherLocationInput() {
     }
   };
 
-  if (!loaded) return <div style={{ fontSize: 12, color: TEXT_MUTED }}>…</div>;
+  if (!loaded) return <div style={{ fontSize: "var(--text-xs)", color: TEXT_MUTED }}>…</div>;
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
@@ -125,7 +125,7 @@ export default function HouseholdTab() {
 
       <section>
         <h2 style={{ margin: "0 0 8px 0", fontSize: 15 }}>Working hours</h2>
-        <table style={{ fontSize: 13, borderCollapse: "collapse" }}>
+        <table style={{ fontSize: "var(--text-sm)", borderCollapse: "collapse" }}>
           <thead>
             <tr>
               <th style={{ textAlign: "left", padding: "4px 8px" }}>Day</th>
@@ -186,7 +186,7 @@ export default function HouseholdTab() {
               }}
             >
               <div>
-                <div style={{ fontSize: 13, color: "var(--ink)" }}>{p.name}</div>
+                <div style={{ fontSize: "var(--text-sm)", color: "var(--ink)" }}>{p.name}</div>
                 <div style={{ fontSize: 11, color: TEXT_MUTED }}>{p.kind}</div>
               </div>
               <button

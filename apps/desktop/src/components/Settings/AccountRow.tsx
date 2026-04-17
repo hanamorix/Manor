@@ -169,7 +169,7 @@ export default function AccountRow({ account, onRefresh }: AccountRowProps) {
             style={{
               flex: 1,
               padding: "5px 8px",
-              fontSize: 12,
+              fontSize: "var(--text-xs)",
               border: "1px solid var(--hairline)",
               borderRadius: "var(--radius-lg)",
               background: "var(--hairline)",

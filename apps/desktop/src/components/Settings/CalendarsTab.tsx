@@ -26,7 +26,7 @@ export default function CalendarsTab() {
       </SectionLabel>
 
       {accounts.length === 0 && !adding && (
-        <p style={{ color: "var(--ink-soft)", fontSize: 13, marginBottom: 12 }}>
+        <p style={{ color: "var(--ink-soft)", fontSize: "var(--text-sm)", marginBottom: 12 }}>
           No accounts yet. Add one to start syncing events.
         </p>
       )}

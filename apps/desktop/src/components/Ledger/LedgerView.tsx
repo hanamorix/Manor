@@ -93,7 +93,7 @@ export default function LedgerView() {
           onAdd={() => setShowAdd(true)}
         />
         {importToast && (
-          <div style={{ fontSize: 12, color: "var(--ink)" }}>{importToast}</div>
+          <div style={{ fontSize: "var(--text-xs)", color: "var(--ink)" }}>{importToast}</div>
         )}
       </main>
 

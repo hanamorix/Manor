@@ -33,7 +33,7 @@ export default function Wizard() {
         }}
       >
         <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-          <div style={{ fontSize: 13, color: "var(--ink-soft)", fontWeight: 500 }}>
+          <div style={{ fontSize: "var(--text-sm)", color: "var(--ink-soft)", fontWeight: 500 }}>
             Setting up Manor
           </div>
           <div
@@ -59,7 +59,7 @@ export default function Wizard() {
           </div>
           <div
             style={{
-              fontSize: 13,
+              fontSize: "var(--text-sm)",
               color: "var(--ink-soft)",
               minWidth: 30,
               textAlign: "right",

@@ -58,7 +58,7 @@ export default function SampleDataBanner() {
     <div style={{
       padding: 10, borderRadius: "var(--radius-lg)", background: "var(--surface)",
       border: "1px solid var(--hairline-strong)", display: "flex", justifyContent: "space-between",
-      alignItems: "center", fontSize: 12,
+      alignItems: "center", fontSize: "var(--text-xs)",
     }}>
       <span style={{ color: "var(--ink)" }}>
         {count} sample item{count === 1 ? "" : "s"} still here from setup.

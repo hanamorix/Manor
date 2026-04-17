@@ -26,7 +26,7 @@ export default function Toast() {
         color: "var(--action-fg)",
         padding: "8px 16px",
         borderRadius: "var(--radius-pill)",
-        fontSize: 13,
+        fontSize: "var(--text-sm)",
         fontWeight: 600,
         boxShadow: "var(--shadow-md)",
         zIndex: 1100,

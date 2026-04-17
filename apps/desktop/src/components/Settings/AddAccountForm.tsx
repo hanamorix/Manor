@@ -40,7 +40,7 @@ export default function AddAccountForm({ onClose }: AddAccountFormProps) {
   const inputStyle: React.CSSProperties = {
     width: "100%", padding: "6px 10px",
     border: "1px solid var(--hairline)", borderRadius: 6,
-    fontSize: 13, fontFamily: "inherit",
+    fontSize: "var(--text-sm)", fontFamily: "inherit",
   };
 
   return (

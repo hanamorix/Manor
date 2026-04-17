@@ -51,7 +51,7 @@ const InputPill = forwardRef<HTMLInputElement, InputPillProps>(
             borderRadius: "var(--radius-md)",
             border: "1px solid var(--hairline)",
             background: "var(--paper)",
-            fontSize: 14,
+            fontSize: "var(--text-md)",
             fontFamily: "inherit",
             color: "var(--ink)",
             boxShadow: focused ? "var(--shadow-md)" : "var(--shadow-sm)",

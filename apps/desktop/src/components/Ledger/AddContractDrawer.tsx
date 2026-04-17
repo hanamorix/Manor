@@ -115,7 +115,7 @@ export default function AddContractDrawer({ existing, onClose, onSaved }: Props)
   const inputStyle: React.CSSProperties = {
     width: "100%",
     padding: "9px 12px",
-    fontSize: 14,
+    fontSize: "var(--text-md)",
     border: "1px solid var(--hairline)",
     borderRadius: "var(--radius-lg)",
     background: "var(--hairline)",
@@ -173,7 +173,7 @@ export default function AddContractDrawer({ existing, onClose, onSaved }: Props)
             borderBottom: "1px solid var(--hairline)",
           }}
         >
-          <div style={{ fontSize: 16, fontWeight: 600, color: "var(--ink)" }}>
+          <div style={{ fontSize: "var(--text-lg)", fontWeight: 600, color: "var(--ink)" }}>
             {existing ? "Edit contract" : "Add contract"}
           </div>
           <button
@@ -324,7 +324,7 @@ export default function AddContractDrawer({ existing, onClose, onSaved }: Props)
                 background: "var(--paper-muted)",
                 border: "1px solid var(--ink-danger)",
                 borderRadius: "var(--radius-lg)",
-                fontSize: 13,
+                fontSize: "var(--text-sm)",
                 color: "var(--ink)",
               }}
             >

@@ -84,7 +84,7 @@ export default function AddRecurringDrawer({ categories, existing, onClose, onSa
   const inputStyle: React.CSSProperties = {
     width: "100%",
     padding: "9px 12px",
-    fontSize: 14,
+    fontSize: "var(--text-md)",
     border: "1px solid var(--hairline)",
     borderRadius: "var(--radius-lg)",
     background: "var(--hairline)",
@@ -142,7 +142,7 @@ export default function AddRecurringDrawer({ categories, existing, onClose, onSa
             borderBottom: "1px solid var(--hairline)",
           }}
         >
-          <div style={{ fontSize: 16, fontWeight: 600, color: "var(--ink)" }}>
+          <div style={{ fontSize: "var(--text-lg)", fontWeight: 600, color: "var(--ink)" }}>
             {existing ? "Edit recurring payment" : "Add recurring payment"}
           </div>
           <button
@@ -267,7 +267,7 @@ export default function AddRecurringDrawer({ categories, existing, onClose, onSa
                 background: "var(--paper-muted)",
                 border: "1px solid var(--ink-danger)",
                 borderRadius: "var(--radius-lg)",
-                fontSize: 13,
+                fontSize: "var(--text-sm)",
                 color: "var(--ink)",
               }}
             >
