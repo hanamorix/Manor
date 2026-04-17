@@ -1,6 +1,8 @@
 import { useEffect, useState } from "react";
+import { LayoutGrid } from "lucide-react";
 import { useTimeBlocksStore } from "../../lib/timeblocks/state";
 import { listBlocksForWeek, listRecurringBlocks, type TimeBlock, type BlockKind } from "../../lib/timeblocks/ipc";
+import { PageHeader } from "../../lib/ui";
 import BlockDrawer from "./BlockDrawer";
 
 const pageStyle: React.CSSProperties = {
@@ -124,7 +126,7 @@ export default function TimeBlocksView() {
 
   return (
     <div style={pageStyle}>
-      <h1 style={{ fontSize: 24, fontWeight: 700, margin: "0 0 16px" }}>Time Blocks</h1>
+      <PageHeader icon={LayoutGrid} title="Time blocks" />
 
       <section style={sectionStyle}>
         <h2 style={headerStyle}>This week</h2>

@@ -1,6 +1,8 @@
 import { useEffect, useState } from "react";
+import { Sparkles } from "lucide-react";
 import { useChoresStore } from "../../lib/chores/state";
 import { listAllChores, checkChoreFairness, type Chore } from "../../lib/chores/ipc";
+import { PageHeader } from "../../lib/ui";
 import ChoreDrawer from "./ChoreDrawer";
 
 const pageStyle: React.CSSProperties = {
@@ -99,7 +101,7 @@ export default function ChoresView() {
 
   return (
     <div style={pageStyle}>
-      <h1 style={{ fontSize: 24, fontWeight: 700, margin: "0 0 16px" }}>Chores</h1>
+      <PageHeader icon={Sparkles} title="Chores" />
 
       {fairnessNudges.map((n) => (
         <div key={n.chore_id} style={fairnessBanner}>
