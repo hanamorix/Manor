@@ -4,7 +4,8 @@ import { settingGet, settingSet } from "../../lib/foundation/ipc";
 import {
   remoteProviderStatus, remoteSetKey, remoteRemoveKey,
   remoteSetBudget, remoteSetEnabledForReview, remoteTest,
-  type RemoteProviderStatus,
+  remoteCallLogList, remoteCallLogClear,
+  type RemoteProviderStatus, type CallLogEntry,
 } from "../../lib/remote/ipc";
 
 const DEFAULT_MODEL_KEY = "ai.default_model";
@@ -154,6 +155,97 @@ function RemoteProvidersSection() {
   );
 }
 
+function CallLogSection() {
+  const [entries, setEntries] = useState<CallLogEntry[]>([]);
+  const [expanded, setExpanded] = useState<number | null>(null);
+  const [clearing, setClearing] = useState(false);
+
+  const refresh = async () => {
+    setEntries(await remoteCallLogList(20).catch(() => []));
+  };
+
+  useEffect(() => { void refresh(); }, []);
+
+  const clearLog = async () => {
+    if (!confirm("Soft-delete all call log entries? You can still restore them from Trash for 30 days.")) return;
+    setClearing(true);
+    try {
+      await remoteCallLogClear();
+      await refresh();
+    } finally { setClearing(false); }
+  };
+
+  return (
+    <section style={{ marginTop: 16 }}>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+        <h2 style={{ margin: 0, fontSize: 15 }}>Call log ({entries.length})</h2>
+        {entries.length > 0 && (
+          <button onClick={clearLog} disabled={clearing} style={{ fontSize: 11 }}>
+            {clearing ? "Clearing…" : "Clear log"}
+          </button>
+        )}
+      </div>
+      {entries.length === 0 && (
+        <div style={{ fontSize: 12, color: "#888", marginTop: 6 }}>
+          No remote calls yet. Enable Claude for ledger review + run a review to see entries here.
+        </div>
+      )}
+      <div style={{ marginTop: 8, display: "flex", flexDirection: "column", gap: 4 }}>
+        {entries.map((e) => {
+          const isExpanded = expanded === e.id;
+          const outcome = e.error ? "error" : e.completed_at ? "ok" : "in-flight";
+          const outcomeColor = outcome === "ok" ? "#6f6" : outcome === "error" ? "#f66" : "#d90";
+          return (
+            <div key={e.id}
+                 onClick={() => setExpanded(isExpanded ? null : e.id)}
+                 style={{ padding: 8, borderRadius: 4, background: "#151515", cursor: "pointer" }}>
+              <div style={{ display: "flex", justifyContent: "space-between", fontSize: 12 }}>
+                <span>
+                  <span style={{ color: outcomeColor }}>●</span>{" "}
+                  {new Date(e.started_at * 1000).toLocaleString()} · {e.skill} · {e.model}
+                </span>
+                <span style={{ color: "#888" }}>
+                  {e.redaction_count > 0 && `${e.redaction_count} redacted · `}
+                  {e.cost_pence != null && `£${(e.cost_pence / 100).toFixed(2)}`}
+                </span>
+              </div>
+              {isExpanded && (
+                <div style={{ marginTop: 6, fontSize: 11, color: "#aaa" }}>
+                  <div><strong>Reason:</strong> {e.user_visible_reason}</div>
+                  <div style={{ marginTop: 4 }}>
+                    <strong>Prompt (redacted, this is what left your Mac):</strong>
+                    <pre style={{ background: "#0a0a0a", padding: 6, borderRadius: 3, overflowX: "auto", fontSize: 10 }}>
+                      {e.prompt_redacted}
+                    </pre>
+                  </div>
+                  {e.response_text && (
+                    <div>
+                      <strong>Response:</strong>
+                      <pre style={{ background: "#0a0a0a", padding: 6, borderRadius: 3, overflowX: "auto", fontSize: 10 }}>
+                        {e.response_text}
+                      </pre>
+                    </div>
+                  )}
+                  {e.error && (
+                    <div style={{ color: "#f66" }}>
+                      <strong>Error:</strong> {e.error}
+                    </div>
+                  )}
+                  {e.input_tokens != null && (
+                    <div style={{ color: "#666" }}>
+                      Tokens: {e.input_tokens} in / {e.output_tokens} out
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          );
+        })}
+      </div>
+    </section>
+  );
+}
+
 export default function AiTab() {
   const [status, setStatus] = useState<OllamaStatus | null>(null);
   const [loading, setLoading] = useState(true);
@@ -214,6 +306,8 @@ export default function AiTab() {
       <EmbeddingsSection />
 
       <RemoteProvidersSection />
+
+      <CallLogSection />
     </div>
   );
 }
