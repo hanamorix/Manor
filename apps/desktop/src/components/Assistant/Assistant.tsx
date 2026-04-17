@@ -1,6 +1,5 @@
 import { useEffect, useRef } from "react";
 import Avatar from "./Avatar";
-import BubbleLayer from "./BubbleLayer";
 import InputPill from "./InputPill";
 import UnreadBadge from "./UnreadBadge";
 import ConversationDrawer from "./ConversationDrawer";
@@ -186,11 +185,7 @@ export default function Assistant() {
         void listTasks().then(setTodayTasks);
       } else if (chunk.type === "Done") {
         endAssistantMessage();
-        // Reset bubble TTL to 8s now that all content has arrived — the
-        // bubble was created with a long holding TTL (120s) to survive the
-        // batch-replay architecture where tokens arrive all at once after
-        // full generation. Changing ttlMs triggers BubbleLayer's useEffect
-        // which restarts the countdown from zero.
+        // Reset bubble TTL to 8s now that all content has arrived.
         setBubbleTtl(assistantBubbleId, 8000);
         if (looksLikeDelight(assistantText)) {
           setAvatarState("idle"); // will pass through laughing in a future refinement
@@ -243,7 +238,6 @@ export default function Assistant() {
   return (
     <>
       <ConversationDrawer onSubmit={handleSubmit} />
-      <BubbleLayer minimized={minimized} />
 
       <div
         style={{

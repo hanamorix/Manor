@@ -112,12 +112,12 @@ html, body {
   font-variant-numeric: tabular-nums;
 }
 
-/* Existing keyframes retained unchanged for now; typingBounce replaced in Phase 5 */
+/* Keyframes */
 @keyframes bubbleIn     { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: translateY(0); } }
 @keyframes drawerIn     { from { opacity: 0; transform: translateX(24px); } to { opacity: 1; transform: translateX(0); } }
 @keyframes bannerIn     { from { opacity: 0; transform: translateY(-8px); } to { opacity: 1; transform: translateY(0); } }
 @keyframes settingsIn   { from { opacity: 0; transform: scale(0.98); } to { opacity: 1; transform: scale(1); } }
-@keyframes typingBounce { 0%, 60%, 100% { transform: translateY(0); } 30% { transform: translateY(-5px); } }
+@keyframes typingPulse  { 0%, 100% { opacity: 0.35; } 50% { opacity: 1; } }
 
 /* Reduced motion — non-negotiable */
 @media (prefers-reduced-motion: reduce) {
