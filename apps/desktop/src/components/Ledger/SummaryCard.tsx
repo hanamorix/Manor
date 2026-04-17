@@ -50,13 +50,14 @@ export default function SummaryCard({ summary, year, month, totalBudget, onBudge
         marginBottom: 8,
       }}
     >
-        {MONTH_NAMES[month - 1].toUpperCase()} {year}
+      <div style={{ fontSize: "var(--text-xs)", opacity: 0.5, marginBottom: 8 }}>
+        {MONTH_NAMES[month - 1]} {year}
       </div>
 
       <div
         style={{
           fontSize: 28,
-          fontWeight: over ? 700 : 600,
+          fontWeight: over ? 600 : 600,
           marginBottom: 4,
           fontFamily: "var(--font-mono)",
           fontVariantNumeric: "tabular-nums",
