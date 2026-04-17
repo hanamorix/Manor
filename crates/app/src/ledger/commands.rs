@@ -363,3 +363,98 @@ pub fn ledger_import_csv(state: State<'_, Db>, args: DoImportArgs) -> Result<Imp
     let mut conn = state.0.lock().map_err(|e| e.to_string())?;
     csv_import::do_import(&mut conn, args.rows).map_err(|e| e.to_string())
 }
+
+// ── AI Month-in-Review ────────────────────────────────────────────────────────
+
+use crate::assistant::ollama::StreamChunk;
+use crate::ledger::ai_review;
+use crate::remote::{
+    keychain as remote_keychain, orchestrator as remote_orch, PROVIDER_CLAUDE,
+    REMOTE_ENABLED_FOR_REVIEW_KEY,
+};
+use tauri::ipc::Channel;
+use tokio::sync::mpsc;
+
+#[derive(serde::Deserialize)]
+pub struct AiReviewArgs {
+    pub year: i32,
+    pub month: u32,
+}
+
+fn should_use_remote(conn: &rusqlite::Connection) -> bool {
+    let enabled = manor_core::setting::get(conn, REMOTE_ENABLED_FOR_REVIEW_KEY)
+        .ok()
+        .flatten()
+        .as_deref()
+        == Some("1");
+    enabled && remote_keychain::has_key(PROVIDER_CLAUDE)
+}
+
+#[tauri::command]
+pub async fn ledger_ai_month_review(
+    state: State<'_, Db>,
+    args: AiReviewArgs,
+    on_event: Channel<StreamChunk>,
+) -> Result<(), String> {
+    let (summary, renewals, use_remote) = {
+        let conn = state.0.lock().map_err(|e| e.to_string())?;
+        let s = manor_core::ledger::budget::monthly_summary(&conn, args.year, args.month)
+            .map_err(|e| e.to_string())?;
+        let r = manor_core::ledger::contract::check_renewals(&conn, chrono::Utc::now().timestamp())
+            .map_err(|e| e.to_string())?;
+        let use_remote = should_use_remote(&conn);
+        (s, r, use_remote)
+    };
+    let prompt = ai_review::build_prompt(args.year, args.month, &summary, &renewals);
+
+    if use_remote {
+        // Route through the Landmark 2 orchestrator — redacts, checks budget,
+        // calls Claude, logs to remote_call_log. Non-streaming; we emit the
+        // whole response as a single token chunk.
+        let db_arc = state.inner().clone_arc();
+        match remote_orch::remote_chat(
+            db_arc,
+            remote_orch::RemoteChatRequest {
+                skill: "ledger_review",
+                user_visible_reason: "Month-in-review narrative (ledger)",
+                system_prompt: Some(
+                    "You are a calm personal finance assistant. \
+                Write 2-3 sentences in plain English. No bullet points. \
+                Do not give financial advice.",
+                ),
+                user_prompt: &prompt,
+                max_tokens: 400,
+            },
+        )
+        .await
+        {
+            Ok(outcome) => {
+                on_event
+                    .send(StreamChunk::Token(outcome.text))
+                    .map_err(|e| e.to_string())?;
+                on_event
+                    .send(StreamChunk::Done)
+                    .map_err(|e| e.to_string())?;
+                return Ok(());
+            }
+            Err(e) => {
+                tracing::warn!("remote review failed, falling back to local: {e}");
+                // Fall through to local path below.
+            }
+        }
+    }
+
+    // Local Ollama streaming path.
+    let (tx, mut rx) = mpsc::channel::<StreamChunk>(64);
+    let stream_task = tokio::spawn(async move {
+        ai_review::stream_review(prompt, tx).await;
+    });
+    while let Some(chunk) = rx.recv().await {
+        on_event.send(chunk).map_err(|e| e.to_string())?;
+    }
+    let _ = stream_task.await;
+    on_event
+        .send(StreamChunk::Done)
+        .map_err(|e| e.to_string())?;
+    Ok(())
+}
