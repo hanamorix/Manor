@@ -252,15 +252,13 @@ pub async fn ledger_bank_complete_connect(
 
     // Clone the Arc so the background sync task owns it; no lock held across .await.
     let db_for_sync = state.0.clone();
-    tauri::async_runtime::spawn(async move {
-        let handle = tokio::runtime::Handle::current();
-        tauri::async_runtime::spawn_blocking(move || {
-            if let Ok(mut conn) = db_for_sync.lock() {
-                let client = gocardless::GoCardlessClient::default_prod();
-                let ctx = bank_sync::SyncContext { client: &client, allow_rate_limit_bypass: true };
-                let _ = handle.block_on(bank_sync::sync_all(&mut conn, &ctx));
-            }
-        });
+    let handle = tokio::runtime::Handle::current();
+    tauri::async_runtime::spawn_blocking(move || {
+        if let Ok(mut conn) = db_for_sync.lock() {
+            let client = gocardless::GoCardlessClient::default_prod();
+            let ctx = bank_sync::SyncContext { client: &client, allow_rate_limit_bypass: true };
+            let _ = handle.block_on(bank_sync::sync_all(&mut conn, &ctx));
+        }
     });
 
     Ok(CompleteConnectResponse { account_ids: ids })
@@ -284,15 +282,24 @@ pub async fn ledger_bank_sync_now(
     state: State<'_, Db>,
     args: SyncNowArgs,
 ) -> CmdResult<Vec<bank_sync::SyncAccountReport>> {
-    let client = gocardless::GoCardlessClient::default_prod();
-    let ctx = bank_sync::SyncContext { client: &client, allow_rate_limit_bypass: true };
-    let mut conn = state.0.lock().map_err(|e| err("lock_poisoned", e))?;
-    match args.account_id {
-        Some(id) => Ok(vec![
-            bank_sync::sync_one(&mut conn, &ctx, id).await.map_err(map_anyhow)?
-        ]),
-        None => bank_sync::sync_all(&mut conn, &ctx).await.map_err(map_anyhow),
-    }
+    // Mirror the spawn_blocking + block_on pattern used by complete_connect
+    // and the CalDAV sync_account command in lib.rs — std::sync::MutexGuard
+    // is !Send, so holding it across an .await is not portable.
+    let db = state.0.clone();
+    let account_id = args.account_id;
+    let handle = tokio::runtime::Handle::current();
+    let join = tauri::async_runtime::spawn_blocking(move || -> anyhow::Result<Vec<bank_sync::SyncAccountReport>> {
+        let client = gocardless::GoCardlessClient::default_prod();
+        let ctx = bank_sync::SyncContext { client: &client, allow_rate_limit_bypass: true };
+        let mut conn = db.lock().map_err(|e| anyhow::anyhow!("lock poisoned: {e}"))?;
+        match account_id {
+            Some(id) => Ok(vec![handle.block_on(bank_sync::sync_one(&mut conn, &ctx, id))?]),
+            None => handle.block_on(bank_sync::sync_all(&mut conn, &ctx)),
+        }
+    });
+    join.await
+        .map_err(|e| err("join_error", e))?
+        .map_err(map_anyhow)
 }
 
 #[derive(Deserialize)]
