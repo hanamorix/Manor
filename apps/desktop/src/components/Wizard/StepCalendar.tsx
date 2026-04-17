@@ -1,7 +1,9 @@
 import { useEffect, useState } from "react";
+import { ArrowRight } from "lucide-react";
 import { invoke } from "@tauri-apps/api/core";
 import { useWizardStore } from "../../lib/wizard/state";
-import { wizardPrimaryButton, wizardStatusCardGood, wizardStatusCardMuted } from "./styles";
+import { wizardStatusCardGood, wizardStatusCardMuted } from "./styles";
+import { Button } from "../../lib/ui";
 
 interface CalendarAccount {
   id: number;
@@ -60,9 +62,9 @@ export default function StepCalendar() {
       )}
 
       <div style={{ display: "flex", justifyContent: "flex-end" }}>
-        <button onClick={advance} style={wizardPrimaryButton}>
+        <Button variant="primary" icon={ArrowRight} onClick={advance}>
           Next
-        </button>
+        </Button>
       </div>
     </div>
   );

@@ -1,7 +1,8 @@
 import { useEffect, useState } from "react";
+import { ArrowRight } from "lucide-react";
 import { dataDirPath } from "../../lib/settings/ipc";
 import { useWizardStore } from "../../lib/wizard/state";
-import { wizardPrimaryButton } from "./styles";
+import { Button } from "../../lib/ui";
 
 export default function StepDataDir() {
   const advance = useWizardStore((s) => s.advance);
@@ -38,9 +39,9 @@ export default function StepDataDir() {
         {dir}
       </div>
       <div style={{ display: "flex", justifyContent: "flex-end" }}>
-        <button onClick={advance} style={wizardPrimaryButton}>
+        <Button variant="primary" icon={ArrowRight} onClick={advance}>
           Next
-        </button>
+        </Button>
       </div>
     </div>
   );

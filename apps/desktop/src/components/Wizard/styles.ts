@@ -3,30 +3,6 @@
 
 import type { CSSProperties } from "react";
 
-export const wizardPrimaryButton: CSSProperties = {
-  padding: "8px 18px",
-  background: "var(--ink)",
-  color: "var(--action-fg)",
-  border: "none",
-  borderRadius: "var(--radius-pill)",
-  fontSize: 13,
-  fontWeight: 600,
-  cursor: "pointer",
-  fontFamily: "inherit",
-};
-
-export const wizardSecondaryButton: CSSProperties = {
-  padding: "8px 14px",
-  background: "transparent",
-  color: "var(--ink)",
-  border: "1px solid var(--hairline)",
-  borderRadius: "var(--radius-pill)",
-  fontSize: 13,
-  fontWeight: 500,
-  cursor: "pointer",
-  fontFamily: "inherit",
-};
-
 export const wizardStatusCardGood: CSSProperties = {
   padding: 12,
   border: "1px solid rgba(52, 199, 89, 0.3)",

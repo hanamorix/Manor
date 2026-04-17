@@ -1,13 +1,13 @@
 import { useEffect, useState } from "react";
+import { ArrowRight, RefreshCw } from "lucide-react";
 import { ollamaStatus, type OllamaStatus } from "../../lib/settings/ipc";
 import { useWizardStore } from "../../lib/wizard/state";
 import {
   wizardCodeBlock,
-  wizardPrimaryButton,
-  wizardSecondaryButton,
   wizardStatusCardGood,
   wizardStatusCardWarn,
 } from "./styles";
+import { Button } from "../../lib/ui";
 
 export default function StepOllama() {
   const advance = useWizardStore((s) => s.advance);
@@ -100,12 +100,12 @@ export default function StepOllama() {
         ))}
 
       <div style={{ display: "flex", justifyContent: "space-between" }}>
-        <button onClick={probe} disabled={checking} style={wizardSecondaryButton}>
+        <Button variant="secondary" icon={RefreshCw} onClick={probe} disabled={checking}>
           Re-check
-        </button>
-        <button onClick={advance} style={wizardPrimaryButton}>
+        </Button>
+        <Button variant="primary" icon={ArrowRight} onClick={advance}>
           Next
-        </button>
+        </Button>
       </div>
     </div>
   );

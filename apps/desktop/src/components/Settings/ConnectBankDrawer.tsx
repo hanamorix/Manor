@@ -1,5 +1,7 @@
 import { useEffect, useState } from "react";
+import { Check, ArrowRight } from "lucide-react";
 import * as ipc from "../../lib/ledger/bank-ipc";
+import { Button } from "../../lib/ui";
 
 type Mode =
   | { kind: "connect" }
@@ -156,7 +158,7 @@ export function ConnectBankDrawer({ mode, onClose }: Props) {
               {stage.account_ids.length === 1 ? "" : "s"}
             </h3>
             <p>Syncing 180 days of transactions — this may take up to 30 seconds.</p>
-            <button onClick={onClose}>Done</button>
+            <Button variant="primary" icon={Check} onClick={onClose}>Done</Button>
           </div>
         )}
 
@@ -173,7 +175,7 @@ export function ConnectBankDrawer({ mode, onClose }: Props) {
             >
               {stage.message}
             </pre>
-            <button onClick={onClose}>Close</button>
+            <Button variant="secondary" onClick={onClose}>Close</Button>
           </div>
         )}
       </div>
@@ -257,13 +259,15 @@ function ByokForm({
           marginTop: 20,
         }}
       >
-        <button onClick={onCancel}>Cancel</button>
-        <button
+        <Button variant="secondary" onClick={onCancel}>Cancel</Button>
+        <Button
+          variant="primary"
+          icon={ArrowRight}
           onClick={() => onSubmit(id.trim(), key.trim())}
           disabled={!id.trim() || !key.trim()}
         >
           Continue
-        </button>
+        </Button>
       </div>
     </div>
   );

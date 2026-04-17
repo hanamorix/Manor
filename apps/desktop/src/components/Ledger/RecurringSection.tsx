@@ -1,8 +1,10 @@
 import { useEffect, useState } from "react";
+import { Plus } from "lucide-react";
 import { listRecurring, deleteRecurring } from "../../lib/ledger/ipc";
 import { useLedgerStore } from "../../lib/ledger/state";
 import type { Category, RecurringPayment } from "../../lib/ledger/ipc";
 import AddRecurringDrawer from "./AddRecurringDrawer";
+import { Button } from "../../lib/ui";
 
 interface Props {
   categories: Category[];
@@ -92,22 +94,9 @@ export default function RecurringSection({ categories }: Props) {
               </span>
             </h3>
           </div>
-          <button
-            onClick={() => setShowAdd(true)}
-            style={{
-              background: "var(--ink)",
-              color: "var(--action-fg)",
-              border: "none",
-              borderRadius: "var(--radius-pill)",
-              padding: "4px 12px",
-              fontSize: 12,
-              fontWeight: 600,
-              cursor: "pointer",
-              fontFamily: "inherit",
-            }}
-          >
-            + Add
-          </button>
+          <Button variant="primary" icon={Plus} onClick={() => setShowAdd(true)}>
+            Add
+          </Button>
         </div>
 
         {/* Row list */}

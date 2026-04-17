@@ -1,5 +1,7 @@
 import { useState } from "react";
+import { BookOpen } from "lucide-react";
 import { aiMonthReview, type MonthlySummary, type StreamChunk } from "../../lib/ledger/ipc";
+import { Button } from "../../lib/ui";
 
 interface Props {
   year: number;
@@ -97,23 +99,9 @@ export default function MonthReviewPanel({ year, month, summary }: Props) {
           )}
         </>
       ) : (
-        <button
-          onClick={run}
-          disabled={running}
-          style={{
-            padding: "10px 16px",
-            background: "var(--ink)",
-            color: "var(--action-fg)",
-            border: "none",
-            borderRadius: "var(--radius-pill)",
-            fontSize: 14,
-            fontWeight: 600,
-            cursor: running ? "not-allowed" : "pointer",
-            opacity: running ? 0.6 : 1,
-          }}
-        >
+        <Button variant="primary" icon={BookOpen} onClick={run} disabled={running} style={{ opacity: running ? 0.6 : 1 }}>
           {running ? "Thinking…" : "Review with AI"}
-        </button>
+        </Button>
       )}
 
       {error && (

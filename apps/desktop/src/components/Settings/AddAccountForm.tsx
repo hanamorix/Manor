@@ -1,6 +1,8 @@
 import { useState } from "react";
+import { Link } from "lucide-react";
 import { addCalendarAccount } from "../../lib/settings/ipc";
 import { useSettingsStore } from "../../lib/settings/state";
+import { Button } from "../../lib/ui";
 
 interface AddAccountFormProps { onClose: () => void; }
 
@@ -109,21 +111,16 @@ export default function AddAccountForm({ onClose }: AddAccountFormProps) {
       )}
 
       <div style={{ marginTop: 12, display: "flex", gap: 8, justifyContent: "flex-end" }}>
-        <button onClick={onClose} style={{
-          padding: "6px 12px", borderRadius: 6, fontSize: 12, fontWeight: 600,
-          border: "1px solid var(--hairline)", background: "var(--surface)", cursor: "pointer",
-        }}>Cancel</button>
-        <button
+        <Button variant="secondary" onClick={onClose}>Cancel</Button>
+        <Button
+          variant="primary"
+          icon={Link}
           onClick={onConnect}
           disabled={!canSubmit}
-          style={{
-            padding: "6px 12px", borderRadius: 6, fontSize: 12, fontWeight: 700,
-            border: "none", background: canSubmit ? "var(--ink)" : "var(--hairline)",
-            color: canSubmit ? "var(--action-fg)" : "var(--ink-soft)", cursor: canSubmit ? "pointer" : "default",
-          }}
+          style={{ opacity: canSubmit ? 1 : 0.5 }}
         >
           {busy ? "Connecting…" : "Connect"}
-        </button>
+        </Button>
       </div>
     </div>
   );

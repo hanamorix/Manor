@@ -1,8 +1,10 @@
 import { useEffect, useState } from "react";
+import { Plus } from "lucide-react";
 import { listContracts, deleteContract } from "../../lib/ledger/ipc";
 import { useLedgerStore } from "../../lib/ledger/state";
 import type { Contract } from "../../lib/ledger/ipc";
 import AddContractDrawer from "./AddContractDrawer";
+import { Button } from "../../lib/ui";
 
 function formatPence(pence: number): string {
   return `£${(pence / 100).toFixed(2)}`;
@@ -145,22 +147,9 @@ export default function ContractsSection() {
               </span>
             </h3>
           </div>
-          <button
-            onClick={() => setShowAdd(true)}
-            style={{
-              background: "var(--ink)",
-              color: "var(--action-fg)",
-              border: "none",
-              borderRadius: "var(--radius-pill)",
-              padding: "4px 12px",
-              fontSize: 12,
-              fontWeight: 600,
-              cursor: "pointer",
-              fontFamily: "inherit",
-            }}
-          >
-            + Add
-          </button>
+          <Button variant="primary" icon={Plus} onClick={() => setShowAdd(true)}>
+            Add
+          </Button>
         </div>
 
         {/* Row list */}

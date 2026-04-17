@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { Check, Plus } from "lucide-react";
 import type { Chore, RotationKind } from "../../lib/chores/ipc";
 import {
   createChore,
@@ -9,6 +10,7 @@ import {
 } from "../../lib/chores/ipc";
 import { useChoresStore } from "../../lib/chores/state";
 import { useOverlay } from "../../lib/overlay/state";
+import { Button } from "../../lib/ui";
 
 const overlayStyle: React.CSSProperties = {
   position: "fixed",
@@ -68,27 +70,6 @@ const tabStyle = (active: boolean): React.CSSProperties => ({
   borderBottomWidth: 2,
   borderBottomColor: active ? "var(--ink)" : "transparent",
 });
-
-const btnPrimary: React.CSSProperties = {
-  background: "var(--ink)",
-  color: "var(--action-fg)",
-  border: "none",
-  borderRadius: 999,
-  padding: "8px 18px",
-  fontSize: 13,
-  fontWeight: 600,
-  cursor: "pointer",
-};
-
-const btnGhost: React.CSSProperties = {
-  background: "transparent",
-  color: "var(--ink-soft)",
-  border: "1px solid var(--hairline)",
-  borderRadius: 999,
-  padding: "8px 18px",
-  fontSize: 13,
-  cursor: "pointer",
-};
 
 const btnDanger: React.CSSProperties = {
   background: "transparent",
@@ -218,8 +199,8 @@ export default function ChoreDrawer({ chore, onClose }: Props) {
             </select>
 
             <div style={{ display: "flex", gap: 8, marginTop: 24 }}>
-              <button style={btnPrimary} onClick={onSave}>{chore ? "Save" : "Create"}</button>
-              <button style={btnGhost} onClick={onClose}>Cancel</button>
+              <Button variant="primary" icon={chore ? Check : Plus} onClick={onSave}>{chore ? "Save" : "Create"}</Button>
+              <Button variant="secondary" onClick={onClose}>Cancel</Button>
             </div>
 
             {chore && (

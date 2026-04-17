@@ -1,4 +1,5 @@
 import { useRef, useState } from "react";
+import { Upload } from "lucide-react";
 import {
   previewCsv,
   importCsv,
@@ -7,6 +8,7 @@ import {
 } from "../../lib/ledger/ipc";
 import { useLedgerStore } from "../../lib/ledger/state";
 import { useOverlay } from "../../lib/overlay/state";
+import { Button } from "../../lib/ui";
 
 interface Props {
   onClose: () => void;
@@ -378,46 +380,22 @@ export default function CsvImportDrawer({ onClose, onImported }: Props) {
             gap: 10,
           }}
         >
-          <button
-            onClick={onClose}
-            style={{
-              flex: 1,
-              padding: "10px 16px",
-              background: "transparent",
-              color: "var(--ink)",
-              border: "1px solid var(--hairline)",
-              borderRadius: "var(--radius-pill)",
-              fontSize: 14,
-              fontWeight: 600,
-              cursor: "pointer",
-              fontFamily: "inherit",
-            }}
-          >
+          <Button variant="secondary" onClick={onClose} style={{ flex: 1 }}>
             Cancel
-          </button>
-          <button
+          </Button>
+          <Button
+            variant="primary"
+            icon={Upload}
             onClick={doImport}
             disabled={!canImport}
-            style={{
-              flex: 2,
-              padding: "10px 16px",
-              background: "var(--ink)",
-              color: "var(--action-fg)",
-              border: "none",
-              borderRadius: "var(--radius-pill)",
-              fontSize: 14,
-              fontWeight: 600,
-              cursor: canImport ? "pointer" : "default",
-              opacity: canImport ? 1 : 0.5,
-              fontFamily: "inherit",
-            }}
+            style={{ flex: 2, opacity: canImport ? 1 : 0.5 }}
           >
             {importing
               ? "Importing…"
               : rows.length > 0
               ? `Import ${rows.length - duplicateCount} transaction${rows.length - duplicateCount !== 1 ? "s" : ""}`
               : "Import"}
-          </button>
+          </Button>
         </div>
       </div>
     </>

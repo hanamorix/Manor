@@ -1,7 +1,9 @@
 import { useState } from "react";
+import { Check } from "lucide-react";
 import { addContract, updateContract } from "../../lib/ledger/ipc";
 import { useOverlay } from "../../lib/overlay/state";
 import type { Contract } from "../../lib/ledger/ipc";
+import { Button } from "../../lib/ui";
 
 interface Props {
   existing?: Contract;
@@ -340,42 +342,18 @@ export default function AddContractDrawer({ existing, onClose, onSaved }: Props)
             gap: 10,
           }}
         >
-          <button
-            onClick={onClose}
-            style={{
-              flex: 1,
-              padding: "10px 16px",
-              background: "transparent",
-              color: "var(--ink)",
-              border: "1px solid var(--hairline)",
-              borderRadius: "var(--radius-pill)",
-              fontSize: 14,
-              fontWeight: 600,
-              cursor: "pointer",
-              fontFamily: "inherit",
-            }}
-          >
+          <Button variant="secondary" onClick={onClose} style={{ flex: 1 }}>
             Cancel
-          </button>
-          <button
+          </Button>
+          <Button
+            variant="primary"
+            icon={Check}
             onClick={handleSave}
             disabled={!canSave || saving}
-            style={{
-              flex: 2,
-              padding: "10px 16px",
-              background: "var(--ink)",
-              color: "var(--action-fg)",
-              border: "none",
-              borderRadius: "var(--radius-pill)",
-              fontSize: 14,
-              fontWeight: 600,
-              cursor: !canSave || saving ? "default" : "pointer",
-              opacity: !canSave || saving ? 0.5 : 1,
-              fontFamily: "inherit",
-            }}
+            style={{ flex: 2, opacity: !canSave || saving ? 0.5 : 1 }}
           >
             {saving ? "Saving…" : existing ? "Save changes" : "Add contract"}
-          </button>
+          </Button>
         </div>
       </div>
     </>
