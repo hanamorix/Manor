@@ -129,7 +129,7 @@ export default function EditEventDrawer({ event, onClose, onSaved }: Props) {
           )}
 
           {event.is_recurring_occurrence && (
-            <div style={{ marginBottom: 16, padding: "8px 12px", background: "rgba(0,122,255,0.08)", borderRadius: 8, fontSize: 12, color: "var(--ink)" }}>
+            <div style={{ marginBottom: 16, padding: "8px 12px", background: "var(--paper-muted)", borderRadius: 8, fontSize: 12, color: "var(--ink)" }}>
               Recurring event — editing this occurrence only
             </div>
           )}
@@ -174,7 +174,7 @@ export default function EditEventDrawer({ event, onClose, onSaved }: Props) {
             </div>
 
             {error && (
-              <div style={{ padding: "10px 12px", background: "rgba(255,59,48,0.08)", border: "1px solid rgba(255,59,48,0.3)", borderRadius: 10, fontSize: 13, color: "var(--ink)" }}>
+              <div style={{ padding: "10px 12px", background: "var(--paper-muted)", border: "1px solid var(--ink-danger)", borderRadius: 10, fontSize: 13, color: "var(--ink)" }}>
                 {error}
               </div>
             )}
@@ -182,7 +182,7 @@ export default function EditEventDrawer({ event, onClose, onSaved }: Props) {
             {!confirmDelete ? (
               <button
                 onClick={() => setConfirmDelete(true)}
-                style={{ marginTop: 8, background: "none", border: "1px solid rgba(255,59,48,0.4)", borderRadius: 10, padding: "10px 0", color: "var(--ink)", fontSize: 13, fontWeight: 600, cursor: "pointer", fontFamily: "inherit" }}
+                style={{ marginTop: 8, background: "none", border: "1px solid var(--ink-danger)", borderRadius: 10, padding: "10px 0", color: "var(--ink)", fontSize: 13, fontWeight: 600, cursor: "pointer", fontFamily: "inherit" }}
               >
                 Delete Event
               </button>
@@ -192,7 +192,7 @@ export default function EditEventDrawer({ event, onClose, onSaved }: Props) {
                   <button
                     onClick={() => handleDelete(true)}
                     disabled={deleting}
-                    style={{ background: "rgba(255,59,48,0.08)", border: "1px solid rgba(255,59,48,0.4)", borderRadius: 10, padding: "10px 0", color: "var(--ink)", fontSize: 13, fontWeight: 600, cursor: "pointer", fontFamily: "inherit" }}
+                    style={{ background: "var(--paper-muted)", border: "1px solid var(--ink-danger)", borderRadius: 10, padding: "10px 0", color: "var(--ink)", fontSize: 13, fontWeight: 600, cursor: "pointer", fontFamily: "inherit" }}
                   >
                     Delete this occurrence only
                   </button>
@@ -200,7 +200,7 @@ export default function EditEventDrawer({ event, onClose, onSaved }: Props) {
                 <button
                   onClick={() => handleDelete(false)}
                   disabled={deleting}
-                  style={{ background: "rgba(255,59,48,0.15)", border: "1px solid rgba(255,59,48,0.6)", borderRadius: 10, padding: "10px 0", color: "var(--ink)", fontSize: 14, fontWeight: 600, cursor: "pointer", fontFamily: "inherit" }}
+                  style={{ background: "var(--paper-muted)", border: "1px solid var(--ink-danger)", borderRadius: 10, padding: "10px 0", color: "var(--ink)", fontSize: 14, fontWeight: 600, cursor: "pointer", fontFamily: "inherit" }}
                 >
                   {event.is_recurring_occurrence ? "Delete all occurrences" : "Confirm Delete"}
                 </button>

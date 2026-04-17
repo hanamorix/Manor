@@ -48,7 +48,7 @@ const emptyStyle: React.CSSProperties = {
 const nudgeStyle: React.CSSProperties = {
   marginTop: 10,
   padding: "10px 12px",
-  background: "rgba(0,122,255,0.06)",
+  background: "var(--paper-muted)",
   borderRadius: 8,
   fontSize: 12,
   color: "var(--ink-soft)",
