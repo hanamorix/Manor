@@ -21,6 +21,7 @@ chrono-tz.workspace = true
 rrule.workspace = true
 uuid.workspace = true
 sha2.workspace = true
+regex.workspace = true
 age.workspace = true
 tar.workspace = true
 flate2.workspace = true
@@ -28,3 +29,4 @@ bytemuck.workspace = true
 
 [dev-dependencies]
 tempfile.workspace = true
+proptest.workspace = true

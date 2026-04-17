@@ -40,6 +40,8 @@ tar = "0.4"
 flate2 = "1"
 plist = "1.7"
 bytemuck = "1"
+regex = "1"
+proptest = "1"
 
 # dev-dependencies
 wiremock = "0.6"
