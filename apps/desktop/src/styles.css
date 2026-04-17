@@ -36,6 +36,8 @@
   --hairline-strong:   #e0e0e0;
   --scrim:             rgba(0, 0, 0, 0.25);
 
+  --paper-muted:       #f4f4f4;
+
   --action-bg:               #1f1f1f;
   --action-fg:               #ffffff;
   --action-secondary-border: #e0e0e0;
@@ -53,6 +55,8 @@
     --hairline-strong:   #3a3a3a;
     --scrim:             rgba(0, 0, 0, 0.55);
 
+    --paper-muted:       #141414;
+
     --action-bg:               #e8e8e8;
     --action-fg:               #191919;
     --action-secondary-border: #3a3a3a;
@@ -69,6 +73,8 @@
   --hairline:          #2a2a2a;
   --hairline-strong:   #3a3a3a;
   --scrim:             rgba(0, 0, 0, 0.55);
+  --paper-muted:       #141414;
+
   --action-bg:               #e8e8e8;
   --action-fg:               #191919;
   --action-secondary-border: #3a3a3a;
