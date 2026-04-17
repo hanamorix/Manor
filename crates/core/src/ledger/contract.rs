@@ -126,6 +126,52 @@ pub fn delete(conn: &Connection, id: i64) -> Result<()> {
     Ok(())
 }
 
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+pub struct RenewalAlert {
+    pub contract_id: i64,
+    pub provider: String,
+    pub kind: String,
+    pub term_end: i64,
+    pub days_remaining: i64,
+    pub exit_fee_pence: Option<i64>,
+    pub severity: String, // "amber" or "red"
+}
+
+/// Return contracts whose `term_end` is within their `renewal_alert_days` window.
+/// `severity = "red"` if ≤7 days remaining, else `"amber"`.
+pub fn check_renewals(conn: &Connection, now_ts: i64) -> Result<Vec<RenewalAlert>> {
+    let mut stmt = conn.prepare(
+        "SELECT id, provider, kind, term_end, renewal_alert_days, exit_fee_pence
+         FROM contract
+         WHERE deleted_at IS NULL
+           AND term_end - ?1 <= renewal_alert_days * 86400
+           AND term_end > ?1
+         ORDER BY term_end ASC",
+    )?;
+    let rows = stmt
+        .query_map(params![now_ts], |row| {
+            let id: i64 = row.get(0)?;
+            let provider: String = row.get(1)?;
+            let kind: String = row.get(2)?;
+            let term_end: i64 = row.get(3)?;
+            let _alert_days: i64 = row.get(4)?;
+            let exit_fee: Option<i64> = row.get(5)?;
+            let days_remaining = ((term_end - now_ts).max(0)) / 86400;
+            let severity = if days_remaining <= 7 { "red" } else { "amber" };
+            Ok(RenewalAlert {
+                contract_id: id,
+                provider,
+                kind,
+                term_end,
+                days_remaining,
+                exit_fee_pence: exit_fee,
+                severity: severity.to_string(),
+            })
+        })?
+        .collect::<rusqlite::Result<Vec<_>>>()?;
+    Ok(rows)
+}
+
 fn get(conn: &Connection, id: i64) -> Result<Contract> {
     let mut stmt = conn.prepare(
         "SELECT id, provider, kind, description, monthly_cost_pence, term_start,
@@ -219,5 +265,58 @@ mod tests {
         let c = insert(&conn, sample("O2", ts(2027, 1, 1))).unwrap();
         delete(&conn, c.id).unwrap();
         assert!(list(&conn).unwrap().is_empty());
+    }
+
+    fn within(new_term_end: i64, alert_days: i64) -> NewContract<'static> {
+        NewContract {
+            provider: "O2",
+            kind: "phone",
+            description: None,
+            monthly_cost_pence: 2500,
+            term_start: ts(2025, 1, 1),
+            term_end: new_term_end,
+            exit_fee_pence: None,
+            renewal_alert_days: alert_days,
+            recurring_payment_id: None,
+            note: None,
+        }
+    }
+
+    #[test]
+    fn check_renewals_includes_contracts_inside_alert_window() {
+        let (_d, conn) = fresh_conn();
+        let now = ts(2026, 4, 16);
+        insert(&conn, within(now + 20 * 86400, 30)).unwrap(); // 20 days away, 30-day window
+        insert(&conn, within(now + 90 * 86400, 30)).unwrap(); // 90 days away — out of window
+        let alerts = check_renewals(&conn, now).unwrap();
+        assert_eq!(alerts.len(), 1);
+        assert_eq!(alerts[0].days_remaining, 20);
+        assert_eq!(alerts[0].severity, "amber");
+    }
+
+    #[test]
+    fn check_renewals_marks_red_under_seven_days() {
+        let (_d, conn) = fresh_conn();
+        let now = ts(2026, 4, 16);
+        insert(&conn, within(now + 3 * 86400, 30)).unwrap();
+        let alerts = check_renewals(&conn, now).unwrap();
+        assert_eq!(alerts[0].severity, "red");
+    }
+
+    #[test]
+    fn check_renewals_excludes_already_expired() {
+        let (_d, conn) = fresh_conn();
+        let now = ts(2026, 4, 16);
+        insert(&conn, within(now - 5 * 86400, 30)).unwrap();
+        assert!(check_renewals(&conn, now).unwrap().is_empty());
+    }
+
+    #[test]
+    fn check_renewals_excludes_deleted() {
+        let (_d, conn) = fresh_conn();
+        let now = ts(2026, 4, 16);
+        let c = insert(&conn, within(now + 5 * 86400, 30)).unwrap();
+        delete(&conn, c.id).unwrap();
+        assert!(check_renewals(&conn, now).unwrap().is_empty());
     }
 }
