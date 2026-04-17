@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { Save, HardDrive, CalendarOff, Calendar, Undo2 } from "lucide-react";
 import {
   backupCreateNow, backupHasPassphrase, backupList, backupRestore,
   backupScheduleInstall, backupScheduleIsInstalled, backupScheduleUninstall,
@@ -11,6 +12,7 @@ import {
   settingsListRow,
   settingsStatusWarn,
 } from "../Settings/styles";
+import { Button } from "../../lib/ui";
 
 function formatSize(bytes: number): string {
   if (bytes < 1024) return `${bytes} B`;
@@ -103,23 +105,25 @@ export default function BackupPanel({ defaultOutDir }: Props) {
             placeholder="Passphrase"
             style={{ width: "60%" }}
           />
-          <button
+          <Button
+            variant="primary"
+            icon={Save}
             onClick={savePass}
             disabled={newPass.length < 8}
             style={{ marginLeft: 8 }}
           >
             Save
-          </button>
+          </Button>
         </div>
       )}
 
       <div style={{ display: "flex", gap: 8 }}>
-        <button onClick={runBackup} disabled={!hasPass || creating}>
+        <Button variant="primary" icon={HardDrive} onClick={runBackup} disabled={!hasPass || creating}>
           {creating ? "Backing up…" : "Back up now"}
-        </button>
-        <button onClick={toggleSchedule} disabled={!hasPass}>
+        </Button>
+        <Button variant="secondary" icon={scheduled ? CalendarOff : Calendar} onClick={toggleSchedule} disabled={!hasPass}>
           {scheduled ? "Disable weekly schedule" : "Enable weekly schedule"}
-        </button>
+        </Button>
       </div>
 
       {!scheduled && hasPass && (
@@ -206,16 +210,16 @@ function RestoreButton({ backupPath }: { backupPath: string }) {
     }
   };
 
-  if (!showing) return <button onClick={() => setShowing(true)}>Restore</button>;
+  if (!showing) return <Button variant="secondary" icon={Undo2} onClick={() => setShowing(true)}>Restore</Button>;
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
       <input type="password" value={pass} onChange={(e) => setPass(e.target.value)}
              placeholder="Passphrase" style={{ width: 180 }} />
       <div style={{ display: "flex", gap: 4 }}>
-        <button onClick={() => { setShowing(false); setResult(null); }}>Cancel</button>
-        <button onClick={run} disabled={working || pass.length === 0}>
+        <Button variant="secondary" onClick={() => { setShowing(false); setResult(null); }}>Cancel</Button>
+        <Button variant="primary" onClick={run} disabled={working || pass.length === 0}>
           {working ? "…" : "Decrypt"}
-        </button>
+        </Button>
       </div>
       {result && (
         <div

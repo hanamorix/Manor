@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { AlertTriangle, X, Trash2 } from "lucide-react";
 import { panicEraseEverything } from "../../lib/safety/ipc";
 import {
   COLOR_DANGER,
@@ -6,6 +7,7 @@ import {
   dangerButton,
   settingsStatusDanger,
 } from "../Settings/styles";
+import { Button } from "../../lib/ui";
 
 export default function PanicButton() {
   const [phase, setPhase] = useState<"idle" | "confirming" | "erasing" | "done" | "error">(
@@ -45,22 +47,14 @@ export default function PanicButton() {
         are not affected. There is no undo.
       </p>
       {phase === "idle" && (
-        <button
+        <Button
+          variant="secondary"
+          icon={AlertTriangle}
           onClick={() => setPhase("confirming")}
-          style={{
-            background: "transparent",
-            color: COLOR_DANGER,
-            border: `1px solid ${COLOR_DANGER}`,
-            borderRadius: "var(--radius-pill)",
-            padding: "6px 14px",
-            fontSize: 12,
-            fontWeight: 600,
-            cursor: "pointer",
-            fontFamily: "inherit",
-          }}
+          style={{ color: COLOR_DANGER, borderColor: COLOR_DANGER }}
         >
           I understand — let me erase
-        </button>
+        </Button>
       )}
       {phase === "confirming" && (
         <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
@@ -85,17 +79,19 @@ export default function PanicButton() {
             />
           </label>
           <div style={{ display: "flex", gap: 6 }}>
-            <button
+            <Button
+              variant="secondary"
+              icon={X}
               onClick={() => {
                 setPhase("idle");
                 setTyped("");
               }}
             >
               Cancel
-            </button>
-            <button onClick={run} disabled={typed !== "DELETE"} style={dangerButton}>
+            </Button>
+            <Button icon={Trash2} onClick={run} disabled={typed !== "DELETE"} style={dangerButton}>
               Erase everything
-            </button>
+            </Button>
           </div>
         </div>
       )}
