@@ -8,26 +8,30 @@ The canonical design direction lives in [`.impeccable.md`](./.impeccable.md) at 
 
 ### At a glance
 
-- **Direction:** Cottage journal. Cream paper, ink text, ivy + rust accents, ornamental typography, hand-lettered accents for dates and pullquotes. Monospace for numbers.
-- **Personality:** cottagecore, handmade, quiet. Journal, not dashboard.
-- **Display type:** Marcellus (free) or PP Right Serif Narrow (paid). **Never:** Inter, Fraunces, Playfair, DM Sans, IBM Plex, Space Grotesk, Outfit.
-- **Body:** macOS system stack (SF Pro). Keep native.
-- **Accents:** Caveat for handwritten moments; Commit Mono / JetBrains Mono for numbers.
-- **Palette:** OKLCH-tinted warm neutrals (`paper`, `oat`, `ink`, `ink-soft`, `hairline`) + ivy, rust, butter, plum accents. No pure black/white. No cool grays.
-- **Dark panels:** Used only for emphasis (SummaryCard-style pullquotes). Not a theme.
-- **Motion:** Minimal. `ease-out-quart`/`ease-out-expo` only. No bounce. Reduced-motion respected.
+- **Direction:** Flat-Notion with icons. Apple-HIG native DNA (SF Pro, system feel) + Vercel-flat execution (hairlines over cards, small radii) + Notion icon language (Lucide outline).
+- **Personality:** flat, minimal, quiet. Document-flat, not dashboard-shaped.
+- **Typography:** SF Pro via system stack. SF Mono for numbers (times, currency, counts). **No web fonts loaded.** Never: Inter, Nunito, Fraunces, Playfair, DM Sans, IBM Plex, Space Grotesk, Outfit, Crimson, Syne.
+- **Icons:** `lucide-react` — single library, outline, strokeWidth 1.8, `currentColor`. Used at page identifiers, section labels, buttons, list affordances.
+- **Palette:** Monochrome, both themes (`paper`, `surface`, `ink`, `ink-soft`, `ink-faint`, `hairline`, `hairline-strong`). Auto light/dark via `prefers-color-scheme`. No accent color.
+- **Surface:** Document-flat. No cards on list views — section-introducer pattern (icon + label + hairline-separated rows). Only `SummaryCard` retains a card-like treatment as a deliberate dark pullquote.
+- **Radii:** 4–6px max. No pills on buttons.
+- **Motion:** 120–200ms, `ease-out` cubic-bezier `(0.2, 0.8, 0.2, 1)`. Transform/opacity only. No bounce. Reduced-motion respected globally.
 
 ### Anti-references (what Manor must not look like)
 
-SaaS dashboards, AI tech-bro (cyan glow / purple gradients), consumer iOS cloneware (rounded-card nesting + bounces), corpo productivity (Inter + gray).
+SaaS dashboards, AI tech-bro (cyan glow / purple gradients), consumer iOS cloneware (rounded-card nesting + iMessage bubbles), corpo productivity (Inter + gray).
 
 ### Anti-patterns (enforced by `audit`)
 
-No gradient text, no coloured side-stripe borders, no glassmorphism decoration, no icons-above-every-heading, no reflex fonts (see list in `.impeccable.md`), no pure-black/pure-white, no bounce/elastic easing, no modals when a side panel works.
+No gradient text, no coloured side-stripe borders (`border-left: Npx` where N > 1), no glassmorphism decoration, no reflex fonts (see list in `.impeccable.md`), no pure-black/pure-white, no cool-neutral grays without hue, no bounce/elastic easing, no pills on regular buttons, no icons-in-rounded-square above headings, no emoji inside chrome, no modals when a side panel works.
 
 ### Current migration state
 
-Phase 2-3 components carry legacy iMessage tokens (`--imessage-blue` etc.) and Phase 5 introduced a dark `#1a1a2e → #16213e` gradient on SummaryCard. Both should migrate opportunistically toward the OKLCH warm-dark palette when touched. No retrofit-all-at-once — new surfaces commit to Cottage Journal; old ones get refactored when they're in flight anyway.
+Phase 6 — Flat Design System migration — replaces the entire previous token + typography system in one landmark. Retires: Nunito root font, `--imessage-*` tokens, Phase-5 `#1a1a2e → #16213e` dark gradient, bordered rounded cards on list views, iMessage chat bubbles in the Assistant. Adds: SF Pro + SF Mono, Lucide icon language, monochrome OKLCH-adjacent palette with auto light/dark, document-flat section-introducer pattern, HIG-flat ConversationDrawer (no bubbles).
+
+Spec: `docs/superpowers/specs/2026-04-17-phase-6-flat-design-system.md`. Six internal phases, one branch (`feature/phase-6-design-system`), one merge.
+
+The earlier Cottage Journal direction (committed and then retired 2026-04-17) is fully superseded. No code was ever written against it — the pivot happened during brainstorming.
 
 **Read `.impeccable.md` for the full principles, tokens, type scale, and ornamental language.**
 
