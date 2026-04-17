@@ -240,6 +240,14 @@ pub fn register(builder: Builder<Wry>) -> Builder<Wry> {
             embedding::commands::embeddings_status,
             embedding::commands::embeddings_search,
             embedding::commands::embeddings_rebuild,
+            remote::commands::remote_provider_status,
+            remote::commands::remote_set_key,
+            remote::commands::remote_remove_key,
+            remote::commands::remote_set_budget,
+            remote::commands::remote_set_enabled_for_review,
+            remote::commands::remote_call_log_list,
+            remote::commands::remote_call_log_clear,
+            remote::commands::remote_test,
         ])
 }
 

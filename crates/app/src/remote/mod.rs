@@ -2,6 +2,7 @@
 //! See `docs/superpowers/specs/2026-04-17-remote-llm-design.md`.
 
 pub mod claude;
+pub mod commands;
 pub mod keychain;
 pub mod orchestrator;
 pub mod provider;
