@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { ollamaStatus, type OllamaStatus } from "../../lib/settings/ipc";
+import { ollamaStatus, type OllamaStatus, embeddingsStatus, embeddingsRebuild, type EmbeddingsStatus } from "../../lib/settings/ipc";
 import { settingGet, settingSet } from "../../lib/foundation/ipc";
 
 const DEFAULT_MODEL_KEY = "ai.default_model";
@@ -61,13 +61,7 @@ export default function AiTab() {
         )}
       </section>
 
-      <section>
-        <h2 style={{ margin: "0 0 8px 0", fontSize: 15 }}>Embeddings</h2>
-        <div style={{ fontSize: 12, color: "#888" }}>
-          Local semantic search indexing. Available once Phase C ships.
-        </div>
-        <button disabled style={{ marginTop: 6, fontSize: 12 }}>Rebuild embeddings</button>
-      </section>
+      <EmbeddingsSection />
 
       <section>
         <h2 style={{ margin: "0 0 8px 0", fontSize: 15 }}>Remote providers</h2>
@@ -76,5 +70,72 @@ export default function AiTab() {
         </div>
       </section>
     </div>
+  );
+}
+
+function EmbeddingsSection() {
+  const [status, setStatus] = useState<EmbeddingsStatus | null>(null);
+  const [rebuilding, setRebuilding] = useState(false);
+  const [message, setMessage] = useState<string | null>(null);
+
+  const refresh = async () => {
+    try {
+      setStatus(await embeddingsStatus());
+    } catch {
+      setStatus(null);
+    }
+  };
+
+  useEffect(() => { void refresh(); }, []);
+
+  const rebuild = async () => {
+    if (!confirm("Rebuild will clear the embedding index and re-embed everything. Continue?")) return;
+    setRebuilding(true);
+    setMessage(null);
+    try {
+      const cleared = await embeddingsRebuild();
+      setMessage(`Cleared ${cleared} vector(s). Re-indexing started — leave Manor open until it finishes.`);
+      await refresh();
+    } catch (e) {
+      setMessage(`Rebuild failed: ${e}`);
+    } finally {
+      setRebuilding(false);
+    }
+  };
+
+  return (
+    <section>
+      <h2 style={{ margin: "0 0 8px 0", fontSize: 15 }}>Embeddings</h2>
+      {!status && <div style={{ fontSize: 12, color: "#888" }}>Loading…</div>}
+      {status && (
+        <>
+          <div style={{ fontSize: 13 }}>
+            <span style={{ color: "#888" }}>Model:</span> {status.model}
+          </div>
+          <div style={{ fontSize: 13, marginTop: 4 }}>
+            <span style={{ color: "#888" }}>Indexed:</span> {status.total} vector(s)
+            {status.by_entity_type.length > 0 && " ("}
+            {status.by_entity_type.map(([t, n], i) => (
+              <span key={t}>
+                {i > 0 && ", "}{t}: {n}
+              </span>
+            ))}
+            {status.by_entity_type.length > 0 && ")"}
+          </div>
+          <button
+            onClick={rebuild}
+            disabled={rebuilding}
+            style={{ marginTop: 8, fontSize: 12 }}
+          >
+            {rebuilding ? "Rebuilding…" : "Rebuild embeddings"}
+          </button>
+          {message && (
+            <div style={{ fontSize: 11, color: message.includes("failed") ? "#f66" : "#6f6", marginTop: 6 }}>
+              {message}
+            </div>
+          )}
+        </>
+      )}
+    </section>
   );
 }

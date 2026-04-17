@@ -2383,6 +2383,7 @@ version = "0.1.0"
 dependencies = [
  "age",
  "anyhow",
+ "bytemuck",
  "chrono",
  "chrono-tz",
  "flate2",

@@ -69,3 +69,31 @@ export interface OllamaStatus {
 export async function ollamaStatus(): Promise<OllamaStatus> {
   return invoke<OllamaStatus>("ollama_status");
 }
+
+export interface EmbeddingsStatus {
+  model: string;
+  total: number;
+  by_entity_type: Array<[string, number]>;
+}
+
+export async function embeddingsStatus(): Promise<EmbeddingsStatus> {
+  return invoke<EmbeddingsStatus>("embeddings_status");
+}
+
+export async function embeddingsRebuild(): Promise<number> {
+  return invoke<number>("embeddings_rebuild");
+}
+
+export interface SearchHit {
+  entity_type: string;
+  entity_id: number;
+  score: number;
+}
+
+export async function embeddingsSearch(
+  query: string,
+  entityTypes: string[],
+  limit: number,
+): Promise<SearchHit[]> {
+  return invoke<SearchHit[]>("embeddings_search", { query, entityTypes, limit });
+}
