@@ -196,6 +196,44 @@ impl OllamaClient {
             tool_calls: collected_tool_calls,
         }
     }
+
+    /// Request embeddings from Ollama's /api/embeddings endpoint.
+    /// Note: uses `self.model` — caller must configure an embedding model
+    /// (e.g., nomic-embed-text) rather than a chat model.
+    pub async fn embed(&self, text: &str) -> anyhow::Result<Vec<f32>> {
+        #[derive(Serialize)]
+        struct Req<'a> {
+            model: &'a str,
+            prompt: &'a str,
+        }
+        #[derive(Deserialize)]
+        struct Resp {
+            embedding: Vec<f32>,
+        }
+        let url = format!("{}/api/embeddings", self.endpoint);
+        let body = Req {
+            model: &self.model,
+            prompt: text,
+        };
+        let resp = self
+            .http
+            .post(&url)
+            .json(&body)
+            .send()
+            .await
+            .map_err(|e| anyhow::anyhow!("embed http: {e}"))?;
+        anyhow::ensure!(
+            resp.status().is_success(),
+            "ollama /api/embeddings returned {}",
+            resp.status()
+        );
+        let parsed: Resp = resp
+            .json()
+            .await
+            .map_err(|e| anyhow::anyhow!("embed parse: {e}"))?;
+        anyhow::ensure!(!parsed.embedding.is_empty(), "empty embedding returned");
+        Ok(parsed.embedding)
+    }
 }
 
 #[cfg(test)]
@@ -331,5 +369,35 @@ mod tests {
             .await;
         let first = rx.recv().await.unwrap();
         assert_eq!(first, StreamChunk::Error(ErrorCode::ModelMissing));
+    }
+
+    #[tokio::test]
+    async fn embed_returns_vector_from_valid_response() {
+        let server = MockServer::start().await;
+        Mock::given(method("POST"))
+            .and(path("/api/embeddings"))
+            .respond_with(ResponseTemplate::new(200).set_body_json(serde_json::json!({
+                "embedding": [0.1, 0.2, 0.3]
+            })))
+            .mount(&server)
+            .await;
+        let client = OllamaClient::new(server.uri(), "nomic-embed-text");
+        let v = client.embed("hello").await.unwrap();
+        assert_eq!(v, vec![0.1, 0.2, 0.3]);
+    }
+
+    #[tokio::test]
+    async fn embed_errors_on_empty_vector() {
+        let server = MockServer::start().await;
+        Mock::given(method("POST"))
+            .and(path("/api/embeddings"))
+            .respond_with(ResponseTemplate::new(200).set_body_json(serde_json::json!({
+                "embedding": []
+            })))
+            .mount(&server)
+            .await;
+        let client = OllamaClient::new(server.uri(), "nomic-embed-text");
+        let err = client.embed("hello").await.unwrap_err();
+        assert!(err.to_string().to_lowercase().contains("empty"));
     }
 }
