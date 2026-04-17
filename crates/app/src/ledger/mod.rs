@@ -2,6 +2,7 @@
 
 pub mod ai_review;
 pub mod bank_keychain;
+pub mod bank_sync;
 pub mod commands;
 pub mod csv_import;
 pub mod gocardless;
