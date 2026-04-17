@@ -39,16 +39,16 @@ function CountdownPill({ days, alertDays }: PillProps) {
     color = "var(--ink-soft)";
     label = "expired";
   } else if (days <= 7) {
-    bg = "rgba(255,59,48,0.2)";
-    color = "var(--ink)";
+    bg = "var(--paper-muted)";
+    color = "var(--ink-danger)";
     label = `${days}d`;
   } else if (days <= alertDays) {
-    bg = "rgba(255,149,0,0.2)";
-    color = "#b36b00";
+    bg = "var(--paper-muted)";
+    color = "var(--ink-soft)";
     label = `${days}d`;
   } else {
     bg = "var(--paper-muted)";
-    color = "rgba(0,0,0,0.45)";
+    color = "var(--ink-faint)";
     label = `${days}d`;
   }
 
