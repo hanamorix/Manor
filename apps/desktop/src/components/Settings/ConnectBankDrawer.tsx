@@ -226,7 +226,7 @@ function ByokForm({
             marginTop: 4,
             background: "var(--paper)",
             color: "var(--ink)",
-            border: "1px solid #2d2d4a",
+            border: "1px solid var(--hairline-strong)",
           }}
         />
       </label>
@@ -242,7 +242,7 @@ function ByokForm({
             marginTop: 4,
             background: "var(--paper)",
             color: "var(--ink)",
-            border: "1px solid #2d2d4a",
+            border: "1px solid var(--hairline-strong)",
           }}
         />
       </label>
@@ -323,7 +323,7 @@ function PickForm({
           marginBottom: 12,
           background: "var(--paper)",
           color: "var(--ink)",
-          border: "1px solid #2d2d4a",
+          border: "1px solid var(--hairline-strong)",
         }}
       />
       <div style={{ maxHeight: 400, overflowY: "auto" }}>
@@ -342,7 +342,7 @@ function PickForm({
               color: "var(--ink)",
               textAlign: "left",
               cursor: "pointer",
-              borderBottom: "1px solid #2d2d4a",
+              borderBottom: "1px solid var(--hairline-strong)",
             }}
           >
             {i.logo_url && <img src={i.logo_url} width={24} height={24} alt="" />}

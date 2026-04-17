@@ -32,7 +32,9 @@ export function BankAccountRow({ account, onReconnect }: Props) {
         gap: 12,
         padding: "12px 16px",
         background: expired ? "var(--hairline)" : "var(--surface)",
-        border: `1px solid ${expired ? "var(--hairline-strong)" : "var(--hairline)"}`,
+        border: expired
+          ? "1px solid var(--ink-soft)"
+          : "1px solid var(--hairline-strong)",
         borderRadius: 8,
         marginBottom: 8,
       }}
@@ -46,7 +48,17 @@ export function BankAccountRow({ account, onReconnect }: Props) {
         </div>
         <div style={{ color: "var(--ink-soft)", fontSize: 12 }}>
           synced {lastSynced}
-          {daysLeft !== null && ` · expires in ${daysLeft} days`}
+          {expired ? (
+            <span style={{ fontWeight: 600, color: "var(--ink-soft)" }}>
+              {" · "}expired
+            </span>
+          ) : (
+            daysLeft !== null && (
+              <span style={{ fontWeight: 400, color: "var(--ink-soft)" }}>
+                {` · expires in ${daysLeft} days`}
+              </span>
+            )
+          )}
         </div>
       </div>
       {expired ? (
