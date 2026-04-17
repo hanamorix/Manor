@@ -12,6 +12,7 @@ use crate::ledger::gocardless::{BankError, GoCardlessClient};
 const OVERLAP_DAYS: i64 = 3;
 const MIN_SYNC_INTERVAL_SECS: i64 = 5 * 60 * 60; // 5h — leaves headroom under GoCardless 4/day limit
 const NUDGE_DEDUP_SECS: i64 = 24 * 60 * 60; // no more than one bank_reconnect bubble per 24h
+const PRE_EXPIRY_WARN_SECS: i64 = 7 * 24 * 60 * 60; // nudge when <7 days remain on requisition
 
 #[derive(Debug, Serialize, Clone)]
 pub struct SyncAccountReport {
@@ -70,6 +71,12 @@ pub async fn sync_one(
                 skipped: true,
                 error: Some("requisition_expired".into()),
             });
+        }
+        // Pre-expiry: fire a nudge when the requisition is within 7 days of
+        // expiring. Still sync normally — this is an advance warning, not a
+        // hard stop. Dedup via last_nudge_at so we don't spam on every tick.
+        if expires - now <= PRE_EXPIRY_WARN_SECS {
+            maybe_nudge_reconnect(conn, &acct, now)?;
         }
     }
 

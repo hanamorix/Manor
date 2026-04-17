@@ -152,15 +152,16 @@ impl GoCardlessClient {
     async fn probe_token(&self, tok: &str) -> Result<bool> {
         // Cheapest authenticated endpoint: GET /institutions/?country=XX
         // returns 400 if the token is valid (invalid country), 401 if not.
+        //
+        // On network / 5xx errors we DO NOT fail the whole sync — the probe
+        // exists only to detect explicit UNAUTHORIZED. If the upstream is
+        // flaky we optimistically say "token probably valid"; the real call
+        // that follows will surface any genuine auth failure.
         let url = format!("{}/api/v2/institutions/?country=XX", self.base);
-        let resp = self
-            .http
-            .get(&url)
-            .bearer_auth(tok)
-            .send()
-            .await
-            .map_err(|e| BankError::UpstreamTransient(e.to_string()))?;
-        Ok(resp.status() != StatusCode::UNAUTHORIZED)
+        match self.http.get(&url).bearer_auth(tok).send().await {
+            Ok(resp) => Ok(resp.status() != StatusCode::UNAUTHORIZED),
+            Err(_) => Ok(true),
+        }
     }
 
     async fn refresh(&self, refresh: &str) -> Result<String> {
@@ -180,16 +181,24 @@ impl GoCardlessClient {
 }
 
 /// Maps GoCardless HTTP errors onto `BankError`.
+///
+/// `AuthFailed` always carries a user-friendly message rather than the
+/// raw GoCardless response body — the body may contain provider-internal
+/// details that have no home on the frontend. We keep the raw body out
+/// of the user-visible error text; logs should capture it separately if
+/// needed (future work).
 pub fn map_http_error(status: StatusCode, body: &str) -> BankError {
     match status {
-        StatusCode::UNAUTHORIZED => BankError::AuthFailed(body.into()),
+        StatusCode::UNAUTHORIZED => BankError::AuthFailed(
+            "GoCardless rejected the credentials — check your Secret ID and Secret Key in Settings → Bank Accounts.".into(),
+        ),
         StatusCode::TOO_MANY_REQUESTS => BankError::RateLimited(300),
         StatusCode::BAD_REQUEST if body.contains("max_historical_days") => {
             BankError::EuaTooLong
         }
         StatusCode::CONFLICT if body.contains("expired") => BankError::RequisitionExpired,
-        s if s.is_server_error() => BankError::UpstreamTransient(format!("{s}: {body}")),
-        other => BankError::Other(format!("{other}: {body}")),
+        s if s.is_server_error() => BankError::UpstreamTransient(format!("{s}")),
+        other => BankError::Other(format!("{other}")),
     }
 }
 

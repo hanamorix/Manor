@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Check, ArrowRight } from "lucide-react";
+import { Check, ArrowRight, RefreshCw } from "lucide-react";
 import * as ipc from "../../lib/ledger/bank-ipc";
 import { Button } from "../../lib/ui";
 
@@ -175,7 +175,33 @@ export function ConnectBankDrawer({ mode, onClose }: Props) {
             >
               {stage.message}
             </pre>
-            <Button variant="secondary" onClick={onClose}>Close</Button>
+            <div style={{ display: "flex", gap: 8, marginTop: 12 }}>
+              <Button
+                variant="primary"
+                icon={RefreshCw}
+                onClick={() => {
+                  setStage({ kind: "loading" });
+                  (async () => {
+                    try {
+                      const hasCreds = await ipc.credentialsStatus();
+                      if (!hasCreds) {
+                        setStage({ kind: "byok" });
+                      } else {
+                        await loadInstitutions("GB");
+                      }
+                    } catch (e: unknown) {
+                      setStage({
+                        kind: "error",
+                        message: e instanceof Error ? e.message : String(e),
+                      });
+                    }
+                  })();
+                }}
+              >
+                Try again
+              </Button>
+              <Button variant="secondary" onClick={onClose}>Close</Button>
+            </div>
           </div>
         )}
       </div>
