@@ -244,7 +244,6 @@ export default function ConversationDrawer({ onSubmit }: ConversationDrawerProps
               border: "1px solid var(--hairline-strong)",
               borderRadius: "var(--radius-md)",
               padding: "8px 10px",
-              outline: "none",
             }}
             onKeyDown={(e) => {
               if (e.key === "Enter" && !e.shiftKey) {

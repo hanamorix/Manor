@@ -52,7 +52,6 @@ export default function SettingsModal() {
           zIndex: 1201,
           display: "flex", flexDirection: "column",
           animation: "settingsIn 200ms ease-out",
-          outline: "none",
         }}
       >
         <header

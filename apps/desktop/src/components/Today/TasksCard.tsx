@@ -106,7 +106,6 @@ export default function TasksCard() {
             borderRadius: 6,
             fontSize: 14,
             fontFamily: "inherit",
-            outline: "none",
             background: "rgba(0,0,0,0.02)",
           }}
         />

@@ -57,7 +57,6 @@ const InputPill = forwardRef<HTMLInputElement, InputPillProps>(
             fontSize: 14,
             fontFamily: "inherit",
             color: "var(--ink)",
-            outline: "none",
             boxShadow: focused ? "var(--shadow-md)" : "var(--shadow-sm)",
             transition: "box-shadow 150ms ease",
           }}

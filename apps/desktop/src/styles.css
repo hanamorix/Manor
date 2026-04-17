@@ -121,3 +121,25 @@ html, body {
     scroll-behavior: auto !important;
   }
 }
+
+/* Focus visible — keyboard-reachable everywhere */
+:focus {
+  outline: none;
+}
+:focus-visible {
+  outline: 2px solid var(--ink);
+  outline-offset: 2px;
+  border-radius: var(--radius-sm);
+}
+button:focus-visible,
+[role="button"]:focus-visible,
+a:focus-visible {
+  outline-offset: 3px;
+}
+input:focus-visible,
+textarea:focus-visible,
+select:focus-visible {
+  outline: 2px solid var(--ink);
+  outline-offset: 0;
+  border-color: var(--ink);
+}
