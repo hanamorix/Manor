@@ -91,18 +91,24 @@ pub fn insert(conn: &Connection, row: InsertBankAccount<'_>) -> Result<BankAccou
     get(conn, conn.last_insert_rowid())
 }
 
+const SELECT_COLS: &str =
+    "id, provider, institution_name, institution_id, institution_logo_url, \
+     account_name, account_type, currency, external_id, requisition_id, reference, \
+     requisition_created_at, requisition_expires_at, max_historical_days_granted, \
+     last_synced_at, last_nudge_at, sync_paused_reason, initial_sync_completed_at, created_at";
+
 pub fn get(conn: &Connection, id: i64) -> Result<BankAccount> {
-    Ok(conn.query_row(
-        "SELECT * FROM bank_account WHERE id = ?1 AND deleted_at IS NULL",
-        [id],
-        BankAccount::from_row,
-    )?)
+    let sql = format!(
+        "SELECT {SELECT_COLS} FROM bank_account WHERE id = ?1 AND deleted_at IS NULL"
+    );
+    Ok(conn.query_row(&sql, [id], BankAccount::from_row)?)
 }
 
 pub fn list(conn: &Connection) -> Result<Vec<BankAccount>> {
-    let mut stmt = conn.prepare(
-        "SELECT * FROM bank_account WHERE deleted_at IS NULL ORDER BY created_at ASC",
-    )?;
+    let sql = format!(
+        "SELECT {SELECT_COLS} FROM bank_account WHERE deleted_at IS NULL ORDER BY created_at ASC"
+    );
+    let mut stmt = conn.prepare(&sql)?;
     let rows = stmt
         .query_map([], BankAccount::from_row)?
         .collect::<rusqlite::Result<Vec<_>>>()?;
@@ -110,11 +116,12 @@ pub fn list(conn: &Connection) -> Result<Vec<BankAccount>> {
 }
 
 pub fn list_active_for_sync(conn: &Connection) -> Result<Vec<BankAccount>> {
-    let mut stmt = conn.prepare(
-        "SELECT * FROM bank_account
-         WHERE deleted_at IS NULL AND sync_paused_reason IS NULL
-         ORDER BY created_at ASC",
-    )?;
+    let sql = format!(
+        "SELECT {SELECT_COLS} FROM bank_account \
+         WHERE deleted_at IS NULL AND sync_paused_reason IS NULL \
+         ORDER BY created_at ASC"
+    );
+    let mut stmt = conn.prepare(&sql)?;
     let rows = stmt
         .query_map([], BankAccount::from_row)?
         .collect::<rusqlite::Result<Vec<_>>>()?;
