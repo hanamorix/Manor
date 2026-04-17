@@ -1,9 +1,9 @@
 import { useEffect, useState } from "react";
-import { LayoutGrid, RefreshCw, Target, ShoppingCart, Inbox, BellOff } from "lucide-react";
+import { LayoutGrid, RefreshCw, Target, ShoppingCart, Inbox, BellOff, Plus } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { useTimeBlocksStore } from "../../lib/timeblocks/state";
 import { listBlocksForWeek, listRecurringBlocks, type TimeBlock, type BlockKind } from "../../lib/timeblocks/ipc";
-import { PageHeader, SectionLabel } from "../../lib/ui";
+import { PageHeader, SectionLabel, Button } from "../../lib/ui";
 import BlockDrawer from "./BlockDrawer";
 
 const pageStyle: React.CSSProperties = {
@@ -13,17 +13,12 @@ const pageStyle: React.CSSProperties = {
 };
 
 const sectionStyle: React.CSSProperties = {
-  background: "var(--paper)",
-  border: "1px solid var(--hairline)",
-  borderRadius: "var(--radius-lg)",
-  boxShadow: "var(--shadow-sm)",
-  padding: "16px 18px",
-  marginBottom: 12,
+  marginBottom: 22,
 };
 
 const dayHeading: React.CSSProperties = {
-  fontSize: 12,
-  fontWeight: 700,
+  fontSize: "var(--text-xs)",
+  fontWeight: 500,
   color: "var(--ink-soft)",
   marginTop: 12,
   marginBottom: 4,
@@ -55,17 +50,6 @@ const rowStyle = (_kind: BlockKind): React.CSSProperties => ({
   fontSize: 13,
 });
 
-const addBtn: React.CSSProperties = {
-  background: "var(--ink)",
-  color: "var(--action-fg)",
-  border: "none",
-  borderRadius: 999,
-  padding: "10px 20px",
-  fontSize: 14,
-  fontWeight: 600,
-  cursor: "pointer",
-  marginTop: 12,
-};
 
 const DAYS = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
 
@@ -162,7 +146,7 @@ export default function TimeBlocksView() {
         )}
       </section>
 
-      <button style={addBtn} onClick={() => setCreating(true)}>+ Add block</button>
+      <Button variant="primary" icon={Plus} onClick={() => setCreating(true)}>Add block</Button>
 
       {creating && <BlockDrawer block={null} onClose={() => setCreating(false)} />}
       {editing && <BlockDrawer block={editing} onClose={() => setEditing(null)} />}

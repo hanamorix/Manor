@@ -1,8 +1,8 @@
 import { useEffect, useState } from "react";
-import { Sparkles } from "lucide-react";
+import { Sparkles, Plus } from "lucide-react";
 import { useChoresStore } from "../../lib/chores/state";
 import { listAllChores, checkChoreFairness, type Chore } from "../../lib/chores/ipc";
-import { PageHeader, SectionLabel } from "../../lib/ui";
+import { PageHeader, SectionLabel, Button } from "../../lib/ui";
 import ChoreDrawer from "./ChoreDrawer";
 
 const pageStyle: React.CSSProperties = {
@@ -12,12 +12,7 @@ const pageStyle: React.CSSProperties = {
 };
 
 const sectionStyle: React.CSSProperties = {
-  background: "var(--paper)",
-  border: "1px solid var(--hairline)",
-  borderRadius: "var(--radius-lg)",
-  boxShadow: "var(--shadow-sm)",
-  padding: "16px 18px",
-  marginBottom: 12,
+  marginBottom: 22,
 };
 
 const rowStyle: React.CSSProperties = {
@@ -30,25 +25,13 @@ const rowStyle: React.CSSProperties = {
 };
 
 const dueBadge = (daysAway: number): React.CSSProperties => ({
-  fontSize: 11,
+  fontSize: "var(--text-xs)",
   padding: "2px 8px",
-  borderRadius: 999,
-  background: daysAway <= 0 ? "rgba(255,59,48,0.1)" : "var(--paper-muted)",
-  color: daysAway <= 0 ? "var(--ink)" : "var(--ink-soft)",
-  fontWeight: 600,
+  borderRadius: "var(--radius-sm)",
+  background: daysAway <= 0 ? "var(--paper-muted)" : "var(--paper-muted)",
+  color: daysAway <= 0 ? "var(--ink-danger)" : "var(--ink-soft)",
+  fontWeight: 500,
 });
-
-const addBtn: React.CSSProperties = {
-  background: "var(--ink)",
-  color: "var(--action-fg)",
-  border: "none",
-  borderRadius: 999,
-  padding: "10px 20px",
-  fontSize: 14,
-  fontWeight: 600,
-  cursor: "pointer",
-  marginTop: 12,
-};
 
 const fairnessBanner: React.CSSProperties = {
   background: "rgba(255,193,92,0.12)",
@@ -145,7 +128,7 @@ export default function ChoresView() {
         )}
       </section>
 
-      <button style={addBtn} onClick={() => setCreating(true)}>+ Add chore</button>
+      <Button variant="primary" icon={Plus} onClick={() => setCreating(true)}>Add chore</Button>
 
       {creating && <ChoreDrawer chore={null} onClose={() => setCreating(false)} />}
       {editing && <ChoreDrawer chore={editing} onClose={() => setEditing(null)} />}
