@@ -1,5 +1,5 @@
 import {
-  Home, LayoutDashboard, Sparkles, LayoutGrid, Wallet, UtensilsCrossed,
+  Home, LayoutDashboard, Sparkles, LayoutGrid, Wallet, Wrench, UtensilsCrossed,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { useNavStore, type View } from "../../lib/nav";
@@ -114,6 +114,7 @@ export default function Sidebar() {
       <NavIcon view="chores" icon={Sparkles} title="Chores" />
       <NavIcon view="timeblocks" icon={LayoutGrid} title="Time Blocks" />
       <NavIcon view="ledger" icon={Wallet} title="Ledger" />
+      <NavIcon view="bones" icon={Wrench} title="Bones" />
       <NavIcon view="hearth" icon={UtensilsCrossed} title="Hearth" />
       <div style={{ flex: 1 }} />
     </nav>

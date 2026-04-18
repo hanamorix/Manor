@@ -1,5 +1,6 @@
 //! Tauri command glue for Manor.
 
+pub mod asset;
 pub mod assistant;
 pub mod embedding;
 pub mod foundation;
@@ -167,6 +168,11 @@ pub fn register(builder: Builder<Wry>) -> Builder<Wry> {
                         }
                         Ok(_) => {}
                         Err(e) => tracing::warn!("recipe: stage_sweep failed: {e}"),
+                    }
+                    match crate::asset::importer::stage_sweep_run_on_startup(&conn, &attachments_dir) {
+                        Ok(n) if n > 0 => tracing::info!("asset stage_sweep: reaped {n} orphans"),
+                        Ok(_) => {}
+                        Err(e) => tracing::warn!("asset stage_sweep failed: {e}"),
                     }
                 });
             }
@@ -347,6 +353,15 @@ pub fn register(builder: Builder<Wry>) -> Builder<Wry> {
             remote::commands::remote_call_log_list,
             remote::commands::remote_call_log_clear,
             remote::commands::remote_test,
+            asset::commands::asset_list,
+            asset::commands::asset_get,
+            asset::commands::asset_create,
+            asset::commands::asset_update,
+            asset::commands::asset_delete,
+            asset::commands::asset_restore,
+            asset::commands::asset_list_documents,
+            asset::commands::asset_attach_hero_from_path,
+            asset::commands::asset_attach_document_from_path,
             recipe::commands::recipe_list,
             recipe::commands::recipe_get,
             recipe::commands::recipe_create,

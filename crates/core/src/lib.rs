@@ -1,6 +1,7 @@
 //! Manor core library.
 
 pub mod assistant;
+pub mod asset;
 pub mod attachment;
 pub mod embedding;
 pub mod household;
