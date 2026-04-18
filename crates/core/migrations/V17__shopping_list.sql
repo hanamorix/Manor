@@ -8,7 +8,7 @@ CREATE TABLE shopping_list_item (
     note            TEXT,
     recipe_id       TEXT REFERENCES recipe(id),
     recipe_title    TEXT,
-    source          TEXT NOT NULL,
+    source          TEXT NOT NULL CHECK (source IN ('generated', 'manual')),
     position        INTEGER NOT NULL,
     ticked          INTEGER NOT NULL DEFAULT 0,
     created_at      INTEGER NOT NULL,
