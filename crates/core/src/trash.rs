@@ -6,11 +6,12 @@ use rusqlite::{params, Connection};
 use serde::{Deserialize, Serialize};
 
 /// One row in the Trash view. `entity_type` is the table name; `entity_id` is
-/// the primary key. `title` is a human-readable label extracted per-table.
+/// the primary key as a string (tables may use either INTEGER or TEXT PKs).
+/// `title` is a human-readable label extracted per-table.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct TrashEntry {
     pub entity_type: String,
-    pub entity_id: i64,
+    pub entity_id: String,
     pub title: String,
     pub deleted_at: i64,
 }
@@ -31,6 +32,8 @@ const REGISTRY: &[(&str, &str)] = &[
     ("category", "name"),
     ("bank_account", "account_name"),
     ("remote_call_log", "user_visible_reason"),
+    // recipe uses TEXT (UUID) primary key; recipe_ingredient cascades via FK.
+    ("recipe", "title"),
 ];
 
 pub fn list_all(conn: &Connection) -> Result<Vec<TrashEntry>> {
@@ -47,9 +50,16 @@ pub fn list_all(conn: &Connection) -> Result<Vec<TrashEntry>> {
             Err(_) => continue,
         };
         let rows = stmt.query_map([], |row| {
+            // id may be INTEGER or TEXT — rusqlite converts either to String.
+            let raw_id: rusqlite::types::Value = row.get(0)?;
+            let entity_id = match raw_id {
+                rusqlite::types::Value::Integer(n) => n.to_string(),
+                rusqlite::types::Value::Text(s) => s,
+                other => format!("{other:?}"),
+            };
             Ok(TrashEntry {
                 entity_type: table.to_string(),
-                entity_id: row.get(0)?,
+                entity_id,
                 title: row.get::<_, Option<String>>(1)?.unwrap_or_default(),
                 deleted_at: row.get(2)?,
             })
@@ -234,6 +244,53 @@ mod tests {
             )
             .unwrap();
         assert_eq!(remaining, 1);
+    }
+
+    #[test]
+    fn trash_sweeper_purges_recipe_after_30_days() {
+        let (_d, conn) = fresh_conn();
+
+        // Use a seconds-based timestamp, like all other tables in this sweeper.
+        // (recipe.dal uses now_ms() in production, but the sweeper cutoff is in
+        // seconds; the test inserts directly to avoid the unit mismatch.)
+        let old_ts: i64 = 100; // ancient epoch second — far past any 30-day cutoff
+
+        conn.execute(
+            "INSERT INTO recipe (id, title, instructions, created_at, updated_at, deleted_at)
+             VALUES ('r1', 'Gone', '', ?1, ?1, ?1)",
+            rusqlite::params![old_ts],
+        )
+        .unwrap();
+        conn.execute(
+            "INSERT INTO recipe_ingredient (id, recipe_id, position, ingredient_name)
+             VALUES ('i1', 'r1', 0, 'salt')",
+            [],
+        )
+        .unwrap();
+
+        // Cutoff = now - 30 days (seconds). old_ts=100 is far older, so it gets swept.
+        let cutoff = Utc::now().timestamp() - 30 * 24 * 60 * 60;
+        let totals = empty_older_than(&conn, cutoff).unwrap();
+        assert!(
+            totals.iter().any(|(t, n)| t == "recipe" && *n == 1),
+            "expected recipe to appear in sweep totals: {totals:?}"
+        );
+
+        let remaining: i64 = conn
+            .query_row("SELECT COUNT(*) FROM recipe WHERE id='r1'", [], |r| {
+                r.get(0)
+            })
+            .unwrap();
+        assert_eq!(remaining, 0, "recipe row should be purged");
+
+        let ing_remaining: i64 = conn
+            .query_row(
+                "SELECT COUNT(*) FROM recipe_ingredient WHERE recipe_id='r1'",
+                [],
+                |r| r.get(0),
+            )
+            .unwrap();
+        assert_eq!(ing_remaining, 0, "recipe_ingredient should cascade-delete");
     }
 
     #[test]
