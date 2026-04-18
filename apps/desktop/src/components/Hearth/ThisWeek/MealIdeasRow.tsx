@@ -129,6 +129,7 @@ export function MealIdeasRow() {
         <div style={{ marginTop: 8, fontSize: 12, color: "var(--ink-soft, #999)" }}>
           <span>Not feeling it? </span>
           <button type="button" onClick={() => void loadLlm()}
+            disabled={loadStatus.kind === "loading"}
             style={{ background: "transparent", border: "none", cursor: "pointer",
                      color: "var(--ink-soft, #999)", textDecoration: "underline" }}>
             Try something new →
@@ -139,6 +140,7 @@ export function MealIdeasRow() {
       {!collapsed && mode === "llm" && (
         <div style={{ marginTop: 8, fontSize: 12, color: "var(--ink-soft, #999)" }}>
           <button type="button" onClick={backToLibrary}
+            disabled={loadStatus.kind === "loading"}
             style={{ background: "transparent", border: "none", cursor: "pointer",
                      color: "var(--ink-soft, #999)", textDecoration: "underline" }}>
             ← Back to library
