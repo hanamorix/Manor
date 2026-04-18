@@ -103,7 +103,7 @@ export default function TimeBlocksCard() {
   const setPatternSuggestion = useTimeBlocksStore((s) => s.setPatternSuggestion);
 
   const { tonight, loadTonight } = useMealPlanStore();
-  const { openRecipeDetail } = useHearthViewStore();
+  const { openRecipeDetail, setSubview } = useHearthViewStore();
   const [dinnerTime, setDinnerTime] = useState<string | null>(null);
 
   useEffect(() => { void loadTonight(); }, [loadTonight]);
@@ -183,7 +183,13 @@ export default function TimeBlocksCard() {
           <div
             key="__meal_today__"
             style={{ ...pillStyle, cursor: "pointer" }}
-            onClick={() => openRecipeDetail(mealRecipe.id)}
+            onClick={() => {
+              if (mealRecipe.deleted_at != null) {
+                setSubview("this_week");
+              } else {
+                openRecipeDetail(mealRecipe.id);
+              }
+            }}
             role="button"
             aria-label={`Tonight: ${mealRecipe.title}`}
           >

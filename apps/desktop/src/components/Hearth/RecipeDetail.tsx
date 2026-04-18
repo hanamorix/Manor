@@ -12,12 +12,15 @@ interface Props {
 
 export function RecipeDetail({ id, onBack }: Props) {
   const [recipe, setRecipe] = useState<Recipe | null>(null);
+  const [loaded, setLoaded] = useState(false);
   const [heroUrl, setHeroUrl] = useState<string | null>(null);
   const [editing, setEditing] = useState(false);
 
   const reload = useCallback(() => {
+    setLoaded(false);
     void ipc.get(id).then((r) => {
       setRecipe(r);
+      setLoaded(true);
       setHeroUrl(null); // reset while loading new hero
       if (r?.hero_attachment_uuid) {
         void ipc.attachmentSrc(r.hero_attachment_uuid).then(setHeroUrl).catch(() => {});
@@ -27,8 +30,23 @@ export function RecipeDetail({ id, onBack }: Props) {
 
   useEffect(() => { reload(); }, [reload]);
 
-  if (!recipe) {
+  if (!loaded) {
     return <div style={{ padding: 32 }}>Loading…</div>;
+  }
+
+  if (!recipe) {
+    return (
+      <div style={{ padding: 32, maxWidth: 720, margin: "0 auto" }}>
+        <button type="button" onClick={onBack}
+          style={{ display: "flex", alignItems: "center", gap: 4 }}>
+          <ArrowLeft size={14} strokeWidth={1.8} /> Back
+        </button>
+        <h1 style={{ fontSize: 24, fontWeight: 600, marginTop: 16 }}>Recipe not found</h1>
+        <p style={{ color: "var(--ink-soft, #999)" }}>
+          It may have been moved to Trash. You can restore it from the Trash view.
+        </p>
+      </div>
+    );
   }
 
   const meta = [
