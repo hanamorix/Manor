@@ -29,10 +29,7 @@ pub fn regenerate_from_week(conn: &Connection, week_start: &str) -> Result<Gener
             continue;
         }
         for ing in &recipe.ingredients {
-            let matched = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
-                crate::meal_plan::matcher::staple_matches(&ing.ingredient_name, &staples)
-            })).unwrap_or(false);
-            if matched {
+            if crate::meal_plan::matcher::staple_matches(&ing.ingredient_name, &staples) {
                 report.items_skipped_staple += 1;
                 continue;
             }
