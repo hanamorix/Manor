@@ -1,5 +1,6 @@
 //! Tauri command glue for Manor.
 
+pub mod asset;
 pub mod assistant;
 pub mod embedding;
 pub mod foundation;
@@ -347,6 +348,13 @@ pub fn register(builder: Builder<Wry>) -> Builder<Wry> {
             remote::commands::remote_call_log_list,
             remote::commands::remote_call_log_clear,
             remote::commands::remote_test,
+            asset::commands::asset_list,
+            asset::commands::asset_get,
+            asset::commands::asset_create,
+            asset::commands::asset_update,
+            asset::commands::asset_delete,
+            asset::commands::asset_restore,
+            asset::commands::asset_list_documents,
             recipe::commands::recipe_list,
             recipe::commands::recipe_get,
             recipe::commands::recipe_create,
