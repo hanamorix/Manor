@@ -69,7 +69,8 @@ pub fn wipe_generated(conn: &Connection) -> Result<()> {
     Ok(())
 }
 
-pub fn counts(conn: &Connection) -> Result<(usize, usize)> {
+#[allow(dead_code)]
+pub(crate) fn counts(conn: &Connection) -> Result<(usize, usize)> {
     let total: i64 = conn.query_row(
         "SELECT COUNT(*) FROM shopping_list_item", [], |r| r.get(0),
     )?;
