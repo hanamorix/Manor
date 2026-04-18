@@ -33,6 +33,7 @@ tiny_http.workspace = true
 urlencoding.workspace = true
 uuid.workspace = true
 scraper = "0.20"
+rand = "0.8"
 
 [dev-dependencies]
 wiremock.workspace = true

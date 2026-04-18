@@ -229,11 +229,32 @@ pub async fn extract_via_llm(
 }
 
 fn extract_json_block<T: for<'de> Deserialize<'de>>(s: &str) -> Result<T, serde_json::Error> {
-    // Find first { and last } to be forgiving if the model prepends/appends prose.
-    let start = s.find('{').unwrap_or(0);
-    let end = s.rfind('}').map(|i| i + 1).unwrap_or(s.len());
+    // Support both object ({…}) and array ([…]) roots — pick whichever opener comes first.
+    let obj_start = s.find('{');
+    let arr_start = s.find('[');
+    let (start, end) = match (obj_start, arr_start) {
+        (Some(o), Some(a)) if a < o => {
+            let e = s.rfind(']').map(|i| i + 1).unwrap_or(s.len());
+            (a, e)
+        }
+        (Some(o), _) => {
+            let e = s.rfind('}').map(|i| i + 1).unwrap_or(s.len());
+            (o, e)
+        }
+        (None, Some(a)) => {
+            let e = s.rfind(']').map(|i| i + 1).unwrap_or(s.len());
+            (a, e)
+        }
+        (None, None) => (0, s.len()),
+    };
     let slice = &s[start..end];
     serde_json::from_str::<T>(slice)
+}
+
+/// Public wrapper over the internal JSON-block parser.
+/// Exposed so manor-app can reuse the same forgiving parse for its own LLM calls.
+pub fn extract_json_block_public<T: for<'de> serde::Deserialize<'de>>(s: &str) -> Result<T, serde_json::Error> {
+    extract_json_block(s)
 }
 
 #[cfg(test)]
