@@ -20,12 +20,17 @@ export function MealIdeasRow() {
   const [expandingIdx, setExpandingIdx] = useState<number | null>(null);
   const [previewDrawer, setPreviewDrawer] = useState<ImportPreview | null>(null);
   const [toast, setToast] = useState<string | null>(null);
+  const [forceShow, setForceShow] = useState(false);
 
   useEffect(() => { void loadLibrary(); }, [loadLibrary]);
 
-  const emptyLibrary = mode === "library" && loadStatus.kind === "idle" && library.length === 0;
+  const allFilled = entries.length === 7 && entries.every((e) => e.recipe !== null);
+  const collapsed = allFilled && !forceShow;
+
+  const emptyLibrary = !collapsed && mode === "library" && loadStatus.kind === "idle" && library.length === 0;
 
   const onReshuffle = () => {
+    setForceShow(true);
     if (mode === "library") void loadLibrary();
     else void loadLlm();
   };
@@ -52,6 +57,9 @@ export function MealIdeasRow() {
       }}>
         <div style={{ fontSize: 14, fontWeight: 600 }}>
           Meal ideas{mode === "llm" ? " — AI" : ""}
+          {allFilled && <span style={{ color: "var(--ink-soft, #999)", fontWeight: 500 }}>
+            {" · Week is fully planned"}
+          </span>}
         </div>
         <button
           type="button"
@@ -64,27 +72,27 @@ export function MealIdeasRow() {
         </button>
       </div>
 
-      {loadStatus.kind === "loading" && (
+      {!collapsed && loadStatus.kind === "loading" && (
         <div style={{ color: "var(--ink-soft, #999)", fontSize: 13, padding: 12 }}>
           Loading…
         </div>
       )}
 
-      {loadStatus.kind === "error" && (
+      {!collapsed && loadStatus.kind === "error" && (
         <div style={{ color: "var(--ink-danger, #b00020)", fontSize: 13, padding: 12 }}>
           {loadStatus.message}{" "}
           <button type="button" onClick={onReshuffle}>Retry</button>
         </div>
       )}
 
-      {emptyLibrary && (
+      {!collapsed && emptyLibrary && (
         <div style={{ color: "var(--ink-soft, #999)", fontSize: 13, padding: 12 }}>
           Add some recipes to your library and suggestions will appear here.{" "}
           <button type="button" onClick={() => setSubview("recipes")}>→ Go to Recipes</button>
         </div>
       )}
 
-      {mode === "library" && loadStatus.kind === "idle" && library.length > 0 && (
+      {!collapsed && mode === "library" && loadStatus.kind === "idle" && library.length > 0 && (
         <div style={{
           display: "grid",
           gridTemplateColumns: "repeat(3, 1fr)",
@@ -100,7 +108,7 @@ export function MealIdeasRow() {
         </div>
       )}
 
-      {mode === "llm" && loadStatus.kind === "idle" && llm.length > 0 && (
+      {!collapsed && mode === "llm" && loadStatus.kind === "idle" && llm.length > 0 && (
         <div style={{
           display: "grid",
           gridTemplateColumns: "repeat(3, 1fr)",
@@ -117,7 +125,7 @@ export function MealIdeasRow() {
         </div>
       )}
 
-      {mode === "library" && (
+      {!collapsed && mode === "library" && (
         <div style={{ marginTop: 8, fontSize: 12, color: "var(--ink-soft, #999)" }}>
           <span>Not feeling it? </span>
           <button type="button" onClick={() => void loadLlm()}
@@ -128,7 +136,7 @@ export function MealIdeasRow() {
         </div>
       )}
 
-      {mode === "llm" && (
+      {!collapsed && mode === "llm" && (
         <div style={{ marginTop: 8, fontSize: 12, color: "var(--ink-soft, #999)" }}>
           <button type="button" onClick={backToLibrary}
             style={{ background: "transparent", border: "none", cursor: "pointer",

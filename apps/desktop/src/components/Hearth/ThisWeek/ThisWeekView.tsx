@@ -6,6 +6,7 @@ import * as recipeIpc from "../../../lib/recipe/recipe-ipc";
 import { DaySlotCard } from "./DaySlotCard";
 import { WeekNav } from "./WeekNav";
 import { RecipePickerDrawer } from "./RecipePickerDrawer";
+import { MealIdeasRow } from "./MealIdeasRow";
 
 const DAY_LABELS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
 
@@ -53,6 +54,7 @@ export function ThisWeekView() {
           setWeekStart(localIso(date));
         }}
       />
+      <MealIdeasRow />
       {loadStatus.kind === "loading" && <p style={{ color: "var(--ink-soft, #999)" }}>Loading…</p>}
       {loadStatus.kind === "error" && <p style={{ color: "var(--ink-danger, #b00020)" }}>{loadStatus.message}</p>}
       <div style={{
