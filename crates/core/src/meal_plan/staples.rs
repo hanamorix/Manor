@@ -103,6 +103,16 @@ pub fn restore_staple(conn: &Connection, id: &str) -> Result<()> {
     Ok(())
 }
 
+/// Hard-delete a staple. Intended for trash-permanent-delete.
+/// Only removes rows that are already soft-deleted.
+pub fn permanent_delete_staple(conn: &Connection, id: &str) -> Result<()> {
+    conn.execute(
+        "DELETE FROM staple_item WHERE id = ?1 AND deleted_at IS NOT NULL",
+        params![id],
+    )?;
+    Ok(())
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -179,6 +189,19 @@ mod tests {
         assert!(list_staples(&conn).unwrap().is_empty());
         restore_staple(&conn, &id).unwrap();
         assert_eq!(list_staples(&conn).unwrap().len(), 1);
+    }
+
+    #[test]
+    fn permanent_delete_only_removes_trashed() {
+        let (_d, conn) = fresh();
+        let id = insert_staple(&conn, &StapleDraft { name: "salt".into(), aliases: vec![] }).unwrap();
+        // active rows are not removable via permanent_delete
+        permanent_delete_staple(&conn, &id).unwrap();
+        assert!(get_staple(&conn, &id).unwrap().is_some());
+        // trashed rows get hard-deleted
+        soft_delete_staple(&conn, &id).unwrap();
+        permanent_delete_staple(&conn, &id).unwrap();
+        assert!(get_staple(&conn, &id).unwrap().is_none());
     }
 
     #[test]

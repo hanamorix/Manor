@@ -25,6 +25,8 @@ pub fn trash_restore(
     match entity_type.as_str() {
         "recipe" => manor_core::recipe::dal::restore_recipe(&conn, &entity_id)
             .map_err(|e| e.to_string()),
+        "staple_item" => manor_core::meal_plan::staples::restore_staple(&conn, &entity_id)
+            .map_err(|e| e.to_string()),
         _ => Err(format!(
             "trash_restore: unknown TEXT-keyed entity type '{entity_type}'"
         )),
@@ -63,6 +65,8 @@ pub fn trash_permanent_delete(
     let conn = state.0.lock().map_err(|e| e.to_string())?;
     match entity_type.as_str() {
         "recipe" => manor_core::recipe::dal::permanent_delete_recipe(&conn, &entity_id)
+            .map_err(|e| e.to_string()),
+        "staple_item" => manor_core::meal_plan::staples::permanent_delete_staple(&conn, &entity_id)
             .map_err(|e| e.to_string()),
         _ => Err(format!(
             "trash_permanent_delete: unknown TEXT-keyed entity type '{entity_type}'"
