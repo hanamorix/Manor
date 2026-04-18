@@ -9,17 +9,24 @@ import { RecipePickerDrawer } from "./RecipePickerDrawer";
 
 const DAY_LABELS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
 
+function localIso(d: Date): string {
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  return `${y}-${m}-${day}`;
+}
+
 function stepWeek(dateStr: string, days: number): string {
   const d = new Date(dateStr + "T00:00:00");
   d.setDate(d.getDate() + days);
-  return d.toISOString().slice(0, 10);
+  return localIso(d);
 }
 
 function mondayOfToday(): string {
   const d = new Date();
   const day = (d.getDay() + 6) % 7;
   d.setDate(d.getDate() - day);
-  return d.toISOString().slice(0, 10);
+  return localIso(d);
 }
 
 export function ThisWeekView() {
@@ -30,7 +37,7 @@ export function ThisWeekView() {
 
   useEffect(() => { void loadWeek(); }, [weekStart, loadWeek]);
 
-  const todayIso = new Date().toISOString().slice(0, 10);
+  const todayIso = localIso(new Date());
 
   return (
     <div>
@@ -43,7 +50,7 @@ export function ThisWeekView() {
           const date = new Date(d + "T00:00:00");
           const offset = (date.getDay() + 6) % 7;
           date.setDate(date.getDate() - offset);
-          setWeekStart(date.toISOString().slice(0, 10));
+          setWeekStart(localIso(date));
         }}
       />
       {loadStatus.kind === "loading" && <p style={{ color: "var(--ink-soft, #999)" }}>Loading…</p>}
