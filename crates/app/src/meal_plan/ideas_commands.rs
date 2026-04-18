@@ -5,7 +5,7 @@ use crate::assistant::ollama::{OllamaClient, DEFAULT_ENDPOINT, DEFAULT_MODEL};
 use crate::recipe::llm_adapter::OllamaLlmAdapter;
 use crate::recipe::importer::ImportPreview;
 use manor_core::meal_plan::ideas::library_ranked;
-use manor_core::recipe::import::{extract_json_block_public, ImportedRecipe, LlmClient};
+use manor_core::recipe::import::{extract_json_array_block_public, extract_json_block_public, ImportedRecipe, LlmClient};
 use manor_core::recipe::{ImportMethod, Recipe, RecipeDraft};
 use rand::seq::SliceRandom;
 use serde::{Deserialize, Serialize};
@@ -40,7 +40,7 @@ pub async fn meal_ideas_llm_titles() -> Result<Vec<IdeaTitle>, String> {
 async fn run_titles(client: &dyn LlmClient) -> Result<Vec<IdeaTitle>, String> {
     let first = client.complete(TITLES_PROMPT).await
         .map_err(|_| "AI unavailable — try again later or check Settings → AI.".to_string())?;
-    let parsed: Result<Vec<IdeaTitle>, _> = extract_json_block_public::<Vec<IdeaTitle>>(&first);
+    let parsed: Result<Vec<IdeaTitle>, _> = extract_json_array_block_public::<Vec<IdeaTitle>>(&first);
 
     let titles = match parsed {
         Ok(t) => t,
@@ -48,7 +48,7 @@ async fn run_titles(client: &dyn LlmClient) -> Result<Vec<IdeaTitle>, String> {
             let retry = format!("{}\n\n(Previous response was not valid JSON. Output ONLY JSON.)", TITLES_PROMPT);
             let second = client.complete(&retry).await
                 .map_err(|_| "AI unavailable — try again later or check Settings → AI.".to_string())?;
-            extract_json_block_public::<Vec<IdeaTitle>>(&second)
+            extract_json_array_block_public::<Vec<IdeaTitle>>(&second)
                 .map_err(|_| "AI returned invalid response — try again.".to_string())?
         }
     };

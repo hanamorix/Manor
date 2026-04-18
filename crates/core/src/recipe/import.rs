@@ -228,33 +228,34 @@ pub async fn extract_via_llm(
     })
 }
 
+/// Parse a JSON object from a string, tolerating prose before/after.
+/// Finds the first `{` and the last `}`, parses the slice between them.
 fn extract_json_block<T: for<'de> Deserialize<'de>>(s: &str) -> Result<T, serde_json::Error> {
-    // Support both object ({…}) and array ([…]) roots — pick whichever opener comes first.
-    let obj_start = s.find('{');
-    let arr_start = s.find('[');
-    let (start, end) = match (obj_start, arr_start) {
-        (Some(o), Some(a)) if a < o => {
-            let e = s.rfind(']').map(|i| i + 1).unwrap_or(s.len());
-            (a, e)
-        }
-        (Some(o), _) => {
-            let e = s.rfind('}').map(|i| i + 1).unwrap_or(s.len());
-            (o, e)
-        }
-        (None, Some(a)) => {
-            let e = s.rfind(']').map(|i| i + 1).unwrap_or(s.len());
-            (a, e)
-        }
-        (None, None) => (0, s.len()),
-    };
+    let start = s.find('{').unwrap_or(0);
+    let end = s.rfind('}').map(|i| i + 1).unwrap_or(s.len());
     let slice = &s[start..end];
     serde_json::from_str::<T>(slice)
 }
 
-/// Public wrapper over the internal JSON-block parser.
-/// Exposed so manor-app can reuse the same forgiving parse for its own LLM calls.
+/// Parse a JSON array from a string, tolerating prose before/after.
+/// Finds the first `[` and the last `]`, parses the slice between them.
+fn extract_json_array_block<T: for<'de> Deserialize<'de>>(s: &str) -> Result<T, serde_json::Error> {
+    let start = s.find('[').unwrap_or(0);
+    let end = s.rfind(']').map(|i| i + 1).unwrap_or(s.len());
+    let slice = &s[start..end];
+    serde_json::from_str::<T>(slice)
+}
+
+/// Public wrapper over the object-root parser. Used by manor-app's LLM flows
+/// that expect a JSON object response.
 pub fn extract_json_block_public<T: for<'de> serde::Deserialize<'de>>(s: &str) -> Result<T, serde_json::Error> {
     extract_json_block(s)
+}
+
+/// Public wrapper over the array-root parser. Used by manor-app's LLM flows
+/// that expect a JSON array response (e.g., meal-idea titles).
+pub fn extract_json_array_block_public<T: for<'de> serde::Deserialize<'de>>(s: &str) -> Result<T, serde_json::Error> {
+    extract_json_array_block(s)
 }
 
 #[cfg(test)]
@@ -322,6 +323,16 @@ mod tests {
     fn returns_none_without_jsonld() {
         let html = include_str!("../../tests/fixtures/recipe/ottolenghi.html");
         assert!(parse_jsonld(html).is_none());
+    }
+
+    #[test]
+    fn extract_object_tolerates_bracket_prose_before_object() {
+        // Regression guard: previously a [..] appearing before {..} in prose
+        // caused the parser to slice from the [ instead of the {.
+        let noisy = r#"Note: [optional] fields may be null.
+{"title":"Miso","servings":2,"prep_time_mins":null,"cook_time_mins":null,"instructions":"1. Cook.","ingredients":[]}"#;
+        let parsed: LlmRecipe = super::extract_json_block(noisy).expect("parses object despite leading [prose]");
+        assert_eq!(parsed.title, "Miso");
     }
 }
 
