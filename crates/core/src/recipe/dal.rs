@@ -204,6 +204,58 @@ pub fn set_hero_attachment(conn: &Connection, recipe_id: &str, attachment_uuid: 
     Ok(())
 }
 
+/// Like `get_recipe` but returns the row even when `deleted_at IS NOT NULL`.
+/// Used by the meal plan view to surface ghost recipes.
+pub fn get_recipe_including_trashed(conn: &Connection, id: &str) -> Result<Option<Recipe>> {
+    let mut stmt = conn.prepare(
+        "SELECT id, title, servings, prep_time_mins, cook_time_mins, instructions,
+                source_url, source_host, import_method, created_at, updated_at, deleted_at,
+                hero_attachment_uuid
+         FROM recipe WHERE id = ?1",
+    )?;
+    let recipe = stmt
+        .query_row(params![id], |row| {
+            let import_method_str: Option<String> = row.get(8)?;
+            Ok(Recipe {
+                id: row.get(0)?,
+                title: row.get(1)?,
+                servings: row.get(2)?,
+                prep_time_mins: row.get(3)?,
+                cook_time_mins: row.get(4)?,
+                instructions: row.get(5)?,
+                source_url: row.get(6)?,
+                source_host: row.get(7)?,
+                import_method: ImportMethod::from_db(import_method_str.as_deref()),
+                created_at: row.get(9)?,
+                updated_at: row.get(10)?,
+                deleted_at: row.get(11)?,
+                hero_attachment_uuid: row.get(12)?,
+                ingredients: Vec::new(),
+            })
+        })
+        .optional()?;
+
+    let Some(mut recipe) = recipe else {
+        return Ok(None);
+    };
+
+    let mut s2 = conn.prepare(
+        "SELECT quantity_text, ingredient_name, note
+         FROM recipe_ingredient WHERE recipe_id = ?1 ORDER BY position ASC",
+    )?;
+    let rows = s2.query_map(params![id], |r| {
+        Ok(IngredientLine {
+            quantity_text: r.get(0)?,
+            ingredient_name: r.get(1)?,
+            note: r.get(2)?,
+        })
+    })?;
+    for row in rows {
+        recipe.ingredients.push(row?);
+    }
+    Ok(Some(recipe))
+}
+
 pub fn soft_delete_recipe(conn: &Connection, id: &str) -> Result<()> {
     conn.execute(
         "UPDATE recipe SET deleted_at=?1 WHERE id=?2",
@@ -354,6 +406,20 @@ mod tests {
             |r| r.get(0),
         ).unwrap();
         assert_eq!(ing_count, 0);
+    }
+
+    #[test]
+    fn get_recipe_including_trashed_surfaces_soft_deleted() {
+        let (_dir, conn) = fresh_db();
+        let id = insert_recipe(&conn, &simple_draft("Ghost")).unwrap();
+        soft_delete_recipe(&conn, &id).unwrap();
+
+        assert!(get_recipe(&conn, &id).unwrap().is_none(),
+                "get_recipe hides soft-deleted (existing L3a behaviour)");
+
+        let ghost = get_recipe_including_trashed(&conn, &id).unwrap().unwrap();
+        assert_eq!(ghost.title, "Ghost");
+        assert!(ghost.deleted_at.is_some());
     }
 
     fn simple_draft(title: &str) -> RecipeDraft {
