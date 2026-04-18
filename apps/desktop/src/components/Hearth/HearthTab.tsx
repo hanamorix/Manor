@@ -10,8 +10,18 @@ export function HearthTab() {
   const { recipes, search, setSearch, loadStatus, load } = useRecipeStore();
   const [detailId, setDetailId] = useState<string | null>(null);
   const [drawer, setDrawer] = useState<null | "new" | "import">(null);
+  // Local search input tracks keystrokes; store update (and IPC load) is
+  // debounced at 200ms so we don't fire one round-trip per keystroke (spec §6.2).
+  const [searchInput, setSearchInput] = useState(search);
 
   useEffect(() => { void load(); }, [load]);
+
+  useEffect(() => {
+    const handle = setTimeout(() => {
+      if (searchInput !== search) setSearch(searchInput);
+    }, 200);
+    return () => clearTimeout(handle);
+  }, [searchInput, search, setSearch]);
 
   if (detailId) {
     return (
@@ -78,8 +88,8 @@ export function HearthTab() {
       {/* Search */}
       <input
         placeholder="Search recipes"
-        value={search}
-        onChange={(e) => setSearch(e.target.value)}
+        value={searchInput}
+        onChange={(e) => setSearchInput(e.target.value)}
         style={{
           width: "100%",
           marginBottom: 16,
