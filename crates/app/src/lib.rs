@@ -333,6 +333,8 @@ pub fn register(builder: Builder<Wry>) -> Builder<Wry> {
             recipe::commands::recipe_update,
             recipe::commands::recipe_delete,
             recipe::commands::recipe_restore,
+            recipe::commands::recipe_import_preview,
+            recipe::commands::recipe_import_commit,
         ])
 }
 
