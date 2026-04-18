@@ -85,10 +85,13 @@ pub async fn asset_attach_hero_from_path(
     let src = std::path::PathBuf::from(source_path);
     let conn = state.0.lock().map_err(|e| e.to_string())?;
 
-    let uuid = crate::asset::importer::attach_file(&conn, &dir, &src, &id)
+    let tx = conn.unchecked_transaction().map_err(|e| e.to_string())?;
+    let uuid = crate::asset::importer::attach_file(&tx, &dir, &src, &id)
         .map_err(|e| e.to_string())?;
-    manor_core::asset::dal::set_hero_attachment(&conn, &id, Some(&uuid))
+    manor_core::asset::dal::set_hero_attachment(&tx, &id, Some(&uuid))
         .map_err(|e| e.to_string())?;
+    tx.commit().map_err(|e| e.to_string())?;
+
     Ok(uuid)
 }
 
