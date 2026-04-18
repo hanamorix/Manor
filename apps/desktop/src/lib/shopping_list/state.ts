@@ -35,15 +35,21 @@ export const useShoppingListStore = create<ShoppingListStore>((set, get) => ({
   },
 
   async toggle(id) {
-    // Optimistic: flip locally, revert on error.
+    // Optimistic: flip locally + re-sort to match backend ORDER BY ticked ASC, position ASC.
+    // Revert on error — no reload needed when IPC succeeds.
     const before = get().items;
-    set({
-      items: before.map((i) => i.id === id ? { ...i, ticked: !i.ticked } : i),
-    });
+    const optimistic = before
+      .map((i) => i.id === id ? { ...i, ticked: !i.ticked } : i)
+      .sort((a, b) => {
+        if (a.ticked !== b.ticked) return a.ticked ? 1 : -1;
+        return a.position - b.position;
+      });
+    set({ items: optimistic });
     try {
       await ipc.toggle(id);
-      await get().load();
+      // Local state already matches the backend — no reload needed.
     } catch (e: unknown) {
+      // Revert on failure.
       set({ items: before });
       throw e;
     }
