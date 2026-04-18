@@ -1,7 +1,7 @@
 import { useSettingsStore } from "../../lib/settings/state";
 
 type Tab = {
-  id: "data" | "ai" | "calendars" | "household" | "about";
+  id: "data" | "ai" | "calendars" | "household" | "hearth" | "about";
   label: string;
 };
 
@@ -10,6 +10,7 @@ const TABS: Tab[] = [
   { id: "ai",        label: "AI" },
   { id: "calendars", label: "Calendars" },
   { id: "household", label: "Household" },
+  { id: "hearth",    label: "Hearth" },
   { id: "about",     label: "About" },
 ];
 

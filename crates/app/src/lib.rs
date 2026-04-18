@@ -4,6 +4,7 @@ pub mod assistant;
 pub mod embedding;
 pub mod foundation;
 pub mod ledger;
+pub mod meal_plan;
 pub mod recipe;
 pub mod remote;
 pub mod rhythm;
@@ -353,6 +354,15 @@ pub fn register(builder: Builder<Wry>) -> Builder<Wry> {
             recipe::commands::recipe_restore,
             recipe::commands::recipe_import_preview,
             recipe::commands::recipe_import_commit,
+            meal_plan::commands::meal_plan_week_get,
+            meal_plan::commands::meal_plan_today_get,
+            meal_plan::commands::meal_plan_set_entry,
+            meal_plan::commands::meal_plan_clear_entry,
+            meal_plan::commands::staple_list,
+            meal_plan::commands::staple_create,
+            meal_plan::commands::staple_update,
+            meal_plan::commands::staple_delete,
+            meal_plan::commands::staple_restore,
         ])
 }
 

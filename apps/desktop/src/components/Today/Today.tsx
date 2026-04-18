@@ -16,6 +16,7 @@ import ProposalBanner from "./ProposalBanner";
 import RenewalAlertsCard from "./RenewalAlertsCard";
 import SampleDataBanner from "./SampleDataBanner";
 import Toast from "./Toast";
+import { TonightBand } from "./TonightBand";
 
 export default function Today() {
   const setTasks = useTodayStore((s) => s.setTasks);
@@ -62,6 +63,7 @@ export default function Today() {
             </>
           }
         />
+        <TonightBand />
         <EventsCard />
         <TimeBlocksCard />
         <ChoresCard />

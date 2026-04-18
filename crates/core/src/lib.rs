@@ -5,6 +5,7 @@ pub mod attachment;
 pub mod embedding;
 pub mod household;
 pub mod ledger;
+pub mod meal_plan;
 pub mod note;
 pub mod person;
 pub mod recipe;
