@@ -7,6 +7,7 @@ import ChoresView from "./components/Chores/ChoresView";
 import TimeBlocksView from "./components/TimeBlocks/TimeBlocksView";
 import LedgerView from "./components/Ledger/LedgerView";
 import { HearthTab } from "./components/Hearth/HearthTab";
+import { BonesTab } from "./components/Bones/BonesTab";
 import Wizard from "./components/Wizard/Wizard";
 import { useSettingsStore } from "./lib/settings/state";
 import { useNavStore } from "./lib/nav";
@@ -72,6 +73,7 @@ export default function App() {
           {view === "chores" && <ChoresView />}
           {view === "timeblocks" && <TimeBlocksView />}
           {view === "ledger" && <LedgerView />}
+          {view === "bones" && <BonesTab />}
           {view === "hearth" && <HearthTab />}
         </div>
       </div>
