@@ -25,7 +25,7 @@ export function AssetDetail({ id, onBack }: Props) {
     void ipc.get(id).then((a) => { setAsset(a); setLoaded(true); });
   }, [id]);
 
-  useEffect(() => { reload(); }, [reload, editing]);
+  useEffect(() => { reload(); }, [reload]);
 
   useEffect(() => {
     const uuid = asset?.hero_attachment_uuid;
@@ -125,7 +125,8 @@ export function AssetDetail({ id, onBack }: Props) {
       {editing && (
         <AssetEditDrawer
           assetId={id}
-          onClose={() => { setEditing(false); }}
+          onClose={() => setEditing(false)}
+          onSaved={() => reload()}
         />
       )}
     </div>
