@@ -9,7 +9,7 @@ use manor_core::recipe::{
     Recipe, RecipeDraft,
 };
 use serde::Deserialize;
-use tauri::State;
+use tauri::{AppHandle, Manager, State};
 
 #[derive(Deserialize)]
 pub struct ListRecipesArgs {
@@ -84,15 +84,40 @@ pub struct ImportCommitArgs {
 }
 
 /// Commit an import preview to the database as a new recipe.
-/// Hero image download is handled in a later task; for now the URL is stored
-/// on the draft's `source_url` field and `hero_image_url` is silently ignored.
+/// If `hero_image_url` is present, the image is downloaded and stored as an
+/// attachment linked to the new recipe. Image errors are soft-failed: the
+/// recipe is already saved and a missing image is acceptable.
 #[tauri::command]
-pub fn recipe_import_commit(
+pub async fn recipe_import_commit(
+    app: AppHandle,
     args: ImportCommitArgs,
     state: State<'_, Db>,
 ) -> Result<String, String> {
-    let conn = state.0.lock().map_err(|e| e.to_string())?;
-    // Hero image handled in Task 7; ignore for now.
-    let _ = args.hero_image_url;
-    dal::insert_recipe(&conn, &args.draft).map_err(|e| e.to_string())
+    // Step 1: insert recipe — sync, brief lock scope.
+    let id = {
+        let conn = state.0.lock().map_err(|e| e.to_string())?;
+        dal::insert_recipe(&conn, &args.draft).map_err(|e| e.to_string())?
+    }; // lock released before any .await
+
+    // Step 2: optionally download + store hero image. Soft-fail on any error.
+    if let Some(url) = args.hero_image_url.as_deref() {
+        let attachments_dir = app
+            .path()
+            .app_data_dir()
+            .map(|d| d.join("attachments"))
+            .unwrap_or_else(|_| std::path::PathBuf::from("/tmp/manor-attachments"));
+
+        // Lock never crosses .await — fetch_and_link_hero_arc acquires/releases
+        // internally around each sync burst (HTTP runs without any lock held).
+        let db_arc = state.0.clone();
+        let _ = importer::fetch_and_link_hero_arc(
+            db_arc,
+            &id,
+            Some(url),
+            &attachments_dir,
+        )
+        .await;
+    }
+
+    Ok(id)
 }

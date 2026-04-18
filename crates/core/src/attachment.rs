@@ -170,6 +170,24 @@ pub fn restore(conn: &Connection, id: i64) -> Result<Attachment> {
     get(conn, id)
 }
 
+/// Link a staged attachment (entity_id IS NULL) to its owning entity.
+///
+/// `entity_id_str` is stored in the `entity_id` column via SQLite's dynamic
+/// typing; recipes use TEXT UUIDs while most entities use integers.
+/// The sweep queries `entity_id IS NULL`, so this is only needed post-commit.
+pub fn link_to_entity(
+    conn: &Connection,
+    attachment_id: i64,
+    entity_type: &str,
+    entity_id_str: &str,
+) -> Result<()> {
+    conn.execute(
+        "UPDATE attachment SET entity_type = ?1, entity_id = ?2 WHERE id = ?3",
+        params![entity_type, entity_id_str, attachment_id],
+    )?;
+    Ok(())
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

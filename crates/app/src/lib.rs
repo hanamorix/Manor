@@ -152,6 +152,23 @@ pub fn register(builder: Builder<Wry>) -> Builder<Wry> {
                 }
             });
 
+            // Recipe: sweep crash-orphan staged hero-image attachments (entity_id IS NULL,
+            // entity_type='recipe', older than 24h). Soft-fails silently on any error.
+            {
+                let db_arc_sweep = app.state::<assistant::commands::Db>().inner().clone_arc();
+                let attachments_dir = data_dir.join("attachments");
+                tauri::async_runtime::spawn_blocking(move || {
+                    let conn = db_arc_sweep.lock().unwrap();
+                    match crate::recipe::stage_sweep::run_on_startup(&conn, &attachments_dir) {
+                        Ok(n) if n > 0 => {
+                            tracing::info!("recipe: swept {n} orphan staged attachment(s)");
+                        }
+                        Ok(_) => {}
+                        Err(e) => tracing::warn!("recipe: stage_sweep failed: {e}"),
+                    }
+                });
+            }
+
             // Phase 5d: register pending OAuth callbacks map for bank connect flow.
             app.manage::<ledger::bank_commands::PendingCallbacks>(std::sync::Arc::new(
                 tokio::sync::Mutex::new(std::collections::HashMap::new()),

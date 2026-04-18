@@ -4,7 +4,10 @@ use anyhow::{Context, Result};
 use manor_core::recipe::import::{extract_via_llm, parse_jsonld, ImportedRecipe, LlmClient};
 use manor_core::recipe::{ImportMethod, RecipeDraft};
 use reqwest::header::CONTENT_TYPE;
+use rusqlite::Connection;
 use serde::{Deserialize, Serialize};
+use std::path::Path;
+use std::sync::{Arc, Mutex};
 use std::time::Duration;
 
 const MAX_BODY_BYTES: u64 = 2 * 1024 * 1024;
@@ -111,6 +114,123 @@ fn strip_html(html: &str) -> String {
         }
     }
     text.split_whitespace().collect::<Vec<_>>().join(" ")
+}
+
+// ── Hero image staging ────────────────────────────────────────────────────────
+
+const MAX_IMAGE_BYTES: u64 = 5 * 1024 * 1024;
+
+struct HeroImageData {
+    bytes: Vec<u8>,
+    mime_type: String,
+    original_name: String,
+}
+
+/// Fetch hero image bytes from a URL. Pure async HTTP — no DB, no lock.
+async fn download_hero_image(url: &str) -> Result<HeroImageData> {
+    let client = reqwest::Client::builder()
+        .timeout(Duration::from_secs(FETCH_TIMEOUT_SECS))
+        .user_agent(USER_AGENT_STRING)
+        .build()
+        .context("building http client for image")?;
+
+    let resp = client.get(url).send().await.context("fetching hero image")?;
+
+    let ctype = resp
+        .headers()
+        .get(CONTENT_TYPE)
+        .and_then(|v| v.to_str().ok())
+        .unwrap_or("")
+        .to_string();
+
+    let ext = if ctype.contains("jpeg") || ctype.contains("jpg") {
+        "jpg"
+    } else if ctype.contains("png") {
+        "png"
+    } else if ctype.contains("webp") {
+        "webp"
+    } else {
+        return Err(anyhow::anyhow!("unsupported image type: {}", ctype));
+    };
+
+    if let Some(len) = resp.content_length() {
+        if len > MAX_IMAGE_BYTES {
+            return Err(anyhow::anyhow!("hero image too large ({} bytes)", len));
+        }
+    }
+
+    let raw = resp.bytes().await.context("reading image bytes")?;
+    if raw.len() as u64 > MAX_IMAGE_BYTES {
+        return Err(anyhow::anyhow!("hero image too large ({} bytes)", raw.len()));
+    }
+
+    Ok(HeroImageData {
+        bytes: raw.to_vec(),
+        mime_type: ctype,
+        original_name: format!("hero.{}", ext),
+    })
+}
+
+/// Write a pre-fetched image to disk + DB as a staged attachment
+/// (`entity_type='recipe'`, `entity_id=NULL`). Synchronous — call with the
+/// lock held only for this duration.
+fn store_hero_attachment(
+    conn: &Connection,
+    data: &HeroImageData,
+    attachments_dir: &Path,
+) -> Result<i64> {
+    let att = manor_core::attachment::store(
+        conn,
+        attachments_dir,
+        &data.bytes,
+        &data.original_name,
+        &data.mime_type,
+        Some("recipe"),
+        None, // entity_id linked after recipe insert
+    )?;
+    Ok(att.id)
+}
+
+/// Download + stage a hero image, returning the new attachment row id.
+/// Splits async HTTP (no lock) from sync DB write (brief lock scope).
+pub async fn stage_hero_image(
+    db: &Arc<Mutex<Connection>>,
+    url: &str,
+    attachments_dir: &Path,
+) -> Result<i64> {
+    // Phase 1: async HTTP fetch — no lock held.
+    let data = download_hero_image(url).await?;
+
+    // Phase 2: sync DB write — acquire lock, store, release.
+    let conn = db.lock().map_err(|e| anyhow::anyhow!("db lock: {e}"))?;
+    store_hero_attachment(&conn, &data, attachments_dir)
+}
+
+/// Called from `recipe_import_commit`: download + stage the hero image, then
+/// link it to the newly-created recipe row. Soft-fails: a missing image never
+/// blocks a successful recipe save.
+///
+/// The lock is never held across `.await` — HTTP runs lock-free; DB writes
+/// happen in two brief sync bursts (store then link).
+pub async fn fetch_and_link_hero_arc(
+    db: Arc<Mutex<Connection>>,
+    recipe_id: &str,
+    image_url: Option<&str>,
+    attachments_dir: &Path,
+) -> Result<()> {
+    let Some(url) = image_url else {
+        return Ok(());
+    };
+
+    let att_id = match stage_hero_image(&db, url, attachments_dir).await {
+        Ok(id) => id,
+        Err(_) => return Ok(()), // soft-fail: recipe already saved
+    };
+
+    // Link staged attachment to the recipe — brief sync lock.
+    let conn = db.lock().map_err(|e| anyhow::anyhow!("db lock: {e}"))?;
+    let _ = manor_core::attachment::link_to_entity(&conn, att_id, "recipe", recipe_id);
+    Ok(())
 }
 
 fn to_preview(imp: ImportedRecipe) -> ImportPreview {

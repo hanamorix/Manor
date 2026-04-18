@@ -3,3 +3,4 @@
 pub mod commands;
 pub mod importer;
 pub(crate) mod llm_adapter;
+pub mod stage_sweep;
