@@ -36,7 +36,7 @@ export interface AttachmentSummary {
   size_bytes: number;
   sha256: string;
   entity_type: string | null;
-  entity_id: string | null;
+  entity_id: number | null;
   created_at: number;
 }
 
