@@ -51,7 +51,10 @@ export function TonightBand() {
       <div style={bandStyle}>
         <Ban size={18} strokeWidth={1.6} color="var(--ink-soft, #999)" />
         <span style={{ flex: 1, color: "var(--ink-soft, #999)" }}>Recipe deleted — restore or replace?</span>
-        <button type="button" onClick={planHearthAndWeek}>Review →</button>
+        <button type="button" onClick={async () => {
+          if (recipe) { await recipeIpc.restore(recipe.id); await loadTonight(); }
+        }}>Restore</button>
+        <button type="button" onClick={planHearthAndWeek}>Replace →</button>
       </div>
     );
   }
