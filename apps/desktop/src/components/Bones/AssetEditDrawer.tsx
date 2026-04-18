@@ -69,8 +69,20 @@ export function AssetEditDrawer({ assetId, onClose, onSaved }: Props) {
     }
   };
 
-  const removeHero = () => {
-    setDraft({ ...draft, hero_attachment_uuid: null });
+  const removeHero = async () => {
+    if (!assetId) {
+      // Create mode: nothing to persist yet; just clear local state.
+      setDraft({ ...draft, hero_attachment_uuid: null });
+      return;
+    }
+    try {
+      // Persist immediately — symmetric with pickHero.
+      const nextDraft = { ...draft, hero_attachment_uuid: null };
+      await ipc.update(assetId, nextDraft);
+      setDraft(nextDraft);
+    } catch (e: unknown) {
+      setError(e instanceof Error ? e.message : String(e));
+    }
   };
 
   const save = async () => {
