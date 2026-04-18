@@ -12,6 +12,7 @@ pub mod recipe;
 pub mod redact;
 pub mod remote_call_log;
 pub mod setting;
+pub mod shopping_list;
 pub mod snapshot;
 pub mod tag;
 pub mod trash;

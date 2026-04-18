@@ -3,6 +3,7 @@ import { HearthSubNav } from "./HearthSubNav";
 import { RecipesView } from "./RecipesView";
 import { ThisWeekView } from "./ThisWeek/ThisWeekView";
 import { StaplesView } from "./Staples/StaplesView";
+import { ShoppingView } from "./Shopping/ShoppingView";
 import { useHearthViewStore } from "../../lib/hearth/view-state";
 
 export function HearthTab() {
@@ -16,6 +17,7 @@ export function HearthTab() {
       <HearthSubNav />
       {subview === "recipes" && <RecipesView />}
       {subview === "this_week" && <ThisWeekView />}
+      {subview === "shopping" && <ShoppingView />}
       {subview === "staples" && <StaplesView />}
     </div>
   );

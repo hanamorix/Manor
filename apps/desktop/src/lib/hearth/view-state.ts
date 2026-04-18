@@ -1,7 +1,7 @@
 import { create } from "zustand";
 import { settingGet, settingSet } from "../foundation/ipc";
 
-export type HearthSubview = "recipes" | "this_week" | "staples";
+export type HearthSubview = "recipes" | "this_week" | "shopping" | "staples";
 
 interface HearthViewStore {
   subview: HearthSubview;
@@ -22,7 +22,7 @@ export const useHearthViewStore = create<HearthViewStore>((set) => ({
   async hydrate() {
     try {
       const v = await settingGet("hearth.last_subview");
-      if (v === "recipes" || v === "this_week" || v === "staples") {
+      if (v === "recipes" || v === "this_week" || v === "shopping" || v === "staples") {
         set({ subview: v, hydrated: true });
       } else {
         set({ hydrated: true });

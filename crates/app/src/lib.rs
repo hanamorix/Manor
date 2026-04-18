@@ -9,6 +9,7 @@ pub mod recipe;
 pub mod remote;
 pub mod rhythm;
 pub mod safety;
+pub mod shopping_list;
 pub mod sync;
 pub mod weather;
 
@@ -363,6 +364,11 @@ pub fn register(builder: Builder<Wry>) -> Builder<Wry> {
             meal_plan::commands::staple_update,
             meal_plan::commands::staple_delete,
             meal_plan::commands::staple_restore,
+            shopping_list::commands::shopping_list_list,
+            shopping_list::commands::shopping_list_add_manual,
+            shopping_list::commands::shopping_list_toggle,
+            shopping_list::commands::shopping_list_delete,
+            shopping_list::commands::shopping_list_regenerate,
         ])
 }
 
