@@ -4,7 +4,8 @@ use manor_core::asset::{
     Asset, AssetCategory, AssetDraft,
 };
 use serde::Deserialize;
-use tauri::State;
+use std::path::PathBuf;
+use tauri::{AppHandle, Manager, State};
 
 #[derive(Deserialize)]
 pub struct AssetListArgs {
@@ -63,4 +64,45 @@ pub fn asset_list_documents(
     let conn = state.0.lock().map_err(|e| e.to_string())?;
     manor_core::attachment::list_for_text_entity(&conn, "asset", &id)
         .map_err(|e| e.to_string())
+}
+
+fn resolve_attachments_dir(app: &AppHandle) -> Result<PathBuf, String> {
+    app.path()
+        .app_data_dir()
+        .map(|d| d.join("attachments"))
+        .map_err(|e| e.to_string())
+}
+
+#[tauri::command]
+pub async fn asset_attach_hero_from_path(
+    id: String,
+    source_path: String,
+    state: State<'_, Db>,
+    app: AppHandle,
+) -> Result<String, String> {
+    let dir = resolve_attachments_dir(&app)?;
+    std::fs::create_dir_all(&dir).map_err(|e| e.to_string())?;
+    let src = std::path::PathBuf::from(source_path);
+    let conn = state.0.lock().map_err(|e| e.to_string())?;
+
+    let uuid = crate::asset::importer::attach_file(&conn, &dir, &src, &id)
+        .map_err(|e| e.to_string())?;
+    manor_core::asset::dal::set_hero_attachment(&conn, &id, Some(&uuid))
+        .map_err(|e| e.to_string())?;
+    Ok(uuid)
+}
+
+#[tauri::command]
+pub async fn asset_attach_document_from_path(
+    id: String,
+    source_path: String,
+    state: State<'_, Db>,
+    app: AppHandle,
+) -> Result<String, String> {
+    let dir = resolve_attachments_dir(&app)?;
+    std::fs::create_dir_all(&dir).map_err(|e| e.to_string())?;
+    let src = std::path::PathBuf::from(source_path);
+    let conn = state.0.lock().map_err(|e| e.to_string())?;
+
+    crate::asset::importer::attach_file(&conn, &dir, &src, &id).map_err(|e| e.to_string())
 }
