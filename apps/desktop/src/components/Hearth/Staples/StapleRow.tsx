@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { X, MoreHorizontal } from "lucide-react";
 import type { StapleItem } from "../../../lib/meal_plan/staples-ipc";
 
@@ -13,6 +13,14 @@ export function StapleRow({ staple, onUpdate, onRemove }: Props) {
   const [name, setName] = useState(staple.name);
   const [aliases, setAliases] = useState<string[]>(staple.aliases);
   const [aliasInput, setAliasInput] = useState("");
+
+  // Reset draft whenever the underlying staple changes (different row mounted)
+  // or when edit mode is toggled — discards stale buffers on re-open.
+  useEffect(() => {
+    setName(staple.name);
+    setAliases(staple.aliases);
+    setAliasInput("");
+  }, [staple.id, editing]);
 
   const save = async () => {
     await onUpdate(name.trim() || staple.name, aliases);
