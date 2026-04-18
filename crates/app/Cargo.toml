@@ -32,6 +32,7 @@ csv.workspace = true
 tiny_http.workspace = true
 urlencoding.workspace = true
 uuid.workspace = true
+scraper = "0.20"
 
 [dev-dependencies]
 wiremock.workspace = true

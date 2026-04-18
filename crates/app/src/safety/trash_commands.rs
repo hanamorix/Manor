@@ -14,10 +14,21 @@ pub fn trash_list(state: State<'_, Db>) -> Result<Vec<TrashEntry>, String> {
 pub fn trash_restore(
     state: State<'_, Db>,
     entity_type: String,
-    entity_id: i64,
+    entity_id: String,
 ) -> Result<(), String> {
     let conn = state.0.lock().map_err(|e| e.to_string())?;
-    trash::restore(&conn, &entity_type, entity_id).map_err(|e| e.to_string())
+    // Attempt to parse as an integer first (covers all INTEGER-PK tables).
+    if let Ok(int_id) = entity_id.parse::<i64>() {
+        return trash::restore(&conn, &entity_type, int_id).map_err(|e| e.to_string());
+    }
+    // TEXT-PK entity — route by type.
+    match entity_type.as_str() {
+        "recipe" => manor_core::recipe::dal::restore_recipe(&conn, &entity_id)
+            .map_err(|e| e.to_string()),
+        _ => Err(format!(
+            "trash_restore: unknown TEXT-keyed entity type '{entity_type}'"
+        )),
+    }
 }
 
 #[tauri::command]
@@ -25,22 +36,38 @@ pub fn trash_permanent_delete(
     app: AppHandle,
     state: State<'_, Db>,
     entity_type: String,
-    entity_id: i64,
+    entity_id: String,
 ) -> Result<(), String> {
     // Attachments need filesystem cleanup too — route via the attachment DAL.
     if entity_type == "attachment" {
+        let int_id = entity_id
+            .parse::<i64>()
+            .map_err(|e| format!("attachment id must be integer: {e}"))?;
         let dir = app
             .path()
             .app_data_dir()
             .map_err(|e| e.to_string())?
             .join("attachments");
         let conn = state.0.lock().map_err(|e| e.to_string())?;
-        manor_core::attachment::permanent_delete(&conn, &dir, entity_id)
+        manor_core::attachment::permanent_delete(&conn, &dir, int_id)
             .map_err(|e| e.to_string())?;
         return Ok(());
     }
+    // Attempt integer parse for INTEGER-PK tables.
+    if let Ok(int_id) = entity_id.parse::<i64>() {
+        let conn = state.0.lock().map_err(|e| e.to_string())?;
+        return trash::permanent_delete(&conn, &entity_type, int_id)
+            .map_err(|e| e.to_string());
+    }
+    // TEXT-PK entity — route by type.
     let conn = state.0.lock().map_err(|e| e.to_string())?;
-    trash::permanent_delete(&conn, &entity_type, entity_id).map_err(|e| e.to_string())
+    match entity_type.as_str() {
+        "recipe" => manor_core::recipe::dal::permanent_delete_recipe(&conn, &entity_id)
+            .map_err(|e| e.to_string()),
+        _ => Err(format!(
+            "trash_permanent_delete: unknown TEXT-keyed entity type '{entity_type}'"
+        )),
+    }
 }
 
 #[tauri::command]

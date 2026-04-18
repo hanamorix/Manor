@@ -1,4 +1,4 @@
-import { invoke } from "@tauri-apps/api/core";
+import { invoke, convertFileSrc } from "@tauri-apps/api/core";
 
 export type ImportMethod = "manual" | "jsonld" | "llm" | "llm_remote";
 
@@ -22,6 +22,8 @@ export interface Recipe {
   updated_at: number;
   deleted_at: number | null;
   ingredients: IngredientLine[];
+  /** UUID of the hero attachment (references attachment.uuid). Null when absent. */
+  hero_attachment_uuid: string | null;
 }
 
 export interface RecipeDraft {
@@ -34,6 +36,8 @@ export interface RecipeDraft {
   source_host: string | null;
   import_method: ImportMethod;
   ingredients: IngredientLine[];
+  /** Round-tripped on edits so the hero image survives a save. */
+  hero_attachment_uuid: string | null;
 }
 
 export interface ImportPreview {
@@ -73,4 +77,14 @@ export async function importPreview(url: string): Promise<ImportPreview> {
 
 export async function importCommit(draft: RecipeDraft, heroImageUrl: string | null): Promise<string> {
   return await invoke<string>("recipe_import_commit", { args: { draft, hero_image_url: heroImageUrl } });
+}
+
+/**
+ * Resolve a hero attachment uuid to a webview-safe URL for rendering in <img>.
+ * Calls the Tauri command to get the absolute file path, then converts it via
+ * convertFileSrc so the webview can load it via the asset:// protocol.
+ */
+export async function attachmentSrc(uuid: string): Promise<string> {
+  const absPath = await invoke<string>("attachment_get_path_by_uuid", { uuid });
+  return convertFileSrc(absPath);
 }

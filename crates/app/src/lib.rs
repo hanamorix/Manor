@@ -4,6 +4,7 @@ pub mod assistant;
 pub mod embedding;
 pub mod foundation;
 pub mod ledger;
+pub mod recipe;
 pub mod remote;
 pub mod rhythm;
 pub mod safety;
@@ -150,6 +151,23 @@ pub fn register(builder: Builder<Wry>) -> Builder<Wry> {
                     tracing::info!("embed: indexed {succeeded}/{attempted} stale row(s)");
                 }
             });
+
+            // Recipe: sweep crash-orphan staged hero-image attachments (entity_id IS NULL,
+            // entity_type='recipe', older than 24h). Soft-fails silently on any error.
+            {
+                let db_arc_sweep = app.state::<assistant::commands::Db>().inner().clone_arc();
+                let attachments_dir = data_dir.join("attachments");
+                tauri::async_runtime::spawn_blocking(move || {
+                    let conn = db_arc_sweep.lock().unwrap();
+                    match crate::recipe::stage_sweep::run_on_startup(&conn, &attachments_dir) {
+                        Ok(n) if n > 0 => {
+                            tracing::info!("recipe: swept {n} orphan staged attachment(s)");
+                        }
+                        Ok(_) => {}
+                        Err(e) => tracing::warn!("recipe: stage_sweep failed: {e}"),
+                    }
+                });
+            }
 
             // Phase 5d: register pending OAuth callbacks map for bank connect flow.
             app.manage::<ledger::bank_commands::PendingCallbacks>(std::sync::Arc::new(
@@ -298,6 +316,7 @@ pub fn register(builder: Builder<Wry>) -> Builder<Wry> {
             foundation::commands::person_restore,
             foundation::commands::attachment_restore,
             foundation::commands::attachment_permanent_delete,
+            foundation::commands::attachment_get_path_by_uuid,
             foundation::commands::app_version,
             foundation::commands::data_dir_path,
             foundation::commands::ollama_status,
@@ -326,6 +345,14 @@ pub fn register(builder: Builder<Wry>) -> Builder<Wry> {
             remote::commands::remote_call_log_list,
             remote::commands::remote_call_log_clear,
             remote::commands::remote_test,
+            recipe::commands::recipe_list,
+            recipe::commands::recipe_get,
+            recipe::commands::recipe_create,
+            recipe::commands::recipe_update,
+            recipe::commands::recipe_delete,
+            recipe::commands::recipe_restore,
+            recipe::commands::recipe_import_preview,
+            recipe::commands::recipe_import_commit,
         ])
 }
 

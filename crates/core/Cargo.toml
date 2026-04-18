@@ -26,6 +26,8 @@ age.workspace = true
 tar.workspace = true
 flate2.workspace = true
 bytemuck.workspace = true
+scraper = "0.20"
+async-trait = "0.1"
 
 [dev-dependencies]
 tempfile.workspace = true
