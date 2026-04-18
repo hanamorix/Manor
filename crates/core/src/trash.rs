@@ -34,6 +34,8 @@ const REGISTRY: &[(&str, &str)] = &[
     ("remote_call_log", "user_visible_reason"),
     // recipe uses TEXT (UUID) primary key; recipe_ingredient cascades via FK.
     ("recipe", "title"),
+    // staple_item uses TEXT (UUID) primary key.
+    ("staple_item", "name"),
 ];
 
 pub fn list_all(conn: &Connection) -> Result<Vec<TrashEntry>> {
@@ -291,6 +293,36 @@ mod tests {
             )
             .unwrap();
         assert_eq!(ing_remaining, 0, "recipe_ingredient should cascade-delete");
+    }
+
+    #[test]
+    fn trash_sweeper_purges_staple_after_30_days() {
+        let (_d, conn) = fresh_conn();
+
+        // Insert a staple with deleted_at set far in the past (ancient epoch second).
+        let old_ts: i64 = 100;
+
+        conn.execute(
+            "INSERT INTO staple_item (id, name, created_at, updated_at, deleted_at)
+             VALUES ('s1', 'Gone staple', ?1, ?1, ?1)",
+            rusqlite::params![old_ts],
+        )
+        .unwrap();
+
+        // Cutoff = now - 30 days (seconds). old_ts=100 is far older, so it gets swept.
+        let cutoff = Utc::now().timestamp() - 30 * 24 * 60 * 60;
+        let totals = empty_older_than(&conn, cutoff).unwrap();
+        assert!(
+            totals.iter().any(|(t, n)| t == "staple_item" && *n == 1),
+            "expected staple_item to appear in sweep totals: {totals:?}"
+        );
+
+        let remaining: i64 = conn
+            .query_row("SELECT COUNT(*) FROM staple_item WHERE id='s1'", [], |r| {
+                r.get(0)
+            })
+            .unwrap();
+        assert_eq!(remaining, 0, "staple_item row should be purged");
     }
 
     #[test]
