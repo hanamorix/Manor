@@ -130,6 +130,43 @@ pub fn list_for(conn: &Connection, entity_type: &str, entity_id: i64) -> Result<
     Ok(rows)
 }
 
+/// Like `list_for` but accepts a TEXT entity_id. Used for UUID-keyed entities
+/// (recipes, assets) that store text in the `entity_id` column via SQLite's
+/// dynamic typing.
+///
+/// Note: the returned `Attachment.entity_id` field is set to `None` because the
+/// column holds a TEXT value for these entities; callers should use `entity_type`
+/// for dispatch and the caller-supplied `entity_id` string for identity.
+pub fn list_for_text_entity(
+    conn: &Connection,
+    entity_type: &str,
+    entity_id: &str,
+) -> Result<Vec<Attachment>> {
+    let mut stmt = conn.prepare(
+        "SELECT id, uuid, original_name, mime_type, size_bytes, sha256,
+                entity_type, created_at
+         FROM attachment
+         WHERE entity_type = ?1 AND entity_id = ?2 AND deleted_at IS NULL
+         ORDER BY created_at DESC",
+    )?;
+    let rows = stmt
+        .query_map(params![entity_type, entity_id], |row| {
+            Ok(Attachment {
+                id: row.get(0)?,
+                uuid: row.get(1)?,
+                original_name: row.get(2)?,
+                mime_type: row.get(3)?,
+                size_bytes: row.get(4)?,
+                sha256: row.get(5)?,
+                entity_type: row.get(6)?,
+                entity_id: None, // TEXT entity_id; caller holds the string key
+                created_at: row.get(7)?,
+            })
+        })?
+        .collect::<rusqlite::Result<Vec<_>>>()?;
+    Ok(rows)
+}
+
 /// Soft-delete. File is cleaned up by the permanent-delete sweep (Phase B).
 pub fn delete(conn: &Connection, id: i64) -> Result<()> {
     let now = chrono::Utc::now().timestamp();
@@ -317,5 +354,24 @@ mod tests {
         delete(&conn, a.id).unwrap();
         restore(&conn, a.id).unwrap();
         assert!(get(&conn, a.id).is_ok());
+    }
+
+    #[test]
+    fn list_for_text_entity_finds_by_uuid_entity_id() {
+        let (_dir, conn, root) = fresh_env();
+        // Stage an attachment, then link it to a text-keyed entity ("asset", "asset-uuid").
+        let att = store(
+            &conn, &root,
+            b"fake pdf bytes",
+            "manual.pdf",
+            "application/pdf",
+            Some("asset"),
+            None,
+        ).unwrap();
+        link_to_entity(&conn, att.id, "asset", "asset-uuid-123").unwrap();
+
+        let list = list_for_text_entity(&conn, "asset", "asset-uuid-123").unwrap();
+        assert_eq!(list.len(), 1);
+        assert_eq!(list[0].original_name, "manual.pdf");
     }
 }
