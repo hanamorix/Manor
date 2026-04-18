@@ -6,7 +6,9 @@ import { useHearthViewStore } from "../../../lib/hearth/view-state";
 import { ShoppingItemRow } from "./ShoppingItemRow";
 
 function formatWeekRange(weekStart: string): string {
+  if (!weekStart) return "this week";
   const start = new Date(weekStart + "T00:00:00");
+  if (Number.isNaN(start.getTime())) return "this week";
   const end = new Date(start);
   end.setDate(start.getDate() + 6);
   const fmt = (d: Date, opts: Intl.DateTimeFormatOptions) =>
