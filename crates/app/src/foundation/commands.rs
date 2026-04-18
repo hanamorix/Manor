@@ -343,6 +343,35 @@ pub fn attachment_permanent_delete(
     attachment::permanent_delete(&conn, &root, id).map_err(|e| e.to_string())
 }
 
+/// Return the absolute filesystem path for an attachment looked up by its `uuid`
+/// (TEXT). Used by the recipe hero-image read path: `recipe.hero_attachment_uuid`
+/// is a TEXT uuid, not an integer id, so we look up directly by uuid here.
+/// The frontend calls `convertFileSrc(path)` from `@tauri-apps/api/core` to
+/// convert the absolute path to a webview-safe `asset://` URL for rendering.
+#[tauri::command]
+pub fn attachment_get_path_by_uuid(
+    app: AppHandle,
+    state: State<'_, Db>,
+    uuid: String,
+) -> Result<String, String> {
+    let root = attachments_root(&app)?;
+    let conn = state.0.lock().map_err(|e| e.to_string())?;
+    // Verify the attachment exists and is not deleted.
+    let exists: bool = conn
+        .query_row(
+            "SELECT COUNT(*) FROM attachment WHERE uuid = ?1 AND deleted_at IS NULL",
+            rusqlite::params![uuid],
+            |r| r.get::<_, i64>(0),
+        )
+        .map(|n| n > 0)
+        .map_err(|e| e.to_string())?;
+    if !exists {
+        return Err(format!("attachment not found: {uuid}"));
+    }
+    let path = attachment::file_path(&root, &uuid);
+    Ok(path.to_string_lossy().into_owned())
+}
+
 // ── App metadata ──────────────────────────────────────────────────────────────
 
 #[tauri::command]

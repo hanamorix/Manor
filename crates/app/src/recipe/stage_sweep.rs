@@ -12,14 +12,25 @@ use std::path::Path;
 const ORPHAN_AGE_SECS: i64 = 24 * 60 * 60;
 
 /// Remove staged recipe attachments (entity_type='recipe', entity_id IS NULL)
-/// older than 24 h. Returns the number of orphans swept.
+/// older than 24 h that are NOT referenced by any recipe's hero_attachment_uuid.
+///
+/// The exclusion subquery is the canonical "linked" signal: after a successful
+/// import, `recipe.hero_attachment_uuid` points at the attachment's uuid, and
+/// `entity_id` stays NULL in the attachment table (avoiding the INTEGER/TEXT
+/// mismatch). Returns the number of orphans swept.
 pub fn run_on_startup(conn: &Connection, attachments_dir: &Path) -> Result<usize> {
     let cutoff = chrono::Utc::now().timestamp() - ORPHAN_AGE_SECS;
 
     let mut stmt = conn.prepare(
         "SELECT id, uuid FROM attachment
-         WHERE entity_type = 'recipe' AND entity_id IS NULL AND created_at < ?1
-           AND deleted_at IS NULL",
+         WHERE entity_type = 'recipe'
+           AND entity_id IS NULL
+           AND created_at < ?1
+           AND deleted_at IS NULL
+           AND uuid NOT IN (
+               SELECT hero_attachment_uuid FROM recipe
+               WHERE hero_attachment_uuid IS NOT NULL
+           )",
     )?;
 
     let rows: Vec<(i64, String)> = stmt
@@ -116,22 +127,40 @@ mod tests {
         let dir = TempDir::new().unwrap();
         let conn = fresh_db(&dir);
 
-        // Linked (entity_id IS NOT NULL) — should not be swept even if old.
+        // Attachment staged (entity_id IS NULL) but referenced by a recipe via
+        // hero_attachment_uuid — should NOT be swept even if old.
         let old_ts = chrono::Utc::now().timestamp() - 48 * 60 * 60;
+        let att_uuid = "linked-hero-uuid";
         conn.execute(
             "INSERT INTO attachment
              (uuid, original_name, mime_type, size_bytes, sha256,
               entity_type, entity_id, created_at)
-             VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8)",
+             VALUES (?1, ?2, ?3, ?4, ?5, ?6, NULL, ?7)",
             params![
-                "linked-uuid",
+                att_uuid,
                 "hero.jpg",
                 "image/jpeg",
                 99i64,
                 "cafebabe",
                 "recipe",
-                "some-recipe-uuid",
                 old_ts,
+            ],
+        )
+        .unwrap();
+
+        // Insert a recipe that references this attachment's uuid.
+        let now = chrono::Utc::now().timestamp();
+        conn.execute(
+            "INSERT INTO recipe
+             (id, title, instructions, import_method, created_at, updated_at, hero_attachment_uuid)
+             VALUES (?1, ?2, ?3, ?4, ?5, ?5, ?6)",
+            params![
+                "some-recipe-uuid",
+                "Test recipe",
+                "Cook it.",
+                "manual",
+                now,
+                att_uuid,
             ],
         )
         .unwrap();

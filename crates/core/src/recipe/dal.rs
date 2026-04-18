@@ -12,8 +12,9 @@ pub fn insert_recipe(conn: &Connection, draft: &RecipeDraft) -> Result<String> {
     let now = now_secs();
     conn.execute(
         "INSERT INTO recipe (id, title, servings, prep_time_mins, cook_time_mins,
-            instructions, source_url, source_host, import_method, created_at, updated_at)
-         VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11)",
+            instructions, source_url, source_host, import_method, created_at, updated_at,
+            hero_attachment_uuid)
+         VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12)",
         params![
             id,
             draft.title,
@@ -26,6 +27,7 @@ pub fn insert_recipe(conn: &Connection, draft: &RecipeDraft) -> Result<String> {
             draft.import_method.as_str(),
             now,
             now,
+            draft.hero_attachment_uuid,
         ],
     )?;
     for (pos, ing) in draft.ingredients.iter().enumerate() {
@@ -48,7 +50,8 @@ pub fn insert_recipe(conn: &Connection, draft: &RecipeDraft) -> Result<String> {
 pub fn get_recipe(conn: &Connection, id: &str) -> Result<Option<Recipe>> {
     let mut stmt = conn.prepare(
         "SELECT id, title, servings, prep_time_mins, cook_time_mins, instructions,
-                source_url, source_host, import_method, created_at, updated_at, deleted_at
+                source_url, source_host, import_method, created_at, updated_at, deleted_at,
+                hero_attachment_uuid
          FROM recipe WHERE id = ?1",
     )?;
     let recipe = stmt
@@ -67,6 +70,7 @@ pub fn get_recipe(conn: &Connection, id: &str) -> Result<Option<Recipe>> {
                 created_at: row.get(9)?,
                 updated_at: row.get(10)?,
                 deleted_at: row.get(11)?,
+                hero_attachment_uuid: row.get(12)?,
                 ingredients: Vec::new(),
             })
         })
@@ -103,7 +107,8 @@ pub struct ListFilter {
 pub fn list_recipes(conn: &Connection, filter: &ListFilter) -> Result<Vec<Recipe>> {
     let mut sql = String::from(
         "SELECT id, title, servings, prep_time_mins, cook_time_mins, instructions,
-                source_url, source_host, import_method, created_at, updated_at, deleted_at
+                source_url, source_host, import_method, created_at, updated_at, deleted_at,
+                hero_attachment_uuid
          FROM recipe WHERE 1=1",
     );
     let mut params: Vec<Box<dyn rusqlite::ToSql>> = Vec::new();
@@ -133,6 +138,7 @@ pub fn list_recipes(conn: &Connection, filter: &ListFilter) -> Result<Vec<Recipe
             created_at: row.get(9)?,
             updated_at: row.get(10)?,
             deleted_at: row.get(11)?,
+            hero_attachment_uuid: row.get(12)?,
             ingredients: Vec::new(),
         })
     })?;
@@ -148,8 +154,9 @@ pub fn update_recipe(conn: &Connection, id: &str, draft: &RecipeDraft) -> Result
     let now = now_secs();
     conn.execute(
         "UPDATE recipe SET title=?1, servings=?2, prep_time_mins=?3, cook_time_mins=?4,
-            instructions=?5, source_url=?6, source_host=?7, import_method=?8, updated_at=?9
-         WHERE id=?10",
+            instructions=?5, source_url=?6, source_host=?7, import_method=?8, updated_at=?9,
+            hero_attachment_uuid=?10
+         WHERE id=?11",
         params![
             draft.title,
             draft.servings,
@@ -160,6 +167,7 @@ pub fn update_recipe(conn: &Connection, id: &str, draft: &RecipeDraft) -> Result
             draft.source_host,
             draft.import_method.as_str(),
             now,
+            draft.hero_attachment_uuid,
             id,
         ],
     )?;
@@ -181,6 +189,18 @@ pub fn update_recipe(conn: &Connection, id: &str, draft: &RecipeDraft) -> Result
             ],
         )?;
     }
+    Ok(())
+}
+
+/// Set `hero_attachment_uuid` on a recipe after the attachment has been staged.
+/// Called from the importer instead of `attachment::link_to_entity`, which would
+/// store a TEXT UUID into the INTEGER `entity_id` column (type mismatch).
+pub fn set_hero_attachment(conn: &Connection, recipe_id: &str, attachment_uuid: &str) -> Result<()> {
+    let now = now_secs();
+    conn.execute(
+        "UPDATE recipe SET hero_attachment_uuid = ?1, updated_at = ?2 WHERE id = ?3",
+        params![attachment_uuid, now, recipe_id],
+    )?;
     Ok(())
 }
 
@@ -229,6 +249,7 @@ mod tests {
                 ingredient_name: "aubergines".into(),
                 note: None,
             }],
+            hero_attachment_uuid: None,
         };
         let id = insert_recipe(&conn, &draft).unwrap();
         let got = get_recipe(&conn, &id).unwrap().expect("recipe exists");
@@ -299,6 +320,7 @@ mod tests {
             source_host: None,
             import_method: ImportMethod::Manual,
             ingredients: vec![],
+            hero_attachment_uuid: None,
         }
     }
 }

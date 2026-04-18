@@ -51,6 +51,9 @@ pub struct RecipeDraft {
     pub source_host: Option<String>,
     pub import_method: ImportMethod,
     pub ingredients: Vec<IngredientLine>,
+    /// UUID of the hero attachment row (attachment.uuid, TEXT). Set by the
+    /// importer after staging; round-tripped on edits so it survives a save.
+    pub hero_attachment_uuid: Option<String>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -68,4 +71,6 @@ pub struct Recipe {
     pub updated_at: i64,
     pub deleted_at: Option<i64>,
     pub ingredients: Vec<IngredientLine>,
+    /// UUID of the hero attachment row. NULL when no hero image has been staged.
+    pub hero_attachment_uuid: Option<String>,
 }

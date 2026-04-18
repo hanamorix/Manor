@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
-import { ArrowLeft, Pencil, Trash2 } from "lucide-react";
+import { ArrowLeft, ImageOff, Pencil, Trash2 } from "lucide-react";
 import * as ipc from "../../lib/recipe/recipe-ipc";
 import type { Recipe } from "../../lib/recipe/recipe-ipc";
 import { ImportMethodBadge } from "./ImportMethodBadge";
@@ -12,10 +12,17 @@ interface Props {
 
 export function RecipeDetail({ id, onBack }: Props) {
   const [recipe, setRecipe] = useState<Recipe | null>(null);
+  const [heroUrl, setHeroUrl] = useState<string | null>(null);
   const [editing, setEditing] = useState(false);
 
   const reload = useCallback(() => {
-    void ipc.get(id).then(setRecipe);
+    void ipc.get(id).then((r) => {
+      setRecipe(r);
+      setHeroUrl(null); // reset while loading new hero
+      if (r?.hero_attachment_uuid) {
+        void ipc.attachmentSrc(r.hero_attachment_uuid).then(setHeroUrl).catch(() => {});
+      }
+    });
   }, [id]);
 
   useEffect(() => { reload(); }, [reload]);
@@ -67,6 +74,30 @@ export function RecipeDetail({ id, onBack }: Props) {
             <Trash2 size={14} strokeWidth={1.8} /> Delete
           </button>
         </div>
+      </div>
+
+      {/* Hero image — 16:9, max 360px tall. Flat placeholder when absent. */}
+      <div style={{
+        width: "100%",
+        aspectRatio: "16 / 9",
+        maxHeight: 360,
+        borderRadius: 8,
+        overflow: "hidden",
+        background: "var(--paper-muted, #f5f5f5)",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        marginBottom: 24,
+      }}>
+        {heroUrl ? (
+          <img
+            src={heroUrl}
+            alt={recipe.title}
+            style={{ width: "100%", height: "100%", objectFit: "cover" }}
+          />
+        ) : (
+          <ImageOff size={48} strokeWidth={1.4} color="var(--ink-soft, #999)" />
+        )}
       </div>
 
       <h1 style={{ fontSize: 28, fontWeight: 600, margin: 0 }}>{recipe.title}</h1>

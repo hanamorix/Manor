@@ -23,6 +23,7 @@ const EMPTY_DRAFT: RecipeDraft = {
   source_host: null,
   import_method: "manual",
   ingredients: [],
+  hero_attachment_uuid: null,
 };
 
 export function RecipeEditDrawer({ recipeId, initialDraft, onClose, onSaved, onSubmit, title, saveLabel }: Props) {
@@ -44,6 +45,7 @@ export function RecipeEditDrawer({ recipeId, initialDraft, onClose, onSaved, onS
             source_host: r.source_host,
             import_method: r.import_method,
             ingredients: r.ingredients,
+            hero_attachment_uuid: r.hero_attachment_uuid,
           });
         }
       });

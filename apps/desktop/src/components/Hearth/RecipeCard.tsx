@@ -1,13 +1,28 @@
+import { useEffect, useState } from "react";
 import { ImageOff } from "lucide-react";
+import * as ipc from "../../lib/recipe/recipe-ipc";
 import type { Recipe } from "../../lib/recipe/recipe-ipc";
 
 interface Props {
   recipe: Recipe;
-  heroSrc?: string;
+  heroSrc?: string; // explicit override — takes precedence over uuid lookup
   onClick: () => void;
 }
 
-export function RecipeCard({ recipe, heroSrc, onClick }: Props) {
+export function RecipeCard({ recipe, heroSrc: heroSrcProp, onClick }: Props) {
+  const [heroSrc, setHeroSrc] = useState<string | undefined>(heroSrcProp);
+
+  useEffect(() => {
+    if (heroSrcProp) {
+      setHeroSrc(heroSrcProp);
+      return;
+    }
+    if (recipe.hero_attachment_uuid) {
+      void ipc.attachmentSrc(recipe.hero_attachment_uuid)
+        .then(setHeroSrc)
+        .catch(() => { /* soft-fail: keep placeholder */ });
+    }
+  }, [recipe.hero_attachment_uuid, heroSrcProp]);
   const meta = [
     (recipe.prep_time_mins != null || recipe.cook_time_mins != null)
       ? `${(recipe.prep_time_mins ?? 0) + (recipe.cook_time_mins ?? 0)}m`

@@ -174,11 +174,15 @@ async fn download_hero_image(url: &str) -> Result<HeroImageData> {
 /// Write a pre-fetched image to disk + DB as a staged attachment
 /// (`entity_type='recipe'`, `entity_id=NULL`). Synchronous — call with the
 /// lock held only for this duration.
+///
+/// Returns the attachment's `uuid` (TEXT), not the integer row id, because the
+/// recipe table links via `hero_attachment_uuid TEXT` to avoid the
+/// INTEGER/TEXT mismatch that existed in the old `attachment.entity_id` column.
 fn store_hero_attachment(
     conn: &Connection,
     data: &HeroImageData,
     attachments_dir: &Path,
-) -> Result<i64> {
+) -> Result<String> {
     let att = manor_core::attachment::store(
         conn,
         attachments_dir,
@@ -186,18 +190,18 @@ fn store_hero_attachment(
         &data.original_name,
         &data.mime_type,
         Some("recipe"),
-        None, // entity_id linked after recipe insert
+        None, // entity_id stays NULL; linkage is via recipe.hero_attachment_uuid
     )?;
-    Ok(att.id)
+    Ok(att.uuid)
 }
 
-/// Download + stage a hero image, returning the new attachment row id.
+/// Download + stage a hero image, returning the new attachment's `uuid`.
 /// Splits async HTTP (no lock) from sync DB write (brief lock scope).
 pub async fn stage_hero_image(
     db: &Arc<Mutex<Connection>>,
     url: &str,
     attachments_dir: &Path,
-) -> Result<i64> {
+) -> Result<String> {
     // Phase 1: async HTTP fetch — no lock held.
     let data = download_hero_image(url).await?;
 
@@ -207,11 +211,16 @@ pub async fn stage_hero_image(
 }
 
 /// Called from `recipe_import_commit`: download + stage the hero image, then
-/// link it to the newly-created recipe row. Soft-fails: a missing image never
-/// blocks a successful recipe save.
+/// set `recipe.hero_attachment_uuid` to point at the staged attachment's uuid.
+/// Soft-fails: a missing image never blocks a successful recipe save.
+///
+/// Design: we do NOT call `attachment::link_to_entity` here. That helper would
+/// write a TEXT recipe UUID into `attachment.entity_id INTEGER`, causing a type
+/// mismatch. Instead, `recipe.hero_attachment_uuid TEXT` is the only linkage,
+/// and the orphan sweep excludes attachments whose uuid appears in that column.
 ///
 /// The lock is never held across `.await` — HTTP runs lock-free; DB writes
-/// happen in two brief sync bursts (store then link).
+/// happen in two brief sync bursts (store then update recipe).
 pub async fn fetch_and_link_hero_arc(
     db: Arc<Mutex<Connection>>,
     recipe_id: &str,
@@ -222,14 +231,14 @@ pub async fn fetch_and_link_hero_arc(
         return Ok(());
     };
 
-    let att_id = match stage_hero_image(&db, url, attachments_dir).await {
-        Ok(id) => id,
+    let att_uuid = match stage_hero_image(&db, url, attachments_dir).await {
+        Ok(uuid) => uuid,
         Err(_) => return Ok(()), // soft-fail: recipe already saved
     };
 
-    // Link staged attachment to the recipe — brief sync lock.
+    // Set recipe.hero_attachment_uuid — brief sync lock.
     let conn = db.lock().map_err(|e| anyhow::anyhow!("db lock: {e}"))?;
-    let _ = manor_core::attachment::link_to_entity(&conn, att_id, "recipe", recipe_id);
+    let _ = manor_core::recipe::dal::set_hero_attachment(&conn, recipe_id, &att_uuid);
     Ok(())
 }
 
@@ -247,6 +256,9 @@ fn to_preview(imp: ImportedRecipe) -> ImportPreview {
         source_host: Some(imp.source_host),
         import_method: imp.import_method,
         ingredients: imp.ingredients,
+        // hero_attachment_uuid is set after commit once the image is staged;
+        // it is not known at preview time.
+        hero_attachment_uuid: None,
     };
     ImportPreview {
         recipe_draft: draft,

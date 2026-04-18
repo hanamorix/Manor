@@ -316,6 +316,7 @@ pub fn register(builder: Builder<Wry>) -> Builder<Wry> {
             foundation::commands::person_restore,
             foundation::commands::attachment_restore,
             foundation::commands::attachment_permanent_delete,
+            foundation::commands::attachment_get_path_by_uuid,
             foundation::commands::app_version,
             foundation::commands::data_dir_path,
             foundation::commands::ollama_status,
