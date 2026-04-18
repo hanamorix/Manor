@@ -1,6 +1,7 @@
 //! Meal plan — types + CRUD + staples. Pure data layer.
 
 pub mod dal;
+pub mod ideas;
 pub mod matcher;
 pub mod staples;
 
