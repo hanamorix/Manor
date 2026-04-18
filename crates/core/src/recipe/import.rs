@@ -171,6 +171,71 @@ fn extract_image(v: Option<&Value>) -> Option<String> {
     }
 }
 
+// ---------------------------------------------------------------------------
+// LLM extraction fallback
+// ---------------------------------------------------------------------------
+
+#[async_trait::async_trait]
+pub trait LlmClient: Send + Sync {
+    async fn complete(&self, prompt: &str) -> anyhow::Result<String>;
+}
+
+const LLM_PROMPT: &str = "You extract structured recipe data from webpage text. Output JSON with this exact shape:\n{\n  \"title\": str,\n  \"servings\": int|null,\n  \"prep_time_mins\": int|null,\n  \"cook_time_mins\": int|null,\n  \"instructions\": str (markdown, numbered steps),\n  \"ingredients\": [\n    {\"quantity_text\": str|null, \"ingredient_name\": str, \"note\": str|null}\n  ]\n}\nIf a field is not clearly stated, use null. Do not fabricate quantities.\nOutput ONLY the JSON, no prose before or after.\n\nWebpage content:\n";
+
+#[derive(Deserialize)]
+struct LlmRecipe {
+    title: String,
+    servings: Option<i32>,
+    prep_time_mins: Option<i32>,
+    cook_time_mins: Option<i32>,
+    instructions: String,
+    ingredients: Vec<IngredientLine>,
+}
+
+pub async fn extract_via_llm(
+    page_text: &str,
+    client: &dyn LlmClient,
+    via_remote: bool,
+) -> anyhow::Result<ImportedRecipe> {
+    let truncated: String = page_text.chars().take(4096).collect();
+    let prompt = format!("{}{}", LLM_PROMPT, truncated);
+
+    let first = client.complete(&prompt).await?;
+    let parsed: Result<LlmRecipe, _> = extract_json_block(&first);
+
+    let llm_recipe = match parsed {
+        Ok(r) => r,
+        Err(_) => {
+            let retry_prompt = format!("{}\n\n(Previous response was not valid JSON. Output ONLY JSON.)", prompt);
+            let second = client.complete(&retry_prompt).await?;
+            extract_json_block(&second)
+                .map_err(|e| anyhow::anyhow!("failed to parse LLM JSON after retry: {}", e))?
+        }
+    };
+
+    Ok(ImportedRecipe {
+        title: llm_recipe.title,
+        servings: llm_recipe.servings,
+        prep_time_mins: llm_recipe.prep_time_mins,
+        cook_time_mins: llm_recipe.cook_time_mins,
+        instructions: llm_recipe.instructions,
+        ingredients: llm_recipe.ingredients,
+        source_url: String::new(),
+        source_host: String::new(),
+        import_method: if via_remote { ImportMethod::LlmRemote } else { ImportMethod::Llm },
+        parse_notes: vec!["AI-extracted — please review quantities and steps.".into()],
+        hero_image_url: None,
+    })
+}
+
+fn extract_json_block<T: for<'de> Deserialize<'de>>(s: &str) -> Result<T, serde_json::Error> {
+    // Find first { and last } to be forgiving if the model prepends/appends prose.
+    let start = s.find('{').unwrap_or(0);
+    let end = s.rfind('}').map(|i| i + 1).unwrap_or(s.len());
+    let slice = &s[start..end];
+    serde_json::from_str::<T>(slice)
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -236,5 +301,45 @@ mod tests {
     fn returns_none_without_jsonld() {
         let html = include_str!("../../tests/fixtures/recipe/ottolenghi.html");
         assert!(parse_jsonld(html).is_none());
+    }
+}
+
+#[cfg(test)]
+mod llm_tests {
+    use super::*;
+
+    struct StubLlm { response: String }
+    #[async_trait::async_trait]
+    impl LlmClient for StubLlm {
+        async fn complete(&self, _prompt: &str) -> anyhow::Result<String> {
+            Ok(self.response.clone())
+        }
+    }
+
+    #[tokio::test]
+    async fn extracts_valid_json_via_llm() {
+        let stub = StubLlm { response: r#"{
+            "title":"Lentil dal","servings":2,"prep_time_mins":5,"cook_time_mins":25,
+            "instructions":"1. Rinse lentils.\n2. Simmer.",
+            "ingredients":[{"quantity_text":"200g","ingredient_name":"red lentils","note":null}]
+        }"#.into() };
+        let r = extract_via_llm("page text", &stub, false).await.unwrap();
+        assert_eq!(r.title, "Lentil dal");
+        assert_eq!(r.servings, Some(2));
+        assert_eq!(r.ingredients.len(), 1);
+        assert_eq!(r.import_method, ImportMethod::Llm);
+    }
+
+    #[tokio::test]
+    async fn malformed_json_retries_then_errors() {
+        struct BadLlm;
+        #[async_trait::async_trait]
+        impl LlmClient for BadLlm {
+            async fn complete(&self, _prompt: &str) -> anyhow::Result<String> {
+                Ok("not json".into())
+            }
+        }
+        let err = extract_via_llm("x", &BadLlm, false).await.unwrap_err();
+        assert!(err.to_string().to_lowercase().contains("parse"));
     }
 }
