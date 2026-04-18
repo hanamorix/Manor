@@ -36,6 +36,8 @@ const REGISTRY: &[(&str, &str)] = &[
     ("recipe", "title"),
     // staple_item uses TEXT (UUID) primary key.
     ("staple_item", "name"),
+    // asset uses TEXT (UUID) primary key.
+    ("asset", "name"),
 ];
 
 pub fn list_all(conn: &Connection) -> Result<Vec<TrashEntry>> {
