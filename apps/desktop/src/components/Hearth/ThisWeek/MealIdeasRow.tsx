@@ -1,12 +1,18 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { RefreshCw } from "lucide-react";
 import { useIdeasStore } from "../../../lib/meal_plan/ideas-state";
+import { useMealPlanStore } from "../../../lib/meal_plan/meal-plan-state";
 import { useHearthViewStore } from "../../../lib/hearth/view-state";
 import { RecipeCard } from "../RecipeCard";
+import { AssignDayPopover } from "./AssignDayPopover";
+import type { Recipe } from "../../../lib/recipe/recipe-ipc";
 
 export function MealIdeasRow() {
   const { mode, library, loadStatus, loadLibrary } = useIdeasStore();
+  const { entries, setEntry } = useMealPlanStore();
   const { setSubview } = useHearthViewStore();
+
+  const [assigningRecipe, setAssigningRecipe] = useState<Recipe | null>(null);
 
   useEffect(() => { void loadLibrary(); }, [loadLibrary]);
 
@@ -62,7 +68,7 @@ export function MealIdeasRow() {
             <RecipeCard
               key={r.id}
               recipe={r}
-              onClick={() => console.log("Library card tap — wired in Task 5", r.id)}
+              onClick={() => setAssigningRecipe(r)}
             />
           ))}
         </div>
@@ -77,6 +83,20 @@ export function MealIdeasRow() {
           Try something new →
         </button>
       </div>
+
+      {assigningRecipe && (
+        <AssignDayPopover
+          recipe={assigningRecipe}
+          entries={entries}
+          onClose={() => setAssigningRecipe(null)}
+          onPick={async (date) => {
+            await setEntry(date, assigningRecipe.id);
+            setAssigningRecipe(null);
+            // After assigning, re-load library so the newly-cooked recipe may rotate out.
+            await useIdeasStore.getState().loadLibrary();
+          }}
+        />
+      )}
     </div>
   );
 }
