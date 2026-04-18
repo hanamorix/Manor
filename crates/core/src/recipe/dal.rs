@@ -220,6 +220,16 @@ pub fn restore_recipe(conn: &Connection, id: &str) -> Result<()> {
     Ok(())
 }
 
+/// Hard-delete a recipe row (and its ingredients via CASCADE) by UUID string PK.
+/// Used by the Trash UI's "Delete permanently" path for recipe entities.
+pub fn permanent_delete_recipe(conn: &Connection, id: &str) -> Result<()> {
+    conn.execute(
+        "DELETE FROM recipe WHERE id = ?1 AND deleted_at IS NOT NULL",
+        params![id],
+    )?;
+    Ok(())
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -307,6 +317,27 @@ mod tests {
         assert!(get_recipe(&conn, &id).unwrap().unwrap().deleted_at.is_some());
         restore_recipe(&conn, &id).unwrap();
         assert!(get_recipe(&conn, &id).unwrap().unwrap().deleted_at.is_none());
+    }
+
+    #[test]
+    fn permanent_delete_removes_recipe_and_cascades_ingredients() {
+        let (_dir, conn) = fresh_db();
+        let id = insert_recipe(&conn, &simple_draft("Going")).unwrap();
+        // Insert an ingredient manually to prove cascade.
+        conn.execute(
+            "INSERT INTO recipe_ingredient (id, recipe_id, position, ingredient_name) VALUES ('ing1', ?1, 0, 'salt')",
+            rusqlite::params![id],
+        ).unwrap();
+        // Must be soft-deleted first for permanent_delete_recipe to remove it.
+        soft_delete_recipe(&conn, &id).unwrap();
+        permanent_delete_recipe(&conn, &id).unwrap();
+        assert!(get_recipe(&conn, &id).unwrap().is_none());
+        let ing_count: i64 = conn.query_row(
+            "SELECT COUNT(*) FROM recipe_ingredient WHERE recipe_id = ?1",
+            rusqlite::params![id],
+            |r| r.get(0),
+        ).unwrap();
+        assert_eq!(ing_count, 0);
     }
 
     fn simple_draft(title: &str) -> RecipeDraft {
