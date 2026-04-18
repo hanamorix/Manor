@@ -3,17 +3,18 @@ import { Plus, Download } from "lucide-react";
 import { useRecipeStore } from "../../lib/recipe/recipe-state";
 import { RecipeCard } from "./RecipeCard";
 import { RecipeEditDrawer } from "./RecipeEditDrawer";
+import { RecipeImportDrawer } from "./RecipeImportDrawer";
 
 export function HearthTab() {
   const { recipes, search, setSearch, loadStatus, load } = useRecipeStore();
   // placeholder — Task 14 wires the detail view
   const [, setSelectedId] = useState<string | null>(null);
-  const [drawer, setDrawer] = useState<null | "new">(null);
+  const [drawer, setDrawer] = useState<null | "new" | "import">(null);
 
   useEffect(() => { void load(); }, [load]);
 
   const onNew = () => { setDrawer("new"); };
-  const onImport = () => { console.log("Import drawer — wired in Task 13"); };
+  const onImport = () => { setDrawer("import"); };
 
   return (
     <div style={{ padding: 32, maxWidth: 1200, margin: "0 auto" }}>
@@ -151,6 +152,12 @@ export function HearthTab() {
 
       {drawer === "new" && (
         <RecipeEditDrawer
+          onClose={() => setDrawer(null)}
+          onSaved={() => { setDrawer(null); void load(); }}
+        />
+      )}
+      {drawer === "import" && (
+        <RecipeImportDrawer
           onClose={() => setDrawer(null)}
           onSaved={() => { setDrawer(null); void load(); }}
         />

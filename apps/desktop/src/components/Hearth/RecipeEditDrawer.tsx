@@ -8,6 +8,9 @@ interface Props {
   initialDraft?: RecipeDraft; // prefill when coming from import preview
   onClose: () => void;
   onSaved?: (id: string) => void;
+  onSubmit?: (draft: RecipeDraft) => Promise<string>; // override save path (e.g. importCommit)
+  title?: string;           // override heading
+  saveLabel?: string;       // override save button label
 }
 
 const EMPTY_DRAFT: RecipeDraft = {
@@ -22,7 +25,7 @@ const EMPTY_DRAFT: RecipeDraft = {
   ingredients: [],
 };
 
-export function RecipeEditDrawer({ recipeId, initialDraft, onClose, onSaved }: Props) {
+export function RecipeEditDrawer({ recipeId, initialDraft, onClose, onSaved, onSubmit, title, saveLabel }: Props) {
   const [draft, setDraft] = useState<RecipeDraft>(initialDraft ?? EMPTY_DRAFT);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -65,7 +68,9 @@ export function RecipeEditDrawer({ recipeId, initialDraft, onClose, onSaved }: P
     setError(null);
     try {
       let id: string;
-      if (recipeId) {
+      if (onSubmit) {
+        id = await onSubmit(draft);
+      } else if (recipeId) {
         await ipc.update(recipeId, draft);
         id = recipeId;
       } else {
@@ -96,7 +101,7 @@ export function RecipeEditDrawer({ recipeId, initialDraft, onClose, onSaved }: P
     }}>
       <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 16 }}>
         <h2 style={{ margin: 0, fontSize: 20 }}>
-          {recipeId ? "Edit recipe" : "New recipe"}
+          {title ?? (recipeId ? "Edit recipe" : "New recipe")}
         </h2>
         <button type="button" onClick={onClose} aria-label="Close">✕</button>
       </div>
@@ -179,7 +184,7 @@ export function RecipeEditDrawer({ recipeId, initialDraft, onClose, onSaved }: P
       <div style={{ display: "flex", gap: 8, marginTop: 16 }}>
         <button type="button" onClick={onClose}>Cancel</button>
         <button type="button" onClick={save} disabled={saving}>
-          {saving ? "Saving…" : "Save"}
+          {saving ? "Saving…" : (saveLabel ?? "Save")}
         </button>
       </div>
     </div>
