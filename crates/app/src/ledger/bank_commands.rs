@@ -508,7 +508,7 @@ pub async fn ledger_bank_autocat_pending(
                 rusqlite::params![cat_id, tx_id],
             )
             .unwrap_or(0);
-        updated += rows as usize;
+        updated += rows;
     }
     Ok(updated)
 }

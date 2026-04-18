@@ -463,7 +463,7 @@ impl RawTransaction {
 
     pub fn amount_pence(&self) -> Option<i64> {
         let amt = self.transaction_amount_camel.as_ref()
-            .or_else(|| self.transaction_amount.as_ref())?;
+            .or(self.transaction_amount.as_ref())?;
         let f: f64 = amt.amount.parse().ok()?;
         Some((f * 100.0).round() as i64)
     }

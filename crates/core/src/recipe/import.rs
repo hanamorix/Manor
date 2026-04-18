@@ -132,7 +132,7 @@ fn split_ingredient_line(line: &str) -> IngredientLine {
 
     const UNITS: &[&str] = &["tbsp","tsp","cup","cups","g","kg","ml","l","oz","lb","pcs","piece","pieces","clove","cloves","pinch","dash","handful","sprig","sprigs","can","cans","bunch","bunches"];
     let rest = rest.trim_start();
-    let (unit, after_unit) = rest.split_once(' ').map(|(a, b)| (a, b)).unwrap_or((rest, ""));
+    let (unit, after_unit) = rest.split_once(' ').unwrap_or((rest, ""));
     let (quantity_text, name_plus) = if UNITS.iter().any(|u| unit.eq_ignore_ascii_case(u)) {
         let combined = if qty.is_empty() { unit.to_string() } else { format!("{} {}", qty, unit) };
         (if combined.is_empty() { None } else { Some(combined) }, after_unit.trim())

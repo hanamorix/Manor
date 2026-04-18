@@ -4,6 +4,7 @@ pub mod assistant;
 pub mod embedding;
 pub mod foundation;
 pub mod ledger;
+pub mod recipe;
 pub mod remote;
 pub mod rhythm;
 pub mod safety;
@@ -326,6 +327,12 @@ pub fn register(builder: Builder<Wry>) -> Builder<Wry> {
             remote::commands::remote_call_log_list,
             remote::commands::remote_call_log_clear,
             remote::commands::remote_test,
+            recipe::commands::recipe_list,
+            recipe::commands::recipe_get,
+            recipe::commands::recipe_create,
+            recipe::commands::recipe_update,
+            recipe::commands::recipe_delete,
+            recipe::commands::recipe_restore,
         ])
 }
 
