@@ -31,6 +31,9 @@ export function RecipeImportDrawer({ onClose, onSaved }: Props) {
   if (preview) {
     // Delegate preview UI + edit to RecipeEditDrawer, overriding save to use
     // importCommit so the hero image gets linked.
+    // Note: nothing to cancel on Close here — hero image is staged only at
+    // commit (recipe_import_commit), never during preview. The 24h orphan sweep
+    // in lib.rs handles any crash-orphaned staged attachments on app restart.
     return (
       <RecipeEditDrawer
         initialDraft={preview.recipe_draft}
