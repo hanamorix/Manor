@@ -7,6 +7,7 @@
 fn main() {
     let builder = tauri::Builder::default()
         .plugin(tauri_plugin_dialog::init())
+        .plugin(tauri_plugin_opener::init())
         .plugin(tauri_plugin_shell::init());
     manor_app::register(builder)
         .run(tauri::generate_context!())

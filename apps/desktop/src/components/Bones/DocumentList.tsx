@@ -1,7 +1,8 @@
 import { useEffect, useState, useCallback } from "react";
 import { FileText, Image as ImageIcon, File, Plus } from "lucide-react";
 import { open as openFileDialog } from "@tauri-apps/plugin-dialog";
-import { invoke, convertFileSrc } from "@tauri-apps/api/core";
+import { openPath } from "@tauri-apps/plugin-opener";
+import { invoke } from "@tauri-apps/api/core";
 import * as ipc from "../../lib/asset/ipc";
 import type { AttachmentSummary } from "../../lib/asset/ipc";
 
@@ -54,10 +55,7 @@ export function DocumentList({ assetId }: Props) {
   const openDoc = async (uuid: string) => {
     try {
       const absPath = await invoke<string>("attachment_get_path_by_uuid", { uuid });
-      // Open via system default app — Tauri v2 uses the opener plugin.
-      // Fall back to a simple <a href> / window.open with a converted file URL if opener isn't wired.
-      const url = convertFileSrc(absPath);
-      window.open(url, "_blank");
+      await openPath(absPath);
     } catch (e: unknown) {
       setError(`Couldn't open — ${e instanceof Error ? e.message : String(e)}`);
     }
