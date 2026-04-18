@@ -3,13 +3,13 @@ use anyhow::Result;
 use rusqlite::{params, Connection, OptionalExtension};
 use uuid::Uuid;
 
-fn now_ms() -> i64 {
-    chrono::Utc::now().timestamp_millis()
+fn now_secs() -> i64 {
+    chrono::Utc::now().timestamp()
 }
 
 pub fn insert_recipe(conn: &Connection, draft: &RecipeDraft) -> Result<String> {
     let id = Uuid::new_v4().to_string();
-    let now = now_ms();
+    let now = now_secs();
     conn.execute(
         "INSERT INTO recipe (id, title, servings, prep_time_mins, cook_time_mins,
             instructions, source_url, source_host, import_method, created_at, updated_at)
@@ -145,7 +145,7 @@ pub fn list_recipes(conn: &Connection, filter: &ListFilter) -> Result<Vec<Recipe
 }
 
 pub fn update_recipe(conn: &Connection, id: &str, draft: &RecipeDraft) -> Result<()> {
-    let now = now_ms();
+    let now = now_secs();
     conn.execute(
         "UPDATE recipe SET title=?1, servings=?2, prep_time_mins=?3, cook_time_mins=?4,
             instructions=?5, source_url=?6, source_host=?7, import_method=?8, updated_at=?9
@@ -187,7 +187,7 @@ pub fn update_recipe(conn: &Connection, id: &str, draft: &RecipeDraft) -> Result
 pub fn soft_delete_recipe(conn: &Connection, id: &str) -> Result<()> {
     conn.execute(
         "UPDATE recipe SET deleted_at=?1 WHERE id=?2",
-        params![now_ms(), id],
+        params![now_secs(), id],
     )?;
     Ok(())
 }
@@ -252,7 +252,18 @@ mod tests {
     fn update_bumps_updated_at_and_replaces_ingredients() {
         let (_d, conn) = fresh_db();
         let id = insert_recipe(&conn, &simple_draft("Original")).unwrap();
-        std::thread::sleep(std::time::Duration::from_millis(2));
+        let original_updated_at: i64 = conn.query_row(
+            "SELECT updated_at FROM recipe WHERE id = ?1",
+            rusqlite::params![id],
+            |r| r.get(0),
+        ).unwrap();
+
+        // Force updated_at backwards by 10s so the update bump is observable without sleeping.
+        conn.execute(
+            "UPDATE recipe SET updated_at = ?1, created_at = ?1 WHERE id = ?2",
+            rusqlite::params![original_updated_at - 10, id],
+        ).unwrap();
+
         let mut draft = simple_draft("Updated");
         draft.ingredients = vec![IngredientLine {
             quantity_text: Some("5".into()),
