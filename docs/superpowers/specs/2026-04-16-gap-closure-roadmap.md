@@ -1,7 +1,7 @@
 # Gap Closure Roadmap
 
-- **Date**: 2026-04-16 (updated 2026-04-17)
-- **Status**: Landmark 1 ✅ SHIPPED. Landmark 2 next. Landmark 3 deferred.
+- **Date**: 2026-04-16 (updated 2026-04-18)
+- **Status**: Landmarks 1 & 2 ✅ SHIPPED. Landmark 3 deferred (brainstorm per release).
 - **Authors**: Hana (product), Nell (architect)
 
 ## Purpose
@@ -26,13 +26,13 @@ Life Assistant ("Manor") has shipped v0.1 → v0.3b end-to-end but skipped found
 | G3 | `tag` + `tag_link` tables | design §4.2 | ✅ Phase A |
 | G4 | `note` table | design §4.2 | ✅ Phase A |
 | G5 | `setting(key, value)` table | design §4.2 | ✅ Phase A |
-| G6 | `remote_call_log` table | design §4.2, §4.6 | ⏳ Landmark 2 |
+| G6 | `remote_call_log` table | design §4.2, §4.6 | ✅ Landmark 2 (shipped 2026-04-17) |
 | G7 | `embedding` table | design §4.2, §4.8 | ✅ Phase C (pure-Rust cosine; sqlite-vec deferred — DAL stable for later swap) |
 | G8 | First-launch wizard | design §6.1 | ✅ Phase D |
 | G9 | Weather strip in Today header | design §6.2, §11.3 | ✅ Phase D |
 | G10 | Trash view + panic button + auto-empty | design §4.7 | ✅ Phase B |
 | G11 | Snapshot backup / `.lifebackup` archives | design §8.1 | ✅ Phase B |
-| G12 | Remote LLM support (keys, tier routing, redaction, budget caps) | design §5.1–5.7 | ⏳ Landmark 2 |
+| G12 | Remote LLM support (keys, tier routing, redaction, budget caps) | design §5.1–5.7 | ✅ Landmark 2 (shipped 2026-04-17) |
 | G13 | Settings sections 1, 2, 4, 5 | design §6.4 | ✅ Phase E |
 | G14 | v0.3 Ledger design drift re: contracts table split | self-review | ✅ Phase E Task 1 |
 | G15 | Phase 3c plan checkboxes unchecked despite code being live | self-review | ✅ Phase E Task 1 |
@@ -76,11 +76,11 @@ A single design spec that says "finish what v0.1 already promised." Subsystems c
 
 **Defers**: G6 `remote_call_log` and G12 Remote LLM — they only matter once a remote key can be added, which is Landmark 2.
 
-### Landmark 2 — Remote LLM support (bundles G6, G12) — ⏳ **NEXT**
+### Landmark 2 — Remote LLM support (bundles G6, G12) — ✅ **SHIPPED 2026-04-17**
 
-Own design spec. Cross-cuts skills and UX, carries the most privacy risk (redaction pipeline is tricky, budget caps have edge cases, keys-in-keychain UX needs care). Landing this while people are using v0.1 on local-only is the safe moment.
+Own design spec + plan, shipped cleanly. Cross-cut skills and UX, carried the most privacy risk (redaction pipeline, budget caps, keys-in-keychain UX). Landing this while people were still on local-only was the safe moment.
 
-Subsystems:
+Subsystems (all shipped):
 - G6 `remote_call_log` schema + audit writer
 - Provider abstraction (`crates/core/src/models/` per original design §3.3)
 - Key storage in macOS Keychain + UI for adding/removing
@@ -99,10 +99,10 @@ Each needs its own brainstorm to flesh out what's only one paragraph in the over
 
 1. ~~`specs/2026-04-16-v0.1-completion-design.md` — the big one (Landmark 1).~~ ✅ shipped.
 2. ~~5 phase plans (A–E), executed via subagent-driven-development.~~ ✅ all shipped.
-3. **Landmark 2 design spec** — `specs/2026-04-xx-remote-llm-design.md`. Covers: `remote_call_log` schema, provider abstraction, keychain key UX, tier routing, redaction pipeline, budget caps, Settings/AI tab upgrade.
-4. **Landmark 2 plan** — probably 8–10 tasks (redaction is the risky one; worth property-test rigor).
-5. Execute. When Landmark 2 ships, Manor supports BYO remote keys with proper privacy guardrails.
-6. Landmark 3 (v0.4 Hearth onward) — one brainstorm per release, each its own spec + plan cycle. Not sequenced here.
+3. ~~**Landmark 2 design spec** — Remote LLM support.~~ ✅ shipped.
+4. ~~**Landmark 2 plan** — redaction pipeline, tier routing, keychain, budget caps.~~ ✅ shipped.
+5. ~~Execute Landmark 2.~~ ✅ Manor now supports BYO remote keys with privacy guardrails.
+6. **Landmark 3 (v0.4 Hearth onward)** — one brainstorm per release, each its own spec + plan cycle. v0.4 Hearth is next.
 
 ## Non-goals for this roadmap
 
@@ -112,4 +112,4 @@ Each needs its own brainstorm to flesh out what's only one paragraph in the over
 
 ---
 
-*End of roadmap. Next step: Landmark 2 design spec (Remote LLM support).*
+*End of roadmap. Next step: v0.4 Hearth brainstorm (Landmark 3, first release).*
