@@ -21,13 +21,14 @@ function formatWeekRange(weekStart: string): string {
 
 export function ShoppingView() {
   const { items, loadStatus, load, toggle, addManual, deleteItem, regenerate } = useShoppingListStore();
-  const { weekStart } = useMealPlanStore();
+  const { weekStart, entries, loadWeek } = useMealPlanStore();
   const { setSubview } = useHearthViewStore();
   const [adding, setAdding] = useState(false);
   const [newName, setNewName] = useState("");
   const [toast, setToast] = useState<string | null>(null);
 
   useEffect(() => { void load(); }, [load]);
+  useEffect(() => { void loadWeek(); }, [loadWeek, weekStart]);
 
   const total = items.length;
   const ticked = items.filter((i) => i.ticked).length;
@@ -60,6 +61,7 @@ export function ShoppingView() {
 
   // Empty states
   const allEmpty = total === 0;
+  const anyMealsPlanned = entries.some((e) => e.recipe !== null);
 
   return (
     <div>
@@ -110,16 +112,24 @@ export function ShoppingView() {
 
       {loadStatus.kind === "idle" && allEmpty && !adding && (
         <div style={{ padding: 48, textAlign: "center", color: "var(--ink-soft, #999)" }}>
-          <div style={{ marginBottom: 16 }}>Your shopping list is empty.</div>
-          <div style={{ display: "inline-flex", gap: 8 }}>
-            <button type="button" onClick={doRegenerate}
-              style={{ display: "flex", alignItems: "center", gap: 4 }}>
-              <RefreshCw size={14} strokeWidth={1.8} /> Generate from this week
-            </button>
-            <button type="button" onClick={() => setSubview("this_week")}>
-              Plan meals →
-            </button>
-          </div>
+          {anyMealsPlanned ? (
+            <>
+              <div style={{ marginBottom: 16 }}>Your shopping list is empty.</div>
+              <button type="button" onClick={doRegenerate}
+                style={{ display: "inline-flex", alignItems: "center", gap: 4 }}>
+                <RefreshCw size={14} strokeWidth={1.8} /> Generate from this week
+              </button>
+            </>
+          ) : (
+            <>
+              <div style={{ marginBottom: 16 }}>
+                Your shopping list is empty. Plan some meals in This Week to generate ingredients.
+              </div>
+              <button type="button" onClick={() => setSubview("this_week")}>
+                Plan meals →
+              </button>
+            </>
+          )}
         </div>
       )}
 
