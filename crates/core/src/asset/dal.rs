@@ -115,6 +115,25 @@ pub fn set_hero_attachment(conn: &Connection, id: &str, uuid: Option<&str>) -> R
     Ok(())
 }
 
+/// Hard-delete a trashed asset. Also soft-deletes its document + hero attachments
+/// so the attachment sweeper cleans up disk files. Only affects rows that are
+/// already soft-deleted.
+pub fn permanent_delete_asset(conn: &Connection, id: &str) -> Result<()> {
+    // Soft-delete linked attachments (the attachment permanent-delete sweep
+    // removes files later).
+    let now = now_secs();
+    conn.execute(
+        "UPDATE attachment SET deleted_at = ?1 WHERE entity_type = 'asset' AND entity_id = ?2 AND deleted_at IS NULL",
+        params![now, id],
+    )?;
+    // Hard-delete the asset (only if trashed).
+    conn.execute(
+        "DELETE FROM asset WHERE id = ?1 AND deleted_at IS NOT NULL",
+        params![id],
+    )?;
+    Ok(())
+}
+
 fn row_to_asset(row: &rusqlite::Row) -> rusqlite::Result<Asset> {
     let category: String = row.get(2)?;
     Ok(Asset {
@@ -247,5 +266,36 @@ mod tests {
         assert_eq!(get_asset(&conn, &id).unwrap().unwrap().hero_attachment_uuid.as_deref(), Some("uuid-123"));
         set_hero_attachment(&conn, &id, None).unwrap();
         assert!(get_asset(&conn, &id).unwrap().unwrap().hero_attachment_uuid.is_none());
+    }
+
+    #[test]
+    fn permanent_delete_removes_trashed_asset_and_soft_deletes_attachments() {
+        let (_d, conn) = fresh();
+        let id = insert_asset(&conn, &draft("Gone", AssetCategory::Other)).unwrap();
+
+        // Pre-seed a linked attachment row directly (skipping the file-copy path).
+        conn.execute(
+            "INSERT INTO attachment (uuid, original_name, mime_type, size_bytes, sha256,
+                                      entity_type, entity_id)
+             VALUES ('att-uuid', 'manual.pdf', 'application/pdf', 100, 'abc123abc123abc123abc123abc123abc123abc123abc123abc123abc123abc1', 'asset', ?1)",
+            rusqlite::params![id],
+        ).unwrap();
+
+        // Active (not trashed) assets are NOT affected by permanent_delete.
+        permanent_delete_asset(&conn, &id).unwrap();
+        assert!(get_asset(&conn, &id).unwrap().is_some());
+
+        // Trash first, then permanent-delete.
+        soft_delete_asset(&conn, &id).unwrap();
+        permanent_delete_asset(&conn, &id).unwrap();
+        assert!(get_asset_including_trashed(&conn, &id).unwrap().is_none());
+
+        // Attachment row should be soft-deleted (deleted_at IS NOT NULL).
+        let att_trashed: Option<i64> = conn.query_row(
+            "SELECT deleted_at FROM attachment WHERE entity_type = 'asset' AND entity_id = ?1",
+            rusqlite::params![id],
+            |r| r.get(0),
+        ).optional().unwrap().flatten();
+        assert!(att_trashed.is_some(), "attachment should be soft-deleted post-purge");
     }
 }
