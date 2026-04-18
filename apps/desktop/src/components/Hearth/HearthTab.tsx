@@ -4,14 +4,23 @@ import { useRecipeStore } from "../../lib/recipe/recipe-state";
 import { RecipeCard } from "./RecipeCard";
 import { RecipeEditDrawer } from "./RecipeEditDrawer";
 import { RecipeImportDrawer } from "./RecipeImportDrawer";
+import { RecipeDetail } from "./RecipeDetail";
 
 export function HearthTab() {
   const { recipes, search, setSearch, loadStatus, load } = useRecipeStore();
-  // placeholder — Task 14 wires the detail view
-  const [, setSelectedId] = useState<string | null>(null);
+  const [detailId, setDetailId] = useState<string | null>(null);
   const [drawer, setDrawer] = useState<null | "new" | "import">(null);
 
   useEffect(() => { void load(); }, [load]);
+
+  if (detailId) {
+    return (
+      <RecipeDetail
+        id={detailId}
+        onBack={() => { setDetailId(null); void load(); }}
+      />
+    );
+  }
 
   const onNew = () => { setDrawer("new"); };
   const onImport = () => { setDrawer("import"); };
@@ -144,7 +153,7 @@ export function HearthTab() {
             <RecipeCard
               key={r.id}
               recipe={r}
-              onClick={() => setSelectedId(r.id)}
+              onClick={() => setDetailId(r.id)}
             />
           ))}
         </div>
