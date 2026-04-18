@@ -5,6 +5,7 @@ import CalendarsTab from "./CalendarsTab";
 import DataBackupTab from "./DataBackupTab";
 import AiTab from "./AiTab";
 import HouseholdTab from "./HouseholdTab";
+import HearthTab from "./HearthTab";
 import AboutTab from "./AboutTab";
 
 export default function SettingsModal() {
@@ -84,6 +85,7 @@ export default function SettingsModal() {
           {activeTab === "ai" && <AiTab />}
           {activeTab === "calendars" && <CalendarsTab />}
           {activeTab === "household" && <HouseholdTab />}
+          {activeTab === "hearth" && <HearthTab />}
           {activeTab === "about" && <AboutTab />}
         </div>
       </div>

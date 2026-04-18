@@ -3,7 +3,7 @@ import type { CalendarAccount, CalendarInfo } from "./ipc";
 
 interface SettingsStore {
   modalOpen: boolean;
-  activeTab: "data" | "ai" | "calendars" | "household" | "about";
+  activeTab: "data" | "ai" | "calendars" | "household" | "hearth" | "about";
   accounts: CalendarAccount[];
   syncingAccountIds: Set<number>;
   accountCalendars: Map<number, CalendarInfo[]>;
