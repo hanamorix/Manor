@@ -52,7 +52,7 @@ pub fn get_recipe(conn: &Connection, id: &str) -> Result<Option<Recipe>> {
         "SELECT id, title, servings, prep_time_mins, cook_time_mins, instructions,
                 source_url, source_host, import_method, created_at, updated_at, deleted_at,
                 hero_attachment_uuid
-         FROM recipe WHERE id = ?1",
+         FROM recipe WHERE id = ?1 AND deleted_at IS NULL",
     )?;
     let recipe = stmt
         .query_row(params![id], |row| {
@@ -314,9 +314,25 @@ mod tests {
         let (_d, conn) = fresh_db();
         let id = insert_recipe(&conn, &simple_draft("X")).unwrap();
         soft_delete_recipe(&conn, &id).unwrap();
-        assert!(get_recipe(&conn, &id).unwrap().unwrap().deleted_at.is_some());
+        // get_recipe now hides trashed recipes; confirm via direct SQL.
+        let trashed: Option<i64> = conn.query_row(
+            "SELECT deleted_at FROM recipe WHERE id = ?1",
+            rusqlite::params![id],
+            |r| r.get(0),
+        ).unwrap();
+        assert!(trashed.is_some());
         restore_recipe(&conn, &id).unwrap();
         assert!(get_recipe(&conn, &id).unwrap().unwrap().deleted_at.is_none());
+    }
+
+    #[test]
+    fn get_recipe_returns_none_when_trashed() {
+        let (_d, conn) = fresh_db();
+        let id = insert_recipe(&conn, &simple_draft("Hidden")).unwrap();
+        soft_delete_recipe(&conn, &id).unwrap();
+        assert!(get_recipe(&conn, &id).unwrap().is_none());
+        restore_recipe(&conn, &id).unwrap();
+        assert!(get_recipe(&conn, &id).unwrap().is_some());
     }
 
     #[test]
