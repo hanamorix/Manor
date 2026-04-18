@@ -3,6 +3,7 @@ import { useHearthViewStore, type HearthSubview } from "../../lib/hearth/view-st
 const TABS: { key: HearthSubview; label: string }[] = [
   { key: "recipes", label: "Recipes" },
   { key: "this_week", label: "This Week" },
+  { key: "shopping", label: "Shopping" },
   { key: "staples", label: "Staples" },
 ];
 
