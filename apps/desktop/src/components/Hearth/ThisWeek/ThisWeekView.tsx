@@ -1,7 +1,8 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useMealPlanStore } from "../../../lib/meal_plan/meal-plan-state";
 import { DaySlotCard } from "./DaySlotCard";
 import { WeekNav } from "./WeekNav";
+import { RecipePickerDrawer } from "./RecipePickerDrawer";
 
 const DAY_LABELS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
 
@@ -19,7 +20,8 @@ function mondayOfToday(): string {
 }
 
 export function ThisWeekView() {
-  const { weekStart, entries, loadStatus, setWeekStart, loadWeek, clearEntry } = useMealPlanStore();
+  const { weekStart, entries, loadStatus, setWeekStart, loadWeek, setEntry, clearEntry } = useMealPlanStore();
+  const [pickerDate, setPickerDate] = useState<string | null>(null);
 
   useEffect(() => { void loadWeek(); }, [weekStart, loadWeek]);
 
@@ -55,16 +57,26 @@ export function ThisWeekView() {
               <DaySlotCard
                 entry={entry}
                 isToday={isToday}
-                onEmptyClick={() => console.log("Picker — Task 10", entry.entry_date)}
+                onEmptyClick={() => setPickerDate(entry.entry_date)}
                 onFilledClick={(id) => console.log("Detail nav — Task 11", id)}
                 onGhostClick={(e) => console.log("Ghost — Task 11", e)}
-                onSwap={() => console.log("Swap — Task 10", entry.entry_date)}
+                onSwap={() => setPickerDate(entry.entry_date)}
                 onRemove={() => void clearEntry(entry.entry_date)}
               />
             </div>
           );
         })}
       </div>
+      {pickerDate && (
+        <RecipePickerDrawer
+          date={pickerDate}
+          onClose={() => setPickerDate(null)}
+          onPick={async (recipeId) => {
+            await setEntry(pickerDate, recipeId);
+            setPickerDate(null);
+          }}
+        />
+      )}
     </div>
   );
 }
