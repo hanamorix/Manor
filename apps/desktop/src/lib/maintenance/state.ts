@@ -8,11 +8,13 @@ type LoadStatus =
 
 interface MaintenanceStore {
   dueSoon: ipc.ScheduleWithAsset[];
+  dueTodayAndOverdue: ipc.ScheduleWithAsset[];
   schedulesByAsset: Record<string, ipc.MaintenanceSchedule[]>;
   overdueCount: number;
   loadStatus: LoadStatus;
 
   loadDueSoon(): Promise<void>;
+  loadDueTodayAndOverdue(): Promise<void>;
   loadForAsset(assetId: string): Promise<void>;
   loadOverdueCount(): Promise<void>;
 
@@ -24,9 +26,17 @@ interface MaintenanceStore {
 
 export const useMaintenanceStore = create<MaintenanceStore>((set, get) => ({
   dueSoon: [],
+  dueTodayAndOverdue: [],
   schedulesByAsset: {},
   overdueCount: 0,
   loadStatus: { kind: "idle" },
+
+  async loadDueTodayAndOverdue() {
+    try {
+      const rows = await ipc.dueTodayAndOverdue();
+      set({ dueTodayAndOverdue: rows });
+    } catch { /* swallow */ }
+  },
 
   async loadDueSoon() {
     set({ loadStatus: { kind: "loading" } });
