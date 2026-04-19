@@ -66,6 +66,7 @@ export const useMaintenanceStore = create<MaintenanceStore>((set, get) => ({
   async create(draft) {
     const id = await ipc.create(draft);
     await get().loadDueSoon();
+    await get().loadDueTodayAndOverdue();
     await get().loadForAsset(draft.asset_id);
     await get().loadOverdueCount();
     return id;
@@ -74,6 +75,7 @@ export const useMaintenanceStore = create<MaintenanceStore>((set, get) => ({
   async update(id, draft) {
     await ipc.update(id, draft);
     await get().loadDueSoon();
+    await get().loadDueTodayAndOverdue();
     await get().loadForAsset(draft.asset_id);
     await get().loadOverdueCount();
   },
@@ -82,6 +84,7 @@ export const useMaintenanceStore = create<MaintenanceStore>((set, get) => ({
     const sch = (await ipc.get(id));
     await ipc.markDone(id);
     await get().loadDueSoon();
+    await get().loadDueTodayAndOverdue();
     if (sch) await get().loadForAsset(sch.asset_id);
     await get().loadOverdueCount();
   },
@@ -90,6 +93,7 @@ export const useMaintenanceStore = create<MaintenanceStore>((set, get) => ({
     const sch = (await ipc.get(id));
     await ipc.deleteSchedule(id);
     await get().loadDueSoon();
+    await get().loadDueTodayAndOverdue();
     if (sch) await get().loadForAsset(sch.asset_id);
     await get().loadOverdueCount();
   },
