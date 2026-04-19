@@ -116,15 +116,22 @@ pub fn set_hero_attachment(conn: &Connection, id: &str, uuid: Option<&str>) -> R
 }
 
 /// Hard-delete a trashed asset. Also soft-deletes its document + hero attachments
-/// so the attachment sweeper cleans up disk files. Only affects rows that are
-/// already soft-deleted.
+/// so the attachment sweeper cleans up disk files. Hard-deletes linked maintenance
+/// schedules (they cannot remain with a FK pointing at a purged asset). Only affects
+/// rows that are already soft-deleted.
 pub fn permanent_delete_asset(conn: &Connection, id: &str) -> Result<()> {
-    // Soft-delete linked attachments (the attachment permanent-delete sweep
-    // removes files later).
     let now = now_secs();
+    // Soft-delete linked attachments (L4a).
     conn.execute(
         "UPDATE attachment SET deleted_at = ?1 WHERE entity_type = 'asset' AND entity_id = ?2 AND deleted_at IS NULL",
         params![now, id],
+    )?;
+    // Hard-delete linked maintenance schedules (L4b). Soft-delete alone isn't possible
+    // here because the FK on asset_id blocks the asset hard-delete while any schedule
+    // row (even a soft-deleted one) still references this asset.
+    conn.execute(
+        "DELETE FROM maintenance_schedule WHERE asset_id = ?1",
+        params![id],
     )?;
     // Hard-delete the asset (only if trashed).
     conn.execute(
@@ -297,5 +304,33 @@ mod tests {
             |r| r.get(0),
         ).optional().unwrap().flatten();
         assert!(att_trashed.is_some(), "attachment should be soft-deleted post-purge");
+    }
+
+    #[test]
+    fn permanent_delete_cascades_to_maintenance_schedules() {
+        let (_d, conn) = fresh();
+        let asset_id = insert_asset(&conn, &draft("Boiler", AssetCategory::Appliance)).unwrap();
+
+        // Insert a schedule directly (skipping the mod.rs type to avoid circular test deps;
+        // the test verifies the cascade SQL runs regardless of schedule validity).
+        let today = chrono::Local::now().date_naive().format("%Y-%m-%d").to_string();
+        conn.execute(
+            "INSERT INTO maintenance_schedule
+               (id, asset_id, task, interval_months, next_due_date, created_at, updated_at)
+             VALUES ('sched1', ?1, 'Service', 12, ?2, 0, 0)",
+            rusqlite::params![asset_id, today],
+        ).unwrap();
+
+        // Trash + permanent-delete the asset.
+        soft_delete_asset(&conn, &asset_id).unwrap();
+        permanent_delete_asset(&conn, &asset_id).unwrap();
+
+        // The schedule should be hard-deleted (FK on asset_id requires full removal).
+        let sched_row: Option<String> = conn.query_row(
+            "SELECT id FROM maintenance_schedule WHERE id = 'sched1'",
+            [],
+            |r| r.get(0),
+        ).optional().unwrap();
+        assert!(sched_row.is_none(), "schedule should be hard-deleted when asset is purged");
     }
 }

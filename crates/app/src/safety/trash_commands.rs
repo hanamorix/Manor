@@ -29,6 +29,8 @@ pub fn trash_restore(
             .map_err(|e| e.to_string()),
         "asset" => manor_core::asset::dal::restore_asset(&conn, &entity_id)
             .map_err(|e| e.to_string()),
+        "maintenance_schedule" => manor_core::maintenance::dal::restore_schedule(&conn, &entity_id)
+            .map_err(|e| e.to_string()),
         _ => Err(format!(
             "trash_restore: unknown TEXT-keyed entity type '{entity_type}'"
         )),
@@ -71,6 +73,8 @@ pub fn trash_permanent_delete(
         "staple_item" => manor_core::meal_plan::staples::permanent_delete_staple(&conn, &entity_id)
             .map_err(|e| e.to_string()),
         "asset" => manor_core::asset::dal::permanent_delete_asset(&conn, &entity_id)
+            .map_err(|e| e.to_string()),
+        "maintenance_schedule" => manor_core::maintenance::dal::permanent_delete_schedule(&conn, &entity_id)
             .map_err(|e| e.to_string()),
         _ => Err(format!(
             "trash_permanent_delete: unknown TEXT-keyed entity type '{entity_type}'"

@@ -1,7 +1,8 @@
 import { useEffect, useState } from "react";
-import { Sparkles, Plus } from "lucide-react";
+import { Sparkles, Plus, Wrench } from "lucide-react";
 import { useChoresStore } from "../../lib/chores/state";
 import { listAllChores, checkChoreFairness, type Chore } from "../../lib/chores/ipc";
+import { useMaintenanceStore } from "../../lib/maintenance/state";
 import { PageHeader, SectionLabel, Button } from "../../lib/ui";
 import ChoreDrawer from "./ChoreDrawer";
 
@@ -61,13 +62,17 @@ export default function ChoresView() {
   const setFairnessNudges = useChoresStore((s) => s.setFairnessNudges);
   const dismissFairnessNudge = useChoresStore((s) => s.dismissFairnessNudge);
 
+  const { dueTodayAndOverdue, loadDueTodayAndOverdue, markDone: markMaintenanceDone } =
+    useMaintenanceStore();
+
   const [editing, setEditing] = useState<Chore | null>(null);
   const [creating, setCreating] = useState(false);
 
   useEffect(() => {
     void listAllChores().then(setAllChores);
     void checkChoreFairness().then(setFairnessNudges);
-  }, [setAllChores, setFairnessNudges]);
+    void loadDueTodayAndOverdue();
+  }, [setAllChores, setFairnessNudges, loadDueTodayAndOverdue]);
 
   const dueSoon = allChores
     .filter((c) => daysUntil(c.next_due) <= 7)
@@ -93,7 +98,7 @@ export default function ChoresView() {
 
       <section style={sectionStyle}>
         <SectionLabel icon={Sparkles}>Due soon</SectionLabel>
-        {dueSoon.length === 0 ? (
+        {dueSoon.length === 0 && dueTodayAndOverdue.length === 0 ? (
           <p style={{ color: "var(--ink-faint)", fontSize: "var(--text-sm)", margin: 0 }}>Nothing in the next 7 days.</p>
         ) : (
           <ul style={{ listStyle: "none", padding: 0, margin: 0 }}>
@@ -107,6 +112,33 @@ export default function ChoresView() {
                 </li>
               );
             })}
+            {dueTodayAndOverdue.map((r) => (
+              <li key={`maint-${r.schedule.id}`} style={rowStyle}>
+                <Wrench size={18} strokeWidth={1.6} color="var(--ink-soft, #999)" />
+                <span style={{ flex: 1, fontSize: 14 }}>
+                  {r.schedule.task}
+                  <span style={{
+                    marginLeft: 6, fontSize: 11, padding: "1px 6px",
+                    borderRadius: "var(--radius-sm, 4px)",
+                    background: "var(--paper-muted, #f5f5f5)",
+                    color: "var(--ink-soft, #999)",
+                  }}>maintenance</span>
+                </span>
+                <span style={{ fontSize: 12, color: "var(--ink-soft, #999)" }}>
+                  {r.asset_name}
+                </span>
+                <button
+                  type="button"
+                  style={{ marginLeft: 8, fontSize: 12 }}
+                  onClick={async () => {
+                    await markMaintenanceDone(r.schedule.id);
+                    await loadDueTodayAndOverdue();
+                  }}
+                >
+                  Mark done
+                </button>
+              </li>
+            ))}
           </ul>
         )}
       </section>

@@ -4,6 +4,7 @@ import * as ipc from "../../lib/asset/ipc";
 import type { Asset } from "../../lib/asset/ipc";
 import { AssetEditDrawer } from "./AssetEditDrawer";
 import { DocumentList } from "./DocumentList";
+import { MaintenanceSection } from "./MaintenanceSection";
 
 interface Props { id: string; onBack: () => void }
 
@@ -118,6 +119,9 @@ export function AssetDetail({ id, onBack }: Props) {
           </pre>
         </>
       )}
+
+      <h2 style={{ marginTop: 32, fontSize: 18 }}>Maintenance</h2>
+      <MaintenanceSection assetId={id} />
 
       <h2 style={{ marginTop: 32, fontSize: 18 }}>Documents</h2>
       <DocumentList assetId={id} />
