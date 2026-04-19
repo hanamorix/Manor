@@ -35,7 +35,9 @@ export const useMaintenanceStore = create<MaintenanceStore>((set, get) => ({
     try {
       const rows = await ipc.dueTodayAndOverdue();
       set({ dueTodayAndOverdue: rows });
-    } catch { /* swallow */ }
+    } catch (e: unknown) {
+      console.error("Failed to load due-today-and-overdue maintenance:", e);
+    }
   },
 
   async loadDueSoon() {
@@ -60,7 +62,11 @@ export const useMaintenanceStore = create<MaintenanceStore>((set, get) => ({
   },
 
   async loadOverdueCount() {
-    try { set({ overdueCount: await ipc.overdueCount() }); } catch { /* swallow */ }
+    try {
+      set({ overdueCount: await ipc.overdueCount() });
+    } catch (e: unknown) {
+      console.error("Failed to load overdue count:", e);
+    }
   },
 
   async create(draft) {
