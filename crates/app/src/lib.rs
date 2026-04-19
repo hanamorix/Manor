@@ -5,6 +5,7 @@ pub mod assistant;
 pub mod embedding;
 pub mod foundation;
 pub mod ledger;
+pub mod maintenance;
 pub mod meal_plan;
 pub mod recipe;
 pub mod remote;
@@ -387,6 +388,16 @@ pub fn register(builder: Builder<Wry>) -> Builder<Wry> {
             shopping_list::commands::shopping_list_toggle,
             shopping_list::commands::shopping_list_delete,
             shopping_list::commands::shopping_list_regenerate,
+            maintenance::commands::maintenance_schedule_list_for_asset,
+            maintenance::commands::maintenance_schedule_get,
+            maintenance::commands::maintenance_schedule_create,
+            maintenance::commands::maintenance_schedule_update,
+            maintenance::commands::maintenance_schedule_mark_done,
+            maintenance::commands::maintenance_schedule_delete,
+            maintenance::commands::maintenance_schedule_restore,
+            maintenance::commands::maintenance_due_soon,
+            maintenance::commands::maintenance_due_today_and_overdue,
+            maintenance::commands::maintenance_overdue_count,
         ])
 }
 
