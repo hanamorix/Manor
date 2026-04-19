@@ -1,4 +1,4 @@
-import { Wrench, MoreHorizontal } from "lucide-react";
+import { Wrench, MoreHorizontal, X } from "lucide-react";
 import type { MaintenanceSchedule } from "../../../lib/maintenance/ipc";
 
 interface Props {
@@ -17,10 +17,7 @@ function todayIso(): string {
   return `${y}-${m}-${day}`;
 }
 
-function formatRelativeDue(nextDueDate: string): string {
-  const today = new Date(todayIso() + "T00:00:00");
-  const due = new Date(nextDueDate + "T00:00:00");
-  const diffDays = Math.round((due.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+function formatRelativeFromDiff(diffDays: number): string {
   if (diffDays < 0) {
     const n = -diffDays;
     return `${n} day${n === 1 ? "" : "s"} overdue`;
@@ -33,8 +30,12 @@ function formatRelativeDue(nextDueDate: string): string {
 }
 
 export function ScheduleRow({ schedule, assetName, onMarkDone, onEdit, onDelete }: Props) {
-  const isOverdue = formatRelativeDue(schedule.next_due_date).includes("overdue")
-    || formatRelativeDue(schedule.next_due_date) === "due today";
+  const today = new Date(todayIso() + "T00:00:00");
+  const due = new Date(schedule.next_due_date + "T00:00:00");
+  const diffDays = Math.round((due.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+  const isOverdue = diffDays <= 0;
+  const label = formatRelativeFromDiff(diffDays);
+
   return (
     <div style={{
       display: "flex", alignItems: "center", gap: 12,
@@ -49,7 +50,7 @@ export function ScheduleRow({ schedule, assetName, onMarkDone, onEdit, onDelete 
         <div style={{ fontSize: 12, color: "var(--ink-soft, #999)" }}>
           {assetName ? `${assetName} · ` : ""}
           <span style={{ color: isOverdue ? "var(--ink-danger, #b00020)" : undefined }}>
-            {formatRelativeDue(schedule.next_due_date)}
+            {label}
           </span>
         </div>
       </div>
@@ -60,7 +61,7 @@ export function ScheduleRow({ schedule, assetName, onMarkDone, onEdit, onDelete 
       {onDelete && (
         <button type="button" onClick={onDelete} aria-label="Delete schedule"
           style={{ background: "transparent", border: "none", cursor: "pointer" }}>
-          ✕
+          <X size={14} strokeWidth={1.8} />
         </button>
       )}
     </div>
