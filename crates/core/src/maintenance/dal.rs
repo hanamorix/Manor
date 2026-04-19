@@ -85,8 +85,22 @@ pub fn overdue_count(conn: &Connection, today: &str) -> Result<i64> {
 
 pub fn update_schedule(conn: &Connection, id: &str, draft: &MaintenanceScheduleDraft) -> Result<()> {
     let now = now_secs();
-    let today = today_local();
-    let next_due = due::compute_next_due(draft.last_done_date.as_deref(), draft.interval_months, &today)?;
+
+    // Preserve the original creation date as fallback_start when last_done is None,
+    // so editing the interval doesn't silently re-anchor next_due_date to "today".
+    let created_at_secs: i64 = conn.query_row(
+        "SELECT created_at FROM maintenance_schedule WHERE id = ?1",
+        params![id],
+        |r| r.get(0),
+    )?;
+    let fallback = chrono::DateTime::<chrono::Utc>::from_timestamp(created_at_secs, 0)
+        .ok_or_else(|| anyhow::anyhow!("invalid created_at timestamp {}", created_at_secs))?
+        .with_timezone(&chrono::Local)
+        .date_naive()
+        .format("%Y-%m-%d")
+        .to_string();
+
+    let next_due = due::compute_next_due(draft.last_done_date.as_deref(), draft.interval_months, &fallback)?;
     conn.execute(
         "UPDATE maintenance_schedule
          SET asset_id = ?1, task = ?2, interval_months = ?3,
@@ -322,5 +336,43 @@ mod tests {
             "SELECT 1 FROM maintenance_schedule WHERE id = ?1", params![id], |r| r.get(0),
         ).optional().unwrap();
         assert!(row.is_none());
+    }
+
+    #[test]
+    fn update_never_done_preserves_created_at_anchor() {
+        let (_d, conn, asset_id) = fresh();
+        // Insert a never-done schedule. Its next_due_date = today + 12 months.
+        let id = insert_schedule(&conn, &simple_draft(&asset_id)).unwrap();
+        let original = get_schedule(&conn, &id).unwrap().unwrap();
+        let original_next_due = original.next_due_date.clone();
+
+        // Age the row's created_at to 100 days ago so the fallback differs from today.
+        let aged = chrono::Local::now().timestamp() - 100 * 24 * 60 * 60;
+        conn.execute(
+            "UPDATE maintenance_schedule SET created_at = ?1 WHERE id = ?2",
+            params![aged, id],
+        ).unwrap();
+
+        // Change interval; last_done stays None.
+        let mut draft = simple_draft(&asset_id);
+        draft.interval_months = 24;
+        update_schedule(&conn, &id, &draft).unwrap();
+
+        let updated = get_schedule(&conn, &id).unwrap().unwrap();
+
+        // updated.next_due_date should be (created_at ≈ 100 days ago) + 24 months,
+        // NOT "today + 24 months". If the fix works, those two differ by ~100 days.
+        let today = chrono::Local::now().date_naive();
+        let today_plus_24mo = today
+            .checked_add_months(chrono::Months::new(24))
+            .unwrap()
+            .format("%Y-%m-%d")
+            .to_string();
+        assert_ne!(
+            updated.next_due_date,
+            today_plus_24mo,
+            "update_schedule should anchor on created_at, not today"
+        );
+        let _ = original_next_due;
     }
 }
