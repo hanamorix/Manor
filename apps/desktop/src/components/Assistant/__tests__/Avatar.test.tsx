@@ -10,18 +10,17 @@ describe("Avatar", () => {
     expect(screen.getByAltText("Manor")).toBeInTheDocument();
   });
 
-  it("respects the height prop and computes width from the aspect ratio", () => {
+  it("applies the height via inline style; width uses auto so intrinsic ratio is preserved", () => {
     render(<Avatar height={100} />);
     const img = screen.getByAltText("Manor") as HTMLImageElement;
-    expect(img.getAttribute("height")).toBe("100");
-    // NATURAL_RATIO = 274/400 = 0.685 → width ≈ 69 (Math.round)
-    expect(img.getAttribute("width")).toBe("69");
+    expect(img.style.height).toBe("100px");
+    expect(img.style.width).toBe("auto");
   });
 
   it("defaults to height 72 when no prop is given", () => {
     render(<Avatar />);
     const img = screen.getByAltText("Manor") as HTMLImageElement;
-    expect(img.getAttribute("height")).toBe("72");
+    expect(img.style.height).toBe("72px");
   });
 
   it("wraps in a button when onClick is provided and fires on click", () => {

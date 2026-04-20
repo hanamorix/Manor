@@ -1,28 +1,23 @@
 import manorFace from "../../assets/avatars/manor_face.png";
 
-const NATURAL_RATIO = 274 / 400; // intrinsic w/h ratio preserved from old avatars
-
 interface AvatarProps {
-  /** Rendered height in px. Width is computed from the avatar's natural aspect ratio. */
+  /** Rendered height in px. Width scales from the image's intrinsic aspect ratio. */
   height?: number;
   onClick?: () => void;
 }
 
 export default function Avatar({ height = 72, onClick }: AvatarProps) {
-  const width = Math.round(height * NATURAL_RATIO);
-
   const img = (
     <img
       src={manorFace}
       alt="Manor"
-      width={width}
-      height={height}
       style={{
-        width,
         height,
+        width: "auto",
         transform: "scaleX(-1)",
         userSelect: "none",
         pointerEvents: "none",
+        display: "block",
       }}
       draggable={false}
     />

@@ -8,7 +8,7 @@ export interface Exchange {
 }
 
 interface Props {
-  /** Most recent first. Expected up to 2 entries; component renders up to 2. */
+  /** Most recent first. Only the first entry (latest) is rendered. */
   exchanges: Exchange[];
   onExpand: () => void;
   /** Override for tests. Default 10000ms. */
@@ -31,7 +31,7 @@ export function EphemeralLog({ exchanges, onExpand, fadeDelayMs = 10000 }: Props
 
   if (!isVisible || exchanges.length === 0) return null;
 
-  const visible = exchanges.slice(0, 2);
+  const latest = exchanges[0];
 
   return (
     <button
@@ -39,7 +39,6 @@ export function EphemeralLog({ exchanges, onExpand, fadeDelayMs = 10000 }: Props
       onClick={onExpand}
       aria-label="Expand conversation history"
       style={{
-        display: "block",
         textAlign: "left",
         width: "100%",
         padding: "6px 10px",
@@ -49,20 +48,17 @@ export function EphemeralLog({ exchanges, onExpand, fadeDelayMs = 10000 }: Props
         borderRadius: 4,
         fontSize: 12,
         lineHeight: 1.6,
+        color: "var(--ink, #333)",
         cursor: "pointer",
         transition: "opacity 400ms ease",
+        // Clamp long responses to 3 lines so they don't eat the screen.
+        display: "-webkit-box",
+        WebkitLineClamp: 3,
+        WebkitBoxOrient: "vertical",
+        overflow: "hidden",
       }}
     >
-      {visible.map((ex) => (
-        <div key={ex.key}>
-          <div style={{ color: "var(--ink-soft, #666)" }}>
-            <strong>You:</strong> {ex.userText}
-          </div>
-          <div style={{ color: "var(--ink, #333)" }}>
-            <strong>Manor:</strong> {ex.assistantText}
-          </div>
-        </div>
-      ))}
+      {latest.assistantText}
     </button>
   );
 }

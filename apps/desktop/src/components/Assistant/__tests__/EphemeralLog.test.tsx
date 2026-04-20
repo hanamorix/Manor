@@ -18,7 +18,7 @@ describe("EphemeralLog", () => {
     expect(container.textContent).toBe("");
   });
 
-  it("renders last two exchanges with user + Manor labels", () => {
+  it("renders only the latest Manor response (not the user prompt)", () => {
     render(
       <EphemeralLog
         exchanges={[
@@ -28,23 +28,11 @@ describe("EphemeralLog", () => {
         onExpand={vi.fn()}
       />,
     );
-    expect(screen.getByText("latest question")).toBeInTheDocument();
     expect(screen.getByText("latest answer")).toBeInTheDocument();
-    expect(screen.getByText("older question")).toBeInTheDocument();
-  });
-
-  it("caps at 2 exchanges even if more are passed", () => {
-    render(
-      <EphemeralLog
-        exchanges={[
-          { userText: "q3", assistantText: "a3", key: 3 },
-          { userText: "q2", assistantText: "a2", key: 2 },
-          { userText: "q1", assistantText: "a1", key: 1 },
-        ]}
-        onExpand={vi.fn()}
-      />,
-    );
-    expect(screen.queryByText("q1")).toBeNull();
+    // User prompts + older exchanges should not appear — just the latest response.
+    expect(screen.queryByText("latest question")).toBeNull();
+    expect(screen.queryByText("older question")).toBeNull();
+    expect(screen.queryByText("older answer")).toBeNull();
   });
 
   it("fades out after the configured delay", () => {
@@ -55,11 +43,11 @@ describe("EphemeralLog", () => {
         fadeDelayMs={5000}
       />,
     );
-    expect(screen.getByText("hi")).toBeInTheDocument();
+    expect(screen.getByText("hello")).toBeInTheDocument();
     act(() => {
       vi.advanceTimersByTime(5001);
     });
-    expect(screen.queryByText("hi")).toBeNull();
+    expect(screen.queryByText("hello")).toBeNull();
   });
 
   it("resets the fade timer when a new exchange arrives", () => {
@@ -83,7 +71,7 @@ describe("EphemeralLog", () => {
     act(() => {
       vi.advanceTimersByTime(3000); // total 6000ms from first — timer reset at 3000
     });
-    expect(screen.getByText("second")).toBeInTheDocument();
+    expect(screen.getByText("second-reply")).toBeInTheDocument();
   });
 
   it("calls onExpand when the log is clicked", () => {
