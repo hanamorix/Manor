@@ -57,7 +57,7 @@ export default function TasksCard() {
 
       {tasks.length === 0 && !adding && (
         <p style={{ color: "var(--ink-faint)", margin: 0, fontSize: 13 }}>
-          Nothing on your plate. Type <code>/task</code> or click + Add to add one.
+          Nothing on your plate.
         </p>
       )}
 

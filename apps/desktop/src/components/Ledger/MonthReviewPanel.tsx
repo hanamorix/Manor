@@ -45,7 +45,7 @@ export default function MonthReviewPanel({ year, month, summary }: Props) {
       }}
     >
       {/* Summary row */}
-      <div style={{ display: "flex", gap: 24, marginBottom: text ? 16 : 0 }}>
+      <div style={{ display: "flex", gap: 24, marginBottom: 16 }}>
         <div>
           <div style={{ fontSize: 11, color: "var(--ink-soft)", marginBottom: 6 }}>In</div>
           <div style={{ fontSize: 18, fontWeight: 600, color: "var(--ink)" }}>
@@ -100,7 +100,7 @@ export default function MonthReviewPanel({ year, month, summary }: Props) {
         </>
       ) : (
         <Button variant="primary" icon={BookOpen} onClick={run} disabled={running} style={{ opacity: running ? 0.6 : 1 }}>
-          {running ? "Thinking…" : "Review with AI"}
+          {running ? "Thinking…" : "Review Month"}
         </Button>
       )}
 

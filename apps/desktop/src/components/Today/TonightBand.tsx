@@ -34,6 +34,7 @@ export function TonightBand() {
     background: "var(--paper, #fff)",
     border: "1px solid var(--hairline, #e5e5e5)",
     borderRadius: 6,
+    marginBottom: 12,
   };
 
   if (!recipe) {

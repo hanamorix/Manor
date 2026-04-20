@@ -62,7 +62,7 @@ export default function ChoresCard() {
         Chores
       </SectionLabel>
       {chores.length === 0 ? (
-        <div style={emptyStyle}>All clear today 🧹</div>
+        <div style={emptyStyle}>All clear today</div>
       ) : (
         <ul style={{ listStyle: "none", margin: 0, padding: 0 }}>
           {chores.map((c) => {

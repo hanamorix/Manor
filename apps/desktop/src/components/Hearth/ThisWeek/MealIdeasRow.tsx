@@ -73,20 +73,20 @@ export function MealIdeasRow() {
       </div>
 
       {!collapsed && loadStatus.kind === "loading" && (
-        <div style={{ color: "var(--ink-soft, #999)", fontSize: 13, padding: 12 }}>
+        <div style={{ color: "var(--ink-soft, #999)", fontSize: 13, padding: "4px 0" }}>
           Loading…
         </div>
       )}
 
       {!collapsed && loadStatus.kind === "error" && (
-        <div style={{ color: "var(--ink-danger, #b00020)", fontSize: 13, padding: 12 }}>
+        <div style={{ color: "var(--ink-danger, #b00020)", fontSize: 13, padding: "4px 0" }}>
           {loadStatus.message}{" "}
           <button type="button" onClick={onReshuffle}>Retry</button>
         </div>
       )}
 
       {!collapsed && emptyLibrary && (
-        <div style={{ color: "var(--ink-soft, #999)", fontSize: 13, padding: 12 }}>
+        <div style={{ color: "var(--ink-soft, #999)", fontSize: 13, padding: "4px 0" }}>
           Add some recipes to your library and suggestions will appear here.{" "}
           <button type="button" onClick={() => setSubview("recipes")}>→ Go to Recipes</button>
         </div>

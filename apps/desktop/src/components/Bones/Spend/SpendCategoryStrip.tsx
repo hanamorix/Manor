@@ -41,7 +41,7 @@ export function SpendCategoryStrip({ totals }: Props) {
               borderRadius: 6,
             }}
           >
-            <div style={{ fontSize: 13, color: "var(--ink-soft, #777)" }}>
+            <div style={{ fontSize: 13, color: "var(--ink-soft, #777)", marginBottom: 8 }}>
               {c.emoji} {c.label}
             </div>
             <div style={{ fontSize: 20, fontWeight: 500 }}>{gbp(twelveM)}</div>
