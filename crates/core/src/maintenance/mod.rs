@@ -3,6 +3,7 @@
 pub mod dal;
 pub mod due;
 pub mod event;
+pub mod event_dal;
 
 use serde::{Deserialize, Serialize};
 
