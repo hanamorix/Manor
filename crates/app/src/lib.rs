@@ -7,6 +7,7 @@ pub mod foundation;
 pub mod ledger;
 pub mod maintenance;
 pub mod meal_plan;
+pub mod pdf_extract;
 pub mod recipe;
 pub mod remote;
 pub mod repair;
