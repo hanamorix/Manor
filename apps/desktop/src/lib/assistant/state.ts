@@ -1,5 +1,4 @@
 import { create } from "zustand";
-import type { AssistantState } from "./expressions";
 import type { Message } from "./ipc";
 
 export interface TransientBubble {
@@ -11,13 +10,10 @@ export interface TransientBubble {
 }
 
 interface AssistantStore {
-  avatarState: AssistantState;
   messages: Message[];
   transientBubbles: TransientBubble[];
   unreadCount: number;
-  drawerOpen: boolean;
 
-  setAvatarState: (s: AssistantState) => void;
   hydrateMessages: (msgs: Message[]) => void;
   beginAssistantMessage: (id: number) => void;
   appendAssistantToken: (fragment: string) => void;
@@ -30,19 +26,14 @@ interface AssistantStore {
   dismissBubble: (id: string) => void;
 
   setUnreadCount: (n: number) => void;
-  setDrawerOpen: (open: boolean) => void;
 }
 
 const MAX_VISIBLE_BUBBLES = 3;
 
 export const useAssistantStore = create<AssistantStore>((set) => ({
-  avatarState: "idle",
   messages: [],
   transientBubbles: [],
   unreadCount: 0,
-  drawerOpen: false,
-
-  setAvatarState: (s) => set({ avatarState: s }),
 
   hydrateMessages: (msgs) => set({ messages: msgs }),
 
@@ -70,7 +61,7 @@ export const useAssistantStore = create<AssistantStore>((set) => ({
       return { messages: [...st.messages.slice(0, -1), updated] };
     }),
 
-  endAssistantMessage: () => set({ avatarState: "idle" }),
+  endAssistantMessage: () => set({}),
 
   addUserMessage: (msg) =>
     set((st) => ({ messages: [...st.messages, msg] })),
@@ -102,6 +93,4 @@ export const useAssistantStore = create<AssistantStore>((set) => ({
     })),
 
   setUnreadCount: (n) => set({ unreadCount: n }),
-
-  setDrawerOpen: (open) => set({ drawerOpen: open }),
 }));

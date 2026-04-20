@@ -1,11 +1,12 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import Avatar from "./Avatar";
-import InputPill from "./InputPill";
+import ChatDock from "./ChatDock";
+import ChatHistoryPanel from "./ChatHistoryPanel";
+import { EphemeralLog, type Exchange } from "./EphemeralLog";
 import UnreadBadge from "./UnreadBadge";
-import ConversationDrawer from "./ConversationDrawer";
 import { useAssistantStore } from "../../lib/assistant/state";
 import { sendMessage, getUnreadCount, listMessages } from "../../lib/assistant/ipc";
-import type { StreamChunk } from "../../lib/assistant/ipc";
+import type { StreamChunk, Message as AssistantMessage } from "../../lib/assistant/ipc";
 import { parseSlash } from "../../lib/today/slash";
 import { addTask, listTasks, listProposals } from "../../lib/today/ipc";
 import { addTransaction } from "../../lib/ledger/ipc";
@@ -17,16 +18,12 @@ function newBubbleId() {
   return Math.random().toString(36).slice(2, 10);
 }
 
-function looksLikeDelight(content: string): boolean {
-  if (/[\u{1F389}\u{1F38A}]/u.test(content)) return true;
-  const exclaims = (content.match(/!/g) || []).length;
-  return exclaims >= 3;
-}
+const MENU_WIDTH_PX = 70;
+const AVATAR_COLUMN_PX = 104;
 
 export default function Assistant() {
-  const pillRef = useRef<HTMLInputElement>(null);
+  const dockRef = useRef<HTMLInputElement>(null);
 
-  const setAvatarState = useAssistantStore((s) => s.setAvatarState);
   const enqueueBubble = useAssistantStore((s) => s.enqueueBubble);
   const appendBubbleContent = useAssistantStore((s) => s.appendBubbleContent);
   const transientBubbles = useAssistantStore((s) => s.transientBubbles);
@@ -36,13 +33,14 @@ export default function Assistant() {
   const addUserMessage = useAssistantStore((s) => s.addUserMessage);
   const setBubbleTtl = useAssistantStore((s) => s.setBubbleTtl);
   const setUnreadCount = useAssistantStore((s) => s.setUnreadCount);
-  const setDrawerOpen = useAssistantStore((s) => s.setDrawerOpen);
   const hydrateMessages = useAssistantStore((s) => s.hydrateMessages);
+  const messages = useAssistantStore((s) => s.messages);
 
   const setTodayTasks = useTodayStore((s) => s.setTasks);
   const setPendingProposals = useTodayStore((s) => s.setPendingProposals);
 
-  // Initial load: hydrate recent messages + unread count.
+  const [isHistoryOpen, setIsHistoryOpen] = useState(false);
+
   useEffect(() => {
     void (async () => {
       const msgs = await listMessages(100, 0);
@@ -52,7 +50,6 @@ export default function Assistant() {
     })();
   }, [hydrateMessages, setUnreadCount]);
 
-  // Global ⌘/ — focus the pill (only when Manor has window focus; listener is scoped to document).
   useEffect(() => {
     let lastFire = 0;
     const onKey = (e: globalThis.KeyboardEvent) => {
@@ -61,12 +58,20 @@ export default function Assistant() {
         if (now - lastFire < 150) return;
         lastFire = now;
         e.preventDefault();
-        pillRef.current?.focus();
+        dockRef.current?.focus();
       }
     };
     document.addEventListener("keydown", onKey);
     return () => document.removeEventListener("keydown", onKey);
   }, []);
+
+  useEffect(() => {
+    if (isHistoryOpen) dockRef.current?.focus();
+  }, [isHistoryOpen]);
+
+  const lastTwoExchanges = useMemo<Exchange[]>(() => {
+    return extractExchanges(messages).slice(-2).reverse();
+  }, [messages]);
 
   const handleSubmit = async (content: string) => {
     const slash = parseSlash(content);
@@ -77,7 +82,6 @@ export default function Assistant() {
         useTodayStore.getState().showToast(`Added: ${slash.title}`);
         return;
       } catch (e) {
-        setAvatarState("confused");
         enqueueBubble({
           id: newBubbleId(),
           kind: "error",
@@ -107,7 +111,6 @@ export default function Assistant() {
         });
         return;
       } catch (e) {
-        setAvatarState("confused");
         enqueueBubble({
           id: newBubbleId(),
           kind: "error",
@@ -118,11 +121,7 @@ export default function Assistant() {
         return;
       }
     }
-    // `unknown` slashes fall through to send_message as a normal chat turn.
 
-    setAvatarState("listening");
-
-    // Optimistic: add a blue user bubble + a provisional message to the scrollback.
     const userBubbleId = newBubbleId();
     enqueueBubble({
       id: userBubbleId,
@@ -131,9 +130,6 @@ export default function Assistant() {
       messageId: null,
       ttlMs: 10000,
     });
-    // We don't know the DB id yet, but addUserMessage takes a full Message shape.
-    // Use a negative temporary id that won't collide with real ids; the drawer
-    // re-hydrates from the DB on open, so this is fine.
     addUserMessage({
       id: -Date.now(),
       conversation_id: 1,
@@ -144,17 +140,13 @@ export default function Assistant() {
       proposal_id: null,
     });
 
-    setAvatarState("thinking");
-
     let assistantDbId: number | null = null;
     const assistantBubbleId = newBubbleId();
-    let assistantText = "";
 
     const onEvent = (chunk: StreamChunk) => {
       if (chunk.type === "Started") {
         assistantDbId = chunk.value;
         beginAssistantMessage(assistantDbId);
-        setAvatarState("speaking");
         enqueueBubble({
           id: assistantBubbleId,
           kind: "assistant",
@@ -164,11 +156,8 @@ export default function Assistant() {
         });
       } else if (chunk.type === "Token") {
         if (assistantDbId === null) {
-          // Defensive — Started should always fire first. If not, we still want
-          // tokens to appear, so synthesize and continue.
           assistantDbId = -Date.now();
           beginAssistantMessage(assistantDbId);
-          setAvatarState("speaking");
           enqueueBubble({
             id: assistantBubbleId,
             kind: "assistant",
@@ -177,7 +166,6 @@ export default function Assistant() {
             ttlMs: 12000,
           });
         }
-        assistantText += chunk.value;
         appendAssistantToken(chunk.value);
         appendBubbleContent(assistantBubbleId, chunk.value);
       } else if (chunk.type === "Proposal") {
@@ -185,17 +173,9 @@ export default function Assistant() {
         void listTasks().then(setTodayTasks);
       } else if (chunk.type === "Done") {
         endAssistantMessage();
-        // Reset bubble TTL to 8s now that all content has arrived.
         setBubbleTtl(assistantBubbleId, 8000);
-        if (looksLikeDelight(assistantText)) {
-          setAvatarState("idle"); // will pass through laughing in a future refinement
-        } else {
-          setAvatarState("idle");
-        }
-        // Refresh unread count from DB — the authoritative source.
         void getUnreadCount().then(setUnreadCount);
       } else if (chunk.type === "Error") {
-        setAvatarState("confused");
         const errorMessage =
           chunk.value === "OllamaUnreachable"
             ? "I can't reach Ollama. Is it running?"
@@ -217,7 +197,6 @@ export default function Assistant() {
     try {
       await sendMessage(content, onEvent);
     } catch (e) {
-      setAvatarState("confused");
       enqueueBubble({
         id: newBubbleId(),
         kind: "error",
@@ -228,16 +207,42 @@ export default function Assistant() {
     }
   };
 
-  // Minimize when any right-side drawer or the settings modal is open, so we
-  // don't cover content. Conversation drawer has its own z-index above the
-  // avatar so it doesn't need to trigger minimize.
   const overlayCount = useOverlayStore((s) => s.count);
   const settingsOpen = useSettingsStore((s) => s.modalOpen);
   const minimized = overlayCount > 0 || settingsOpen;
 
+  const dockHidden = transientBubbles.length > 0;
+
   return (
     <>
-      <ConversationDrawer onSubmit={handleSubmit} />
+      <div
+        style={{
+          position: "fixed",
+          left: MENU_WIDTH_PX + 16,
+          right: AVATAR_COLUMN_PX,
+          bottom: 16,
+          zIndex: 999,
+          pointerEvents: dockHidden && !isHistoryOpen ? "none" : "auto",
+        }}
+      >
+        {!isHistoryOpen && (
+          <EphemeralLog
+            exchanges={lastTwoExchanges}
+            onExpand={() => setIsHistoryOpen(true)}
+          />
+        )}
+        <ChatHistoryPanel
+          isOpen={isHistoryOpen}
+          messages={messages}
+          onCollapse={() => setIsHistoryOpen(false)}
+        />
+        <ChatDock
+          ref={dockRef}
+          onSubmit={handleSubmit}
+          onExpand={() => setIsHistoryOpen(true)}
+          hidden={dockHidden}
+        />
+      </div>
 
       <div
         style={{
@@ -254,21 +259,26 @@ export default function Assistant() {
         }}
       >
         {!minimized && <UnreadBadgeWithAnchor />}
-        {!minimized && transientBubbles.length === 0 && (
-          <InputPill
-            ref={pillRef}
-            onSubmit={handleSubmit}
-            onFocus={() => setAvatarState("listening")}
-            onBlur={() => setAvatarState("idle")}
-          />
-        )}
         <Avatar
           height={minimized ? 40 : 72}
-          onClick={() => setDrawerOpen(true)}
+          onClick={() => setIsHistoryOpen((v) => !v)}
         />
       </div>
     </>
   );
+}
+
+function extractExchanges(messages: AssistantMessage[]): Exchange[] {
+  const out: Exchange[] = [];
+  for (let i = 0; i < messages.length - 1; i++) {
+    const a = messages[i];
+    const b = messages[i + 1];
+    if (a.role === "user" && b.role === "assistant") {
+      out.push({ userText: a.content, assistantText: b.content, key: b.id });
+      i++;
+    }
+  }
+  return out;
 }
 
 function UnreadBadgeWithAnchor() {

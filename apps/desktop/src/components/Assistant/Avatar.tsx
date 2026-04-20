@@ -1,7 +1,6 @@
-import { useAssistantStore } from "../../lib/assistant/state";
-import { expressionFor } from "../../lib/assistant/expressions";
+import manorFace from "../../assets/avatars/manor_face.png";
 
-const NATURAL_RATIO = 274 / 400; // intrinsic w/h of the avatar PNGs in material/
+const NATURAL_RATIO = 274 / 400; // intrinsic w/h ratio preserved from old avatars
 
 interface AvatarProps {
   /** Rendered height in px. Width is computed from the avatar's natural aspect ratio. */
@@ -9,14 +8,12 @@ interface AvatarProps {
   onClick?: () => void;
 }
 
-export default function Avatar({ height = 96, onClick }: AvatarProps) {
-  const state = useAssistantStore((s) => s.avatarState);
-  const src = expressionFor(state);
+export default function Avatar({ height = 72, onClick }: AvatarProps) {
   const width = Math.round(height * NATURAL_RATIO);
 
   const img = (
     <img
-      src={src}
+      src={manorFace}
       alt="Manor"
       width={width}
       height={height}
@@ -24,7 +21,6 @@ export default function Avatar({ height = 96, onClick }: AvatarProps) {
         width,
         height,
         transform: "scaleX(-1)",
-        transition: "opacity 150ms ease-in-out",
         userSelect: "none",
         pointerEvents: "none",
       }}
