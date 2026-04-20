@@ -8,6 +8,7 @@ pub mod ledger;
 pub mod maintenance;
 pub mod meal_plan;
 pub mod recipe;
+pub mod repair;
 pub mod remote;
 pub mod rhythm;
 pub mod safety;
