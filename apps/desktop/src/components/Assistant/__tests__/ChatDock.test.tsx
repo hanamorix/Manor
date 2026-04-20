@@ -36,13 +36,6 @@ describe("ChatDock", () => {
     expect(onExpand).toHaveBeenCalledTimes(1);
   });
 
-  it("renders nothing when hidden", () => {
-    const { container } = render(
-      <ChatDock onSubmit={vi.fn()} onExpand={vi.fn()} hidden />,
-    );
-    expect(container.textContent).toBe("");
-  });
-
   it("blurs the input on Escape", () => {
     render(<ChatDock onSubmit={vi.fn()} onExpand={vi.fn()} />);
     const input = screen.getByPlaceholderText("Say something…") as HTMLInputElement;

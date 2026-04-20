@@ -4,18 +4,10 @@ import { Maximize2 } from "lucide-react";
 interface Props {
   onSubmit: (content: string) => void;
   onExpand: () => void;
-  /** When true, the dock hides (preserves existing InputPill behaviour
-   *  when transient bubbles are present). */
-  hidden?: boolean;
 }
 
-/**
- * Centered bottom input bar. Replaces InputPill.
- * Spans the window width minus ~88px on the right (avatar column)
- * and a small gap on the left. Owns its own input value.
- */
 const ChatDock = forwardRef<HTMLInputElement, Props>(
-  ({ onSubmit, onExpand, hidden = false }, ref) => {
+  ({ onSubmit, onExpand }, ref) => {
     const [value, setValue] = useState("");
 
     const handleKey = (e: KeyboardEvent<HTMLInputElement>) => {
@@ -29,8 +21,6 @@ const ChatDock = forwardRef<HTMLInputElement, Props>(
         (e.target as HTMLInputElement).blur();
       }
     };
-
-    if (hidden) return null;
 
     return (
       <div

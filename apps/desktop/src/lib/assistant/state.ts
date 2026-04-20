@@ -19,6 +19,7 @@ interface AssistantStore {
   appendAssistantToken: (fragment: string) => void;
   endAssistantMessage: () => void;
   addUserMessage: (msg: Message) => void;
+  markAllLocalSeen: () => void;
 
   enqueueBubble: (b: TransientBubble) => void;
   appendBubbleContent: (id: string, fragment: string) => void;
@@ -65,6 +66,11 @@ export const useAssistantStore = create<AssistantStore>((set) => ({
 
   addUserMessage: (msg) =>
     set((st) => ({ messages: [...st.messages, msg] })),
+
+  markAllLocalSeen: () =>
+    set((st) => ({
+      messages: st.messages.map((m) => (m.seen ? m : { ...m, seen: true })),
+    })),
 
   enqueueBubble: (b) =>
     set((st) => {
