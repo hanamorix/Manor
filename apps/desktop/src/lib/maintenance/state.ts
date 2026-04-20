@@ -1,5 +1,7 @@
 import { create } from "zustand";
 import * as ipc from "./ipc";
+import { useMaintenanceEventsStore } from "./event-state";
+import { useSpendStore } from "./spend-state";
 
 type LoadStatus =
   | { kind: "idle" }
@@ -91,7 +93,12 @@ export const useMaintenanceStore = create<MaintenanceStore>((set, get) => ({
     await ipc.markDone(id);
     await get().loadDueSoon();
     await get().loadDueTodayAndOverdue();
-    if (sch) await get().loadForAsset(sch.asset_id);
+    if (sch) {
+      await get().loadForAsset(sch.asset_id);
+      // L4c: invalidate event cache + refresh spend totals.
+      useMaintenanceEventsStore.getState().invalidateAsset(sch.asset_id);
+      await useSpendStore.getState().refresh();
+    }
     await get().loadOverdueCount();
   },
 
