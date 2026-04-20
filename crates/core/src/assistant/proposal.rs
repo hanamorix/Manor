@@ -54,6 +54,16 @@ pub struct Proposal {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct AddMaintenanceScheduleArgs {
+    pub asset_id: String,
+    pub task: String,
+    pub interval_months: i32,
+    pub notes: String,
+    pub source_attachment_uuid: String,
+    pub tier: String,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct AddTaskArgs {
     pub title: String,
     /// Optional due date. qwen2.5 occasionally emits structured objects here
@@ -179,6 +189,88 @@ pub fn reject(conn: &Connection, id: i64) -> Result<()> {
         [id],
     )?;
     Ok(())
+}
+
+/// Apply a pending `add_maintenance_schedule` proposal verbatim.
+/// Inserts the schedule + marks the proposal `applied`.
+/// Returns the inserted schedule's id.
+pub fn approve_add_maintenance_schedule(conn: &mut Connection, id: i64) -> Result<String> {
+    let tx = conn.transaction()?;
+
+    let row: Option<(String, String, String)> = tx
+        .query_row(
+            "SELECT kind, status, diff FROM proposal WHERE id = ?1",
+            [id],
+            |r| Ok((r.get(0)?, r.get(1)?, r.get(2)?)),
+        )
+        .optional()?;
+    let (kind, status, diff) = match row {
+        Some(r) => r,
+        None => bail!("proposal {id} not found"),
+    };
+    if status != "pending" {
+        bail!("proposal {id} is not pending (status={status})");
+    }
+    if kind != "add_maintenance_schedule" {
+        bail!("proposal {id} has unsupported kind: {kind}");
+    }
+
+    let args: AddMaintenanceScheduleArgs = serde_json::from_str(&diff)?;
+    let draft = crate::maintenance::MaintenanceScheduleDraft {
+        asset_id: args.asset_id,
+        task: args.task,
+        interval_months: args.interval_months,
+        last_done_date: None,
+        notes: args.notes,
+    };
+    let schedule_id = crate::maintenance::dal::insert_schedule(&tx, &draft)?;
+
+    tx.execute(
+        "UPDATE proposal SET status = 'applied', applied_at = ?1 WHERE id = ?2",
+        params![Utc::now().timestamp(), id],
+    )?;
+
+    tx.commit()?;
+    Ok(schedule_id)
+}
+
+/// Apply a pending `add_maintenance_schedule` proposal using caller-supplied
+/// edited fields (overrides the diff's values). Used by ScheduleDrawer in
+/// proposal-edit mode. Returns the inserted schedule's id.
+pub fn approve_add_maintenance_schedule_with_override(
+    conn: &mut Connection,
+    id: i64,
+    edited: &crate::maintenance::MaintenanceScheduleDraft,
+) -> Result<String> {
+    let tx = conn.transaction()?;
+
+    let row: Option<(String, String)> = tx
+        .query_row(
+            "SELECT kind, status FROM proposal WHERE id = ?1",
+            [id],
+            |r| Ok((r.get(0)?, r.get(1)?)),
+        )
+        .optional()?;
+    let (kind, status) = match row {
+        Some(r) => r,
+        None => bail!("proposal {id} not found"),
+    };
+    if kind != "add_maintenance_schedule" {
+        bail!("proposal {id} is not an add_maintenance_schedule");
+    }
+    if status != "pending" {
+        bail!("proposal {id} is not pending (status={status})");
+    }
+
+    let schedule_id = crate::maintenance::dal::insert_schedule(&tx, edited)?;
+
+    tx.execute(
+        "UPDATE proposal SET status = 'applied', applied_at = ?1 WHERE id = ?2",
+        params![Utc::now().timestamp(), id],
+    )?;
+
+    tx.commit()?;
+    Ok(schedule_id)
 }
 
 #[cfg(test)]
@@ -315,5 +407,188 @@ mod tests {
         let parsed: AddTaskArgs = serde_json::from_value(weird).unwrap();
         assert_eq!(parsed.title, "Book a dentist appointment");
         assert_eq!(parsed.due_date, None);
+    }
+
+    // ── L4e add_maintenance_schedule proposals ────────────────────────────
+
+    fn insert_test_asset(conn: &Connection) -> String {
+        use crate::asset::{dal as asset_dal, AssetCategory, AssetDraft};
+        asset_dal::insert_asset(
+            conn,
+            &AssetDraft {
+                name: "Boiler".into(),
+                category: AssetCategory::Appliance,
+                make: None,
+                model: None,
+                serial_number: None,
+                purchase_date: None,
+                notes: String::new(),
+                hero_attachment_uuid: None,
+            },
+        )
+        .unwrap()
+    }
+
+    fn insert_pending_schedule_proposal(
+        conn: &Connection,
+        asset_id: &str,
+        task: &str,
+        interval_months: i32,
+        source_attachment_uuid: &str,
+    ) -> i64 {
+        let args = AddMaintenanceScheduleArgs {
+            asset_id: asset_id.into(),
+            task: task.into(),
+            interval_months,
+            notes: String::new(),
+            source_attachment_uuid: source_attachment_uuid.into(),
+            tier: "ollama".into(),
+        };
+        let diff = serde_json::to_string(&args).unwrap();
+        insert(
+            conn,
+            NewProposal {
+                kind: "add_maintenance_schedule",
+                rationale: "test",
+                diff_json: &diff,
+                skill: "pdf_extract",
+            },
+        )
+        .unwrap()
+    }
+
+    #[test]
+    fn approve_add_maintenance_schedule_inserts_and_marks_applied() {
+        let (_d, mut conn) = fresh_conn();
+        let asset_id = insert_test_asset(&conn);
+        let pid = insert_pending_schedule_proposal(&conn, &asset_id, "Annual service", 12, "att-uuid-1");
+
+        let schedule_id = approve_add_maintenance_schedule(&mut conn, pid).unwrap();
+        assert!(!schedule_id.is_empty());
+
+        let s = crate::maintenance::dal::get_schedule(&conn, &schedule_id)
+            .unwrap()
+            .unwrap();
+        assert_eq!(s.task, "Annual service");
+        assert_eq!(s.interval_months, 12);
+
+        let (status, applied_at): (String, Option<i64>) = conn
+            .query_row(
+                "SELECT status, applied_at FROM proposal WHERE id = ?1",
+                [pid],
+                |r| Ok((r.get(0)?, r.get(1)?)),
+            )
+            .unwrap();
+        assert_eq!(status, "applied");
+        assert!(applied_at.is_some());
+    }
+
+    #[test]
+    fn approve_add_maintenance_schedule_fails_on_non_pending() {
+        let (_d, mut conn) = fresh_conn();
+        let asset_id = insert_test_asset(&conn);
+        let pid = insert_pending_schedule_proposal(&conn, &asset_id, "Service", 12, "att");
+        approve_add_maintenance_schedule(&mut conn, pid).unwrap();
+        let err = approve_add_maintenance_schedule(&mut conn, pid)
+            .unwrap_err()
+            .to_string();
+        assert!(err.contains("not pending"), "got: {}", err);
+    }
+
+    #[test]
+    fn approve_add_maintenance_schedule_fails_on_wrong_kind() {
+        let (_d, mut conn) = fresh_conn();
+        let pid = insert(
+            &conn,
+            NewProposal {
+                kind: "add_task",
+                rationale: "r",
+                diff_json: r#"{"title":"t","due_date":null}"#,
+                skill: "test",
+            },
+        )
+        .unwrap();
+        let err = approve_add_maintenance_schedule(&mut conn, pid)
+            .unwrap_err()
+            .to_string();
+        assert!(err.contains("unsupported kind"), "got: {}", err);
+    }
+
+    #[test]
+    fn approve_with_override_uses_edited_fields() {
+        let (_d, mut conn) = fresh_conn();
+        let asset_id = insert_test_asset(&conn);
+        let pid = insert_pending_schedule_proposal(&conn, &asset_id, "Original", 12, "att");
+
+        let edited = crate::maintenance::MaintenanceScheduleDraft {
+            asset_id: asset_id.clone(),
+            task: "Edited task".into(),
+            interval_months: 24,
+            last_done_date: None,
+            notes: "edited notes".into(),
+        };
+        let sched_id =
+            approve_add_maintenance_schedule_with_override(&mut conn, pid, &edited).unwrap();
+
+        let s = crate::maintenance::dal::get_schedule(&conn, &sched_id)
+            .unwrap()
+            .unwrap();
+        assert_eq!(s.task, "Edited task");
+        assert_eq!(s.interval_months, 24);
+        assert_eq!(s.notes, "edited notes");
+
+        let status: String = conn
+            .query_row("SELECT status FROM proposal WHERE id = ?1", [pid], |r| r.get(0))
+            .unwrap();
+        assert_eq!(status, "applied");
+    }
+
+    #[test]
+    fn approve_with_override_rejects_wrong_kind() {
+        let (_d, mut conn) = fresh_conn();
+        let pid = insert(
+            &conn,
+            NewProposal {
+                kind: "add_task",
+                rationale: "r",
+                diff_json: r#"{"title":"t","due_date":null}"#,
+                skill: "test",
+            },
+        )
+        .unwrap();
+        let edited = crate::maintenance::MaintenanceScheduleDraft {
+            asset_id: "x".into(),
+            task: "x".into(),
+            interval_months: 12,
+            last_done_date: None,
+            notes: String::new(),
+        };
+        let err = approve_add_maintenance_schedule_with_override(&mut conn, pid, &edited)
+            .unwrap_err()
+            .to_string();
+        assert!(
+            err.contains("not an add_maintenance_schedule"),
+            "got: {}",
+            err
+        );
+    }
+
+    #[test]
+    fn approve_with_override_rejects_non_pending() {
+        let (_d, mut conn) = fresh_conn();
+        let asset_id = insert_test_asset(&conn);
+        let pid = insert_pending_schedule_proposal(&conn, &asset_id, "Service", 12, "att");
+        reject(&conn, pid).unwrap();
+        let edited = crate::maintenance::MaintenanceScheduleDraft {
+            asset_id: asset_id.clone(),
+            task: "x".into(),
+            interval_months: 12,
+            last_done_date: None,
+            notes: String::new(),
+        };
+        let err = approve_add_maintenance_schedule_with_override(&mut conn, pid, &edited)
+            .unwrap_err()
+            .to_string();
+        assert!(err.contains("not pending"), "got: {}", err);
     }
 }

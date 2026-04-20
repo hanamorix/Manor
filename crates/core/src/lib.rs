@@ -9,6 +9,7 @@ pub mod ledger;
 pub mod maintenance;
 pub mod meal_plan;
 pub mod note;
+pub mod pdf_extract;
 pub mod person;
 pub mod recipe;
 pub mod redact;
