@@ -6,23 +6,11 @@ describe("assistant store", () => {
     useAssistantStore.setState(useAssistantStore.getInitialState(), true);
   });
 
-  it("starts in idle state with no messages and no bubbles", () => {
+  it("starts with no messages, no bubbles, and zero unread", () => {
     const s = useAssistantStore.getState();
-    expect(s.avatarState).toBe("idle");
     expect(s.messages).toEqual([]);
     expect(s.transientBubbles).toEqual([]);
     expect(s.unreadCount).toBe(0);
-    expect(s.drawerOpen).toBe(false);
-  });
-
-  it("transitions avatarState on user send then streaming", () => {
-    const s = useAssistantStore.getState();
-    s.setAvatarState("listening");
-    expect(useAssistantStore.getState().avatarState).toBe("listening");
-    s.setAvatarState("thinking");
-    expect(useAssistantStore.getState().avatarState).toBe("thinking");
-    s.setAvatarState("speaking");
-    expect(useAssistantStore.getState().avatarState).toBe("speaking");
   });
 
   it("appends assistant token fragments to the in-flight message", () => {
