@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 export interface Exchange {
   userText: string;
@@ -15,15 +15,32 @@ interface Props {
   fadeDelayMs?: number;
 }
 
+/**
+ * Shows the latest Manor response for a short time, then fades.
+ *
+ * Only reacts to messages that arrive AFTER the component mounts —
+ * historical messages (present on page load) stay hidden. This prevents
+ * the last message from lingering on every refresh.
+ */
 export function EphemeralLog({ exchanges, onExpand, fadeDelayMs = 10000 }: Props) {
   const [isVisible, setIsVisible] = useState(false);
   const latestKey = exchanges[0]?.key ?? null;
+  const lastSeenKeyRef = useRef<string | number | null>(null);
+  const hasMountedRef = useRef(false);
 
   useEffect(() => {
-    if (latestKey == null) {
-      setIsVisible(false);
+    // On first mount: record the current latest as already seen so the
+    // historical tail of the conversation doesn't flash on page load.
+    if (!hasMountedRef.current) {
+      hasMountedRef.current = true;
+      lastSeenKeyRef.current = latestKey;
       return;
     }
+    // On subsequent updates, only react to genuinely new keys.
+    if (latestKey == null || latestKey === lastSeenKeyRef.current) {
+      return;
+    }
+    lastSeenKeyRef.current = latestKey;
     setIsVisible(true);
     const t = window.setTimeout(() => setIsVisible(false), fadeDelayMs);
     return () => window.clearTimeout(t);
@@ -51,7 +68,6 @@ export function EphemeralLog({ exchanges, onExpand, fadeDelayMs = 10000 }: Props
         color: "var(--ink, #333)",
         cursor: "pointer",
         transition: "opacity 400ms ease",
-        // Clamp long responses to 3 lines so they don't eat the screen.
         display: "-webkit-box",
         WebkitLineClamp: 3,
         WebkitBoxOrient: "vertical",

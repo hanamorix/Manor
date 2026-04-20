@@ -247,7 +247,7 @@ export default function Assistant() {
       <div
         style={{
           position: "fixed",
-          bottom: 16,
+          bottom: 0,
           right: 16,
           display: "flex",
           flexDirection: "column",

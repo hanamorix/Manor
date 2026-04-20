@@ -18,25 +18,44 @@ describe("EphemeralLog", () => {
     expect(container.textContent).toBe("");
   });
 
-  it("renders only the latest Manor response (not the user prompt)", () => {
-    render(
+  it("does not render on initial mount even when exchanges already exist", () => {
+    const { container } = render(
+      <EphemeralLog
+        exchanges={[{ userText: "historical q", assistantText: "historical a", key: 1 }]}
+        onExpand={vi.fn()}
+      />,
+    );
+    expect(container.textContent).toBe("");
+  });
+
+  it("renders only the latest Manor response when a new exchange arrives", () => {
+    const { rerender } = render(
+      <EphemeralLog
+        exchanges={[{ userText: "historical q", assistantText: "historical a", key: 1 }]}
+        onExpand={vi.fn()}
+      />,
+    );
+    rerender(
       <EphemeralLog
         exchanges={[
           { userText: "latest question", assistantText: "latest answer", key: 2 },
-          { userText: "older question", assistantText: "older answer", key: 1 },
+          { userText: "historical q", assistantText: "historical a", key: 1 },
         ]}
         onExpand={vi.fn()}
       />,
     );
     expect(screen.getByText("latest answer")).toBeInTheDocument();
-    // User prompts + older exchanges should not appear — just the latest response.
+    // User prompt + older exchange should not appear.
     expect(screen.queryByText("latest question")).toBeNull();
-    expect(screen.queryByText("older question")).toBeNull();
-    expect(screen.queryByText("older answer")).toBeNull();
+    expect(screen.queryByText("historical q")).toBeNull();
+    expect(screen.queryByText("historical a")).toBeNull();
   });
 
   it("fades out after the configured delay", () => {
-    render(
+    const { rerender } = render(
+      <EphemeralLog exchanges={[]} onExpand={vi.fn()} fadeDelayMs={5000} />,
+    );
+    rerender(
       <EphemeralLog
         exchanges={[{ userText: "hi", assistantText: "hello", key: 1 }]}
         onExpand={vi.fn()}
@@ -52,6 +71,9 @@ describe("EphemeralLog", () => {
 
   it("resets the fade timer when a new exchange arrives", () => {
     const { rerender } = render(
+      <EphemeralLog exchanges={[]} onExpand={vi.fn()} fadeDelayMs={5000} />,
+    );
+    rerender(
       <EphemeralLog
         exchanges={[{ userText: "first", assistantText: "first-reply", key: 1 }]}
         onExpand={vi.fn()}
@@ -76,7 +98,10 @@ describe("EphemeralLog", () => {
 
   it("calls onExpand when the log is clicked", () => {
     const onExpand = vi.fn();
-    render(
+    const { rerender } = render(
+      <EphemeralLog exchanges={[]} onExpand={onExpand} />,
+    );
+    rerender(
       <EphemeralLog
         exchanges={[{ userText: "hi", assistantText: "hello", key: 1 }]}
         onExpand={onExpand}
