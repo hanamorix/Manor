@@ -1,7 +1,7 @@
 import { create } from "zustand";
 import { settingGet, settingSet } from "../foundation/ipc";
 
-export type BonesSubview = "assets" | "due_soon";
+export type BonesSubview = "assets" | "due_soon" | "spend";
 
 interface BonesViewStore {
   subview: BonesSubview;
@@ -22,7 +22,7 @@ export const useBonesViewStore = create<BonesViewStore>((set) => ({
   async hydrate() {
     try {
       const v = await settingGet("bones.last_subview");
-      if (v === "assets" || v === "due_soon") {
+      if (v === "assets" || v === "due_soon" || v === "spend") {
         set({ subview: v, hydrated: true });
       } else {
         set({ hydrated: true });

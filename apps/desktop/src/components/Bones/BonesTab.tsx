@@ -2,6 +2,7 @@ import { useEffect } from "react";
 import { BonesSubNav } from "./BonesSubNav";
 import { AssetsView } from "./AssetsView";
 import { DueSoonView } from "./DueSoon/DueSoonView";
+import { SpendView } from "./Spend/SpendView";
 import { useBonesViewStore } from "../../lib/bones/view-state";
 
 export function BonesTab() {
@@ -13,6 +14,7 @@ export function BonesTab() {
       <BonesSubNav />
       {subview === "assets"   && <AssetsView />}
       {subview === "due_soon" && <DueSoonView />}
+      {subview === "spend"    && <SpendView />}
     </div>
   );
 }
