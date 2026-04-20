@@ -7,6 +7,7 @@ import { DocumentList } from "./DocumentList";
 import { MaintenanceSection } from "./MaintenanceSection";
 import { AssetSpendStrip } from "./AssetSpendStrip";
 import { HistoryBlock } from "./HistoryBlock";
+import { TroubleshootBlock } from "./TroubleshootBlock";
 
 interface Props { id: string; onBack: () => void }
 
@@ -127,6 +128,7 @@ export function AssetDetail({ id, onBack }: Props) {
       <h2 style={{ marginTop: 32, fontSize: 18 }}>Maintenance</h2>
       <MaintenanceSection assetId={id} />
       <HistoryBlock assetId={id} />
+      <TroubleshootBlock assetId={id} />
 
       <h2 style={{ marginTop: 32, fontSize: 18 }}>Documents</h2>
       <DocumentList assetId={id} />
