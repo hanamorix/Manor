@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Trash2 } from "lucide-react";
 import { useMaintenanceStore } from "../../../lib/maintenance/state";
 import { useAssetStore } from "../../../lib/asset/state";
+import { approveWithOverride } from "../../../lib/pdf_extract/ipc";
 import type {
   MaintenanceSchedule, MaintenanceScheduleDraft,
 } from "../../../lib/maintenance/ipc";
@@ -10,6 +11,7 @@ interface Props {
   schedule?: MaintenanceSchedule;         // undefined = create mode
   initialAssetId?: string;
   lockAsset?: boolean;
+  proposalId?: number;                    // L4e: when set, Save applies the proposal
   onClose: () => void;
   onSaved: () => void;
   onDeleted?: () => void;
@@ -24,7 +26,7 @@ const EMPTY_DRAFT: MaintenanceScheduleDraft = {
 };
 
 export function ScheduleDrawer({
-  schedule, initialAssetId, lockAsset, onClose, onSaved, onDeleted,
+  schedule, initialAssetId, lockAsset, proposalId, onClose, onSaved, onDeleted,
 }: Props) {
   const { create, update, deleteSchedule } = useMaintenanceStore();
   const { assets, load: loadAssets } = useAssetStore();
@@ -52,8 +54,13 @@ export function ScheduleDrawer({
     if (draft.interval_months < 1) { setError("Interval must be at least 1 month"); return; }
     setSaving(true); setError(null);
     try {
-      if (schedule) await update(schedule.id, draft);
-      else await create(draft);
+      if (proposalId !== undefined && proposalId !== null) {
+        await approveWithOverride(proposalId, draft);
+      } else if (schedule) {
+        await update(schedule.id, draft);
+      } else {
+        await create(draft);
+      }
       onSaved();
     } catch (e: unknown) {
       setError(e instanceof Error ? e.message : String(e));
@@ -81,7 +88,11 @@ export function ScheduleDrawer({
     }}>
       <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 16 }}>
         <h2 style={{ margin: 0, fontSize: 20 }}>
-          {schedule ? "Edit schedule" : "New schedule"}
+          {proposalId !== undefined && proposalId !== null
+            ? "Review proposed schedule"
+            : schedule
+              ? "Edit schedule"
+              : "New schedule"}
         </h2>
         <button type="button" onClick={onClose} aria-label="Close">✕</button>
       </div>
@@ -137,9 +148,13 @@ export function ScheduleDrawer({
       <div style={{ display: "flex", gap: 8, marginTop: 16 }}>
         <button type="button" onClick={onClose}>Cancel</button>
         <button type="button" onClick={save} disabled={saving}>
-          {saving ? "Saving…" : "Save"}
+          {saving
+            ? "Saving…"
+            : proposalId !== undefined && proposalId !== null
+              ? "Approve & add"
+              : "Save"}
         </button>
-        {schedule && (
+        {schedule && proposalId === undefined && (
           <button type="button" onClick={del}
             style={{ marginLeft: "auto", display: "flex", alignItems: "center", gap: 4 }}>
             <Trash2 size={14} strokeWidth={1.8} /> Delete
