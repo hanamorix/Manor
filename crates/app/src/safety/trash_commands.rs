@@ -35,6 +35,8 @@ pub fn trash_restore(
             .map_err(|e| e.to_string()),
         "maintenance_event" => manor_core::maintenance::event_dal::restore_event(&conn, &entity_id)
             .map_err(|e| e.to_string()),
+        "repair_note" => manor_core::repair::dal::restore_repair_note(&conn, &entity_id)
+            .map_err(|e| e.to_string()),
         _ => Err(format!(
             "trash_restore: unknown TEXT-keyed entity type '{entity_type}'"
         )),
@@ -84,6 +86,8 @@ pub fn trash_permanent_delete(
             manor_core::maintenance::event_dal::permanent_delete_event(&conn, &entity_id)
                 .map_err(|e| e.to_string())
         }
+        "repair_note" => manor_core::repair::dal::permanent_delete_repair_note(&conn, &entity_id)
+            .map_err(|e| e.to_string()),
         _ => Err(format!(
             "trash_permanent_delete: unknown TEXT-keyed entity type '{entity_type}'"
         )),

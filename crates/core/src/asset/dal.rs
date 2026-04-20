@@ -121,6 +121,11 @@ pub fn soft_delete_asset(conn: &Connection, id: &str) -> Result<()> {
         "UPDATE maintenance_event SET deleted_at = ?1 WHERE asset_id = ?2 AND deleted_at IS NULL",
         params![now, id],
     )?;
+    // L4d: cascade soft-delete to linked repair_note rows (same timestamp for restore).
+    conn.execute(
+        "UPDATE repair_note SET deleted_at = ?1 WHERE asset_id = ?2 AND deleted_at IS NULL",
+        params![now, id],
+    )?;
     conn.execute(
         "UPDATE asset SET deleted_at = ?1 WHERE id = ?2 AND deleted_at IS NULL",
         params![now, id],
@@ -140,8 +145,14 @@ pub fn restore_asset(conn: &Connection, id: &str) -> Result<()> {
         .optional()?
         .flatten();
     if let Some(ts) = deleted_at {
+        // L4c: restore events that share the asset's cascade timestamp.
         conn.execute(
             "UPDATE maintenance_event SET deleted_at = NULL WHERE asset_id = ?1 AND deleted_at = ?2",
+            params![id, ts],
+        )?;
+        // L4d: restore repair_notes that share the asset's cascade timestamp.
+        conn.execute(
+            "UPDATE repair_note SET deleted_at = NULL WHERE asset_id = ?1 AND deleted_at = ?2",
             params![id, ts],
         )?;
     }
@@ -177,6 +188,9 @@ pub fn permanent_delete_asset(conn: &Connection, id: &str) -> Result<()> {
         "DELETE FROM maintenance_event WHERE asset_id = ?1",
         params![id],
     )?;
+    // L4d: hard-delete repair_notes before schedules (FK ordering — repair_note.asset_id
+    // references asset; must be removed before the asset row is deleted).
+    conn.execute("DELETE FROM repair_note WHERE asset_id = ?1", params![id])?;
     // Hard-delete linked maintenance schedules (L4b). Soft-delete alone isn't possible
     // here because the FK on asset_id blocks the asset hard-delete while any schedule
     // row (even a soft-deleted one) still references this asset.
@@ -517,6 +531,121 @@ mod tests {
     }
 
     // ── end L4c cascade tests ─────────────────────────────────────────────────
+
+    // ── L4d: repair_note cascade tests ───────────────────────────────────────
+
+    #[test]
+    fn soft_delete_asset_cascades_repair_notes() {
+        use crate::repair::dal as repair_dal;
+        let (_d, conn) = fresh();
+        let asset_id = insert_asset(&conn, &draft("Boiler", AssetCategory::Appliance)).unwrap();
+        let note_draft = crate::repair::RepairNoteDraft {
+            asset_id: asset_id.clone(),
+            symptom: "won't drain".into(),
+            body_md: "Check the filter".into(),
+            sources: vec![crate::repair::RepairSource {
+                url: "https://example.com".into(),
+                title: "Example".into(),
+            }],
+            video_sources: None,
+            tier: crate::repair::LlmTier::Ollama,
+        };
+        repair_dal::insert_repair_note(&conn, &note_draft).unwrap();
+        assert_eq!(
+            repair_dal::list_for_asset(&conn, &asset_id).unwrap().len(),
+            1
+        );
+        soft_delete_asset(&conn, &asset_id).unwrap();
+        assert_eq!(
+            repair_dal::list_for_asset(&conn, &asset_id).unwrap().len(),
+            0
+        );
+    }
+
+    #[test]
+    fn restore_asset_restores_repair_notes_from_same_cascade() {
+        use crate::repair::dal as repair_dal;
+        let (_d, conn) = fresh();
+        let asset_id = insert_asset(&conn, &draft("Boiler", AssetCategory::Appliance)).unwrap();
+        let note_draft = crate::repair::RepairNoteDraft {
+            asset_id: asset_id.clone(),
+            symptom: "test".into(),
+            body_md: "body".into(),
+            sources: vec![],
+            video_sources: None,
+            tier: crate::repair::LlmTier::Ollama,
+        };
+        repair_dal::insert_repair_note(&conn, &note_draft).unwrap();
+        soft_delete_asset(&conn, &asset_id).unwrap();
+        restore_asset(&conn, &asset_id).unwrap();
+        assert_eq!(
+            repair_dal::list_for_asset(&conn, &asset_id).unwrap().len(),
+            1
+        );
+    }
+
+    #[test]
+    fn restore_asset_does_not_resurrect_earlier_trashed_repair_notes() {
+        use crate::repair::dal as repair_dal;
+        let (_d, conn) = fresh();
+        let asset_id = insert_asset(&conn, &draft("Boiler", AssetCategory::Appliance)).unwrap();
+        let note_draft = crate::repair::RepairNoteDraft {
+            asset_id: asset_id.clone(),
+            symptom: "test".into(),
+            body_md: "body".into(),
+            sources: vec![],
+            video_sources: None,
+            tier: crate::repair::LlmTier::Ollama,
+        };
+        let note_id = repair_dal::insert_repair_note(&conn, &note_draft).unwrap();
+        conn.execute(
+            "UPDATE repair_note SET deleted_at = 100 WHERE id = ?1",
+            rusqlite::params![note_id],
+        )
+        .unwrap();
+        conn.execute(
+            "UPDATE asset SET deleted_at = 200 WHERE id = ?1",
+            rusqlite::params![asset_id],
+        )
+        .unwrap();
+        restore_asset(&conn, &asset_id).unwrap();
+        let row: Option<i64> = conn
+            .query_row(
+                "SELECT deleted_at FROM repair_note WHERE id = ?1",
+                rusqlite::params![note_id],
+                |r| r.get(0),
+            )
+            .unwrap();
+        assert_eq!(row, Some(100));
+    }
+
+    #[test]
+    fn permanent_delete_asset_hard_deletes_repair_notes() {
+        use crate::repair::dal as repair_dal;
+        let (_d, conn) = fresh();
+        let asset_id = insert_asset(&conn, &draft("Boiler", AssetCategory::Appliance)).unwrap();
+        let note_draft = crate::repair::RepairNoteDraft {
+            asset_id: asset_id.clone(),
+            symptom: "test".into(),
+            body_md: "body".into(),
+            sources: vec![],
+            video_sources: None,
+            tier: crate::repair::LlmTier::Ollama,
+        };
+        repair_dal::insert_repair_note(&conn, &note_draft).unwrap();
+        soft_delete_asset(&conn, &asset_id).unwrap();
+        permanent_delete_asset(&conn, &asset_id).unwrap();
+        let count: i64 = conn
+            .query_row(
+                "SELECT COUNT(*) FROM repair_note WHERE asset_id = ?1",
+                rusqlite::params![asset_id],
+                |r| r.get(0),
+            )
+            .unwrap();
+        assert_eq!(count, 0);
+    }
+
+    // ── end L4d cascade tests ─────────────────────────────────────────────────
 
     #[test]
     fn permanent_delete_cascades_to_maintenance_schedules() {

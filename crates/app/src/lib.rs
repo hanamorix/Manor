@@ -9,6 +9,7 @@ pub mod maintenance;
 pub mod meal_plan;
 pub mod recipe;
 pub mod remote;
+pub mod repair;
 pub mod rhythm;
 pub mod safety;
 pub mod shopping_list;
@@ -411,6 +412,11 @@ pub fn register(builder: Builder<Wry>) -> Builder<Wry> {
             maintenance::event_commands::maintenance_spend_category_totals,
             maintenance::event_commands::maintenance_suggest_transactions,
             maintenance::event_commands::maintenance_search_transactions,
+            repair::commands::repair_search_ollama,
+            repair::commands::repair_search_claude,
+            repair::commands::repair_note_list_for_asset,
+            repair::commands::repair_note_get,
+            repair::commands::repair_note_delete,
         ])
 }
 

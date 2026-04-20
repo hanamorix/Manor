@@ -1,7 +1,7 @@
 //! Manor core library.
 
-pub mod assistant;
 pub mod asset;
+pub mod assistant;
 pub mod attachment;
 pub mod embedding;
 pub mod household;
@@ -13,6 +13,7 @@ pub mod person;
 pub mod recipe;
 pub mod redact;
 pub mod remote_call_log;
+pub mod repair;
 pub mod setting;
 pub mod shopping_list;
 pub mod snapshot;

@@ -235,6 +235,33 @@ impl OllamaClient {
         Ok(parsed.embedding)
     }
 
+    /// Non-streaming variant: runs a chat call, accumulates all token chunks
+    /// from an internal channel, and returns the concatenated text. No tool
+    /// calls are expected — this is for one-shot synthesis.
+    pub async fn chat_collect(&self, messages: &[ChatMessage]) -> anyhow::Result<String> {
+        let (tx, mut rx) = tokio::sync::mpsc::channel::<StreamChunk>(32);
+        let outcome = self.chat(messages, &[], &tx).await;
+        drop(tx);
+        let mut out = String::new();
+        while let Some(chunk) = rx.recv().await {
+            match chunk {
+                StreamChunk::Token(t) => out.push_str(&t),
+                StreamChunk::Error(ErrorCode::OllamaUnreachable) => {
+                    return Err(anyhow::anyhow!(
+                        "Local model isn't running (Ollama endpoint unreachable)"
+                    ));
+                }
+                StreamChunk::Error(_) => {
+                    return Err(anyhow::anyhow!("Local model call failed"));
+                }
+                StreamChunk::Done => break,
+                StreamChunk::Started(_) | StreamChunk::Proposal(_) => {}
+            }
+        }
+        let _ = outcome;
+        Ok(out)
+    }
+
     /// Non-streaming completion — POST /api/generate with stream:false.
     /// Returns the full response string in one shot. Use for short batch
     /// calls that don't benefit from streaming (autocat, categorisation,
