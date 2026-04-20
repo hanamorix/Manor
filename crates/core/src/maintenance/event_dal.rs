@@ -133,6 +133,102 @@ fn row_to_event(row: &Row) -> Result<MaintenanceEvent> {
     })
 }
 
+pub fn asset_spend_totals(
+    conn: &Connection,
+    today: &str,
+) -> Result<Vec<crate::maintenance::event::AssetSpendTotal>> {
+    let mut stmt = conn.prepare(
+        "WITH cutoff AS (SELECT date(?1, '-365 days') AS d365)
+         SELECT
+             a.id           AS asset_id,
+             a.name         AS asset_name,
+             a.category     AS asset_category,
+             COALESCE(SUM(CASE
+                 WHEN e.completed_date >= (SELECT d365 FROM cutoff)
+                  AND e.cost_pence IS NOT NULL
+                  AND e.deleted_at IS NULL
+                 THEN e.cost_pence END), 0) AS total_last_12m_pence,
+             COALESCE(SUM(CASE
+                 WHEN e.cost_pence IS NOT NULL
+                  AND e.deleted_at IS NULL
+                 THEN e.cost_pence END), 0) AS total_lifetime_pence,
+             COALESCE(SUM(CASE
+                 WHEN e.id IS NOT NULL
+                  AND e.completed_date >= (SELECT d365 FROM cutoff)
+                  AND e.deleted_at IS NULL
+                 THEN 1 END), 0) AS event_count_last_12m,
+             COALESCE(SUM(CASE
+                 WHEN e.id IS NOT NULL
+                  AND e.deleted_at IS NULL
+                 THEN 1 END), 0) AS event_count_lifetime
+         FROM asset a
+         LEFT JOIN maintenance_event e ON e.asset_id = a.id
+         WHERE a.deleted_at IS NULL
+         GROUP BY a.id
+         ORDER BY total_last_12m_pence DESC, a.name COLLATE NOCASE ASC",
+    )?;
+    let rows = stmt
+        .query_map(params![today], |row| {
+            Ok(crate::maintenance::event::AssetSpendTotal {
+                asset_id: row.get("asset_id")?,
+                asset_name: row.get("asset_name")?,
+                asset_category: row.get("asset_category")?,
+                total_last_12m_pence: row.get("total_last_12m_pence")?,
+                total_lifetime_pence: row.get("total_lifetime_pence")?,
+                event_count_last_12m: row.get("event_count_last_12m")?,
+                event_count_lifetime: row.get("event_count_lifetime")?,
+            })
+        })?
+        .collect::<std::result::Result<Vec<_>, _>>()?;
+    Ok(rows)
+}
+
+pub fn asset_spend_for_asset(
+    conn: &Connection,
+    asset_id: &str,
+    today: &str,
+) -> Result<crate::maintenance::event::AssetSpendTotal> {
+    let totals = asset_spend_totals(conn, today)?;
+    totals
+        .into_iter()
+        .find(|r| r.asset_id == asset_id)
+        .ok_or_else(|| anyhow!("Asset not found or trashed"))
+}
+
+pub fn category_spend_totals(
+    conn: &Connection,
+    today: &str,
+) -> Result<Vec<crate::maintenance::event::CategorySpendTotal>> {
+    let mut stmt = conn.prepare(
+        "WITH cutoff AS (SELECT date(?1, '-365 days') AS d365)
+         SELECT
+             a.category AS category,
+             COALESCE(SUM(CASE
+                 WHEN e.completed_date >= (SELECT d365 FROM cutoff)
+                  AND e.cost_pence IS NOT NULL
+                  AND e.deleted_at IS NULL
+                 THEN e.cost_pence END), 0) AS total_last_12m_pence,
+             COALESCE(SUM(CASE
+                 WHEN e.cost_pence IS NOT NULL
+                  AND e.deleted_at IS NULL
+                 THEN e.cost_pence END), 0) AS total_lifetime_pence
+         FROM asset a
+         LEFT JOIN maintenance_event e ON e.asset_id = a.id
+         WHERE a.deleted_at IS NULL
+         GROUP BY a.category",
+    )?;
+    let rows = stmt
+        .query_map(params![today], |row| {
+            Ok(crate::maintenance::event::CategorySpendTotal {
+                category: row.get("category")?,
+                total_last_12m_pence: row.get("total_last_12m_pence")?,
+                total_lifetime_pence: row.get("total_lifetime_pence")?,
+            })
+        })?
+        .collect::<std::result::Result<Vec<_>, _>>()?;
+    Ok(rows)
+}
+
 pub fn list_for_asset(conn: &Connection, asset_id: &str) -> Result<Vec<EventWithContext>> {
     let mut stmt = conn.prepare(
         "SELECT
@@ -233,6 +329,24 @@ mod tests {
             notes: String::new(),
         };
         sched_dal::insert_schedule(conn, &draft).unwrap()
+    }
+
+    fn insert_asset_with_category(
+        conn: &Connection,
+        name: &str,
+        category: AssetCategory,
+    ) -> String {
+        let asset = AssetDraft {
+            name: name.into(),
+            category,
+            make: None,
+            model: None,
+            serial_number: None,
+            purchase_date: None,
+            notes: String::new(),
+            hero_attachment_uuid: None,
+        };
+        asset_dal::insert_asset(conn, &asset).unwrap()
     }
 
     fn draft(asset_id: &str) -> MaintenanceEventDraft {
@@ -406,5 +520,77 @@ mod tests {
         let mut d2 = draft(&asset_id);
         d2.transaction_id = Some(tx_id);
         insert_event(&conn, &d2).unwrap(); // should succeed
+    }
+
+    #[test]
+    fn asset_spend_totals_zero_events_shows_asset_with_zeros() {
+        let (_d, conn, asset_id) = fresh();
+        let rows = asset_spend_totals(&conn, "2026-04-20").unwrap();
+        assert_eq!(rows.len(), 1);
+        assert_eq!(rows[0].asset_id, asset_id);
+        assert_eq!(rows[0].total_last_12m_pence, 0);
+        assert_eq!(rows[0].event_count_lifetime, 0);
+    }
+
+    #[test]
+    fn asset_spend_totals_12m_window() {
+        let (_d, conn, asset_id) = fresh();
+        let mut d = draft(&asset_id);
+        d.completed_date = "2025-04-21".into(); // 364 days before 2026-04-20 — inside
+        d.cost_pence = Some(10000);
+        insert_event(&conn, &d).unwrap();
+        d.completed_date = "2025-04-19".into(); // 366 days before — outside
+        d.cost_pence = Some(50000);
+        insert_event(&conn, &d).unwrap();
+        let rows = asset_spend_totals(&conn, "2026-04-20").unwrap();
+        let row = rows.iter().find(|r| r.asset_id == asset_id).unwrap();
+        assert_eq!(row.total_last_12m_pence, 10000);
+        assert_eq!(row.total_lifetime_pence, 60000);
+        assert_eq!(row.event_count_last_12m, 1);
+        assert_eq!(row.event_count_lifetime, 2);
+    }
+
+    #[test]
+    fn asset_spend_totals_null_cost_counts_but_not_sum() {
+        let (_d, conn, asset_id) = fresh();
+        let mut d = draft(&asset_id);
+        d.cost_pence = None;
+        d.completed_date = "2026-01-10".into();
+        insert_event(&conn, &d).unwrap();
+        let rows = asset_spend_totals(&conn, "2026-04-20").unwrap();
+        let row = rows.iter().find(|r| r.asset_id == asset_id).unwrap();
+        assert_eq!(row.total_lifetime_pence, 0);
+        assert_eq!(row.event_count_lifetime, 1);
+    }
+
+    #[test]
+    fn asset_spend_totals_excludes_trashed_assets() {
+        let (_d, conn, asset_id) = fresh();
+        conn.execute(
+            "UPDATE asset SET deleted_at = 1 WHERE id = ?1",
+            params![asset_id],
+        )
+        .unwrap();
+        let rows = asset_spend_totals(&conn, "2026-04-20").unwrap();
+        assert!(rows.iter().all(|r| r.asset_id != asset_id));
+    }
+
+    #[test]
+    fn category_spend_totals_sums_by_category() {
+        let (_d, conn, _base_asset_id) = fresh();
+        let appliance_id = insert_asset_with_category(&conn, "Boiler 2", AssetCategory::Appliance);
+        let vehicle_id = insert_asset_with_category(&conn, "Car", AssetCategory::Vehicle);
+        let mut d = draft(&appliance_id);
+        d.cost_pence = Some(10000);
+        insert_event(&conn, &d).unwrap();
+        let mut d2 = draft(&vehicle_id);
+        d2.cost_pence = Some(25000);
+        insert_event(&conn, &d2).unwrap();
+        let rows = category_spend_totals(&conn, "2026-04-20").unwrap();
+        let appliance = rows.iter().find(|r| r.category == "appliance").unwrap();
+        let vehicle = rows.iter().find(|r| r.category == "vehicle").unwrap();
+        // fresh()'s base asset is Appliance with no events, so appliance total = 10000 from Boiler 2
+        assert_eq!(appliance.total_lifetime_pence, 10000);
+        assert_eq!(vehicle.total_lifetime_pence, 25000);
     }
 }
