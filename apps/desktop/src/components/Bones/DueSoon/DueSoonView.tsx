@@ -4,6 +4,7 @@ import { useMaintenanceStore } from "../../../lib/maintenance/state";
 import type { ScheduleWithAsset, MaintenanceSchedule } from "../../../lib/maintenance/ipc";
 import { ScheduleRow } from "./ScheduleRow";
 import { ScheduleDrawer } from "./ScheduleDrawer";    // Task 9
+import { LogCompletionDrawer } from "../LogCompletionDrawer";
 
 function todayIso(): string {
   const d = new Date();
@@ -27,6 +28,8 @@ export function DueSoonView() {
   const { dueSoon, loadStatus, loadDueSoon, markDone, deleteSchedule } = useMaintenanceStore();
   const [editing, setEditing] = useState<MaintenanceSchedule | null>(null);
   const [adding, setAdding] = useState(false);
+  const [logDrawerOpen, setLogDrawerOpen] = useState(false);
+  const [logActiveSched, setLogActiveSched] = useState<MaintenanceSchedule | null>(null);
 
   useEffect(() => { void loadDueSoon(); }, [loadDueSoon]);
 
@@ -49,6 +52,7 @@ export function DueSoonView() {
               schedule={r.schedule}
               assetName={r.asset_name}
               onMarkDone={() => void markDone(r.schedule.id)}
+              onLogCompletion={() => { setLogActiveSched(r.schedule); setLogDrawerOpen(true); }}
               onEdit={() => setEditing(r.schedule)}
             />
           ))}
@@ -106,6 +110,18 @@ export function DueSoonView() {
           onClose={() => setEditing(null)}
           onSaved={() => { setEditing(null); void loadDueSoon(); }}
           onDeleted={() => { void deleteSchedule(editing.id); setEditing(null); }}
+        />
+      )}
+      {logActiveSched && (
+        <LogCompletionDrawer
+          open={logDrawerOpen}
+          mode={{
+            kind: "schedule_completion",
+            assetId: logActiveSched.asset_id,
+            scheduleId: logActiveSched.id,
+            taskName: logActiveSched.task,
+          }}
+          onClose={() => { setLogDrawerOpen(false); setLogActiveSched(null); }}
         />
       )}
     </div>

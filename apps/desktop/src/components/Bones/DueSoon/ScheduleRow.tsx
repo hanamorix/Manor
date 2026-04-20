@@ -5,6 +5,7 @@ interface Props {
   schedule: MaintenanceSchedule;
   assetName?: string;
   onMarkDone: () => void;
+  onLogCompletion?: () => void;
   onEdit: () => void;
   onDelete?: () => void;
 }
@@ -29,7 +30,7 @@ function formatRelativeFromDiff(diffDays: number): string {
   return `due in ${weeks} weeks`;
 }
 
-export function ScheduleRow({ schedule, assetName, onMarkDone, onEdit, onDelete }: Props) {
+export function ScheduleRow({ schedule, assetName, onMarkDone, onLogCompletion, onEdit, onDelete }: Props) {
   const today = new Date(todayIso() + "T00:00:00");
   const due = new Date(schedule.next_due_date + "T00:00:00");
   const diffDays = Math.round((due.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
@@ -55,6 +56,11 @@ export function ScheduleRow({ schedule, assetName, onMarkDone, onEdit, onDelete 
         </div>
       </div>
       <button type="button" onClick={onMarkDone}>Mark done</button>
+      {onLogCompletion && (
+        <button type="button" onClick={onLogCompletion} title="Log completion with cost + transaction link">
+          Log…
+        </button>
+      )}
       <button type="button" onClick={onEdit} aria-label="Edit schedule">
         <MoreHorizontal size={14} strokeWidth={1.8} />
       </button>
