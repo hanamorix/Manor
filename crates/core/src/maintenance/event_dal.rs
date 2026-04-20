@@ -1,6 +1,6 @@
 //! Maintenance event DAL (L4c).
 
-use super::event::{EventSource, MaintenanceEvent, MaintenanceEventDraft};
+use super::event::{EventSource, EventWithContext, MaintenanceEvent, MaintenanceEventDraft};
 use anyhow::{anyhow, Result};
 use chrono::NaiveDate;
 use rusqlite::{params, Connection, Row};
@@ -133,6 +133,66 @@ fn row_to_event(row: &Row) -> Result<MaintenanceEvent> {
     })
 }
 
+pub fn list_for_asset(conn: &Connection, asset_id: &str) -> Result<Vec<EventWithContext>> {
+    let mut stmt = conn.prepare(
+        "SELECT
+             me.id, me.asset_id, me.schedule_id, me.title, me.completed_date,
+             me.cost_pence, me.currency, me.notes, me.transaction_id, me.source,
+             me.created_at, me.updated_at, me.deleted_at,
+             ms.task AS schedule_task,
+             CASE WHEN ms.deleted_at IS NOT NULL THEN 1 ELSE 0 END AS schedule_deleted_flag,
+             lt.description AS tx_description,
+             lt.amount_pence AS tx_amount,
+             lt.date AS tx_date
+         FROM maintenance_event me
+         LEFT JOIN maintenance_schedule ms ON ms.id = me.schedule_id
+         LEFT JOIN ledger_transaction lt
+             ON lt.id = me.transaction_id AND lt.deleted_at IS NULL
+         WHERE me.asset_id = ?1 AND me.deleted_at IS NULL
+         ORDER BY me.completed_date DESC, me.created_at DESC",
+    )?;
+    let rows = stmt
+        .query_map(params![asset_id], |row| {
+            let source_str: String = row.get("source")?;
+            let source = EventSource::parse(&source_str).map_err(|e| {
+                rusqlite::Error::FromSqlConversionFailure(
+                    0,
+                    rusqlite::types::Type::Text,
+                    Box::new(std::io::Error::new(
+                        std::io::ErrorKind::InvalidData,
+                        e.to_string(),
+                    )),
+                )
+            })?;
+            let event = MaintenanceEvent {
+                id: row.get("id")?,
+                asset_id: row.get("asset_id")?,
+                schedule_id: row.get("schedule_id")?,
+                title: row.get("title")?,
+                completed_date: row.get("completed_date")?,
+                cost_pence: row.get("cost_pence")?,
+                currency: row.get("currency")?,
+                notes: row.get("notes")?,
+                transaction_id: row.get("transaction_id")?,
+                source,
+                created_at: row.get("created_at")?,
+                updated_at: row.get("updated_at")?,
+                deleted_at: row.get("deleted_at")?,
+            };
+            let schedule_deleted_flag: i64 = row.get("schedule_deleted_flag")?;
+            Ok(EventWithContext {
+                event,
+                schedule_task: row.get("schedule_task")?,
+                schedule_deleted: schedule_deleted_flag != 0,
+                transaction_description: row.get("tx_description")?,
+                transaction_amount_pence: row.get("tx_amount")?,
+                transaction_date: row.get("tx_date")?,
+            })
+        })?
+        .collect::<std::result::Result<Vec<_>, _>>()?;
+    Ok(rows)
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -261,5 +321,90 @@ mod tests {
         update_event(&conn, &id, &d2).unwrap();
         let got = get_event(&conn, &id).unwrap().unwrap();
         assert_eq!(got.transaction_id, None);
+    }
+
+    #[test]
+    fn list_for_asset_orders_desc_and_populates_context() {
+        let (_d, conn, asset_id) = fresh();
+        let sched_id = insert_test_schedule(&conn, &asset_id, "Service", 12);
+        let mut d = draft(&asset_id);
+        d.schedule_id = Some(sched_id.clone());
+        d.completed_date = "2025-01-10".into();
+        insert_event(&conn, &d).unwrap();
+        d.completed_date = "2026-02-20".into();
+        insert_event(&conn, &d).unwrap();
+        let rows = list_for_asset(&conn, &asset_id).unwrap();
+        assert_eq!(rows.len(), 2);
+        assert_eq!(rows[0].event.completed_date, "2026-02-20");
+        assert_eq!(rows[1].event.completed_date, "2025-01-10");
+        assert_eq!(rows[0].schedule_task.as_deref(), Some("Service"));
+        assert!(!rows[0].schedule_deleted);
+    }
+
+    #[test]
+    fn list_for_asset_marks_schedule_deleted() {
+        let (_d, conn, asset_id) = fresh();
+        let sched_id = insert_test_schedule(&conn, &asset_id, "Service", 12);
+        let mut d = draft(&asset_id);
+        d.schedule_id = Some(sched_id.clone());
+        insert_event(&conn, &d).unwrap();
+        // soft-delete the schedule
+        conn.execute(
+            "UPDATE maintenance_schedule SET deleted_at = 1 WHERE id = ?1",
+            params![sched_id],
+        )
+        .unwrap();
+        let rows = list_for_asset(&conn, &asset_id).unwrap();
+        assert_eq!(rows.len(), 1);
+        assert!(rows[0].schedule_deleted);
+        assert_eq!(rows[0].schedule_task.as_deref(), Some("Service")); // still resolvable
+    }
+
+    #[test]
+    fn transaction_unique_index_rejects_duplicate_link() {
+        let (_d, conn, asset_id) = fresh();
+        // Insert a real ledger_transaction row first so FK holds.
+        conn.execute(
+            "INSERT INTO ledger_transaction (amount_pence, currency, description, date, source)
+             VALUES (-14500, 'GBP', 'British Gas service', 1713628800, 'manual')",
+            [],
+        )
+        .unwrap();
+        let tx_id = conn.last_insert_rowid();
+
+        let mut d1 = draft(&asset_id);
+        d1.transaction_id = Some(tx_id);
+        insert_event(&conn, &d1).unwrap();
+
+        let mut d2 = draft(&asset_id);
+        d2.transaction_id = Some(tx_id);
+        let err = insert_event(&conn, &d2).unwrap_err().to_string();
+        assert!(err.contains("already linked"), "got: {}", err);
+    }
+
+    #[test]
+    fn transaction_link_re_allowed_after_soft_delete() {
+        let (_d, conn, asset_id) = fresh();
+        conn.execute(
+            "INSERT INTO ledger_transaction (amount_pence, currency, description, date, source)
+             VALUES (-14500, 'GBP', 'British Gas', 1713628800, 'manual')",
+            [],
+        )
+        .unwrap();
+        let tx_id = conn.last_insert_rowid();
+
+        let mut d1 = draft(&asset_id);
+        d1.transaction_id = Some(tx_id);
+        let id1 = insert_event(&conn, &d1).unwrap();
+        // soft-delete event 1
+        conn.execute(
+            "UPDATE maintenance_event SET deleted_at = 1 WHERE id = ?1",
+            params![id1],
+        )
+        .unwrap();
+
+        let mut d2 = draft(&asset_id);
+        d2.transaction_id = Some(tx_id);
+        insert_event(&conn, &d2).unwrap(); // should succeed
     }
 }
