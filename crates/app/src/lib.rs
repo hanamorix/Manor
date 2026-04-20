@@ -418,6 +418,13 @@ pub fn register(builder: Builder<Wry>) -> Builder<Wry> {
             repair::commands::repair_note_list_for_asset,
             repair::commands::repair_note_get,
             repair::commands::repair_note_delete,
+            pdf_extract::commands::pdf_extract_ollama,
+            pdf_extract::commands::pdf_extract_claude,
+            pdf_extract::commands::pdf_extract_pending_proposals_for_asset,
+            pdf_extract::commands::pdf_extract_pending_exists_for_attachment,
+            pdf_extract::commands::pdf_extract_approve_as_is,
+            pdf_extract::commands::pdf_extract_reject,
+            pdf_extract::commands::pdf_extract_approve_with_override,
         ])
 }
 
