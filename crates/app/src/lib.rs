@@ -170,7 +170,10 @@ pub fn register(builder: Builder<Wry>) -> Builder<Wry> {
                         Ok(_) => {}
                         Err(e) => tracing::warn!("recipe: stage_sweep failed: {e}"),
                     }
-                    match crate::asset::importer::stage_sweep_run_on_startup(&conn, &attachments_dir) {
+                    match crate::asset::importer::stage_sweep_run_on_startup(
+                        &conn,
+                        &attachments_dir,
+                    ) {
                         Ok(n) if n > 0 => tracing::info!("asset stage_sweep: reaped {n} orphans"),
                         Ok(_) => {}
                         Err(e) => tracing::warn!("asset stage_sweep failed: {e}"),
@@ -398,6 +401,16 @@ pub fn register(builder: Builder<Wry>) -> Builder<Wry> {
             maintenance::commands::maintenance_due_soon,
             maintenance::commands::maintenance_due_today_and_overdue,
             maintenance::commands::maintenance_overdue_count,
+            maintenance::event_commands::maintenance_event_list_for_asset,
+            maintenance::event_commands::maintenance_event_get,
+            maintenance::event_commands::maintenance_event_create_oneoff,
+            maintenance::event_commands::maintenance_event_log_completion,
+            maintenance::event_commands::maintenance_event_update,
+            maintenance::event_commands::maintenance_spend_asset_totals,
+            maintenance::event_commands::maintenance_spend_for_asset,
+            maintenance::event_commands::maintenance_spend_category_totals,
+            maintenance::event_commands::maintenance_suggest_transactions,
+            maintenance::event_commands::maintenance_search_transactions,
         ])
 }
 

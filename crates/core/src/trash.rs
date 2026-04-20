@@ -40,6 +40,8 @@ const REGISTRY: &[(&str, &str)] = &[
     ("asset", "name"),
     // maintenance_schedule uses TEXT (UUID) primary key.
     ("maintenance_schedule", "task"),
+    // maintenance_event uses TEXT (UUID) primary key.
+    ("maintenance_event", "title"),
 ];
 
 pub fn list_all(conn: &Connection) -> Result<Vec<TrashEntry>> {

@@ -5,6 +5,8 @@ import type { Asset } from "../../lib/asset/ipc";
 import { AssetEditDrawer } from "./AssetEditDrawer";
 import { DocumentList } from "./DocumentList";
 import { MaintenanceSection } from "./MaintenanceSection";
+import { AssetSpendStrip } from "./AssetSpendStrip";
+import { HistoryBlock } from "./HistoryBlock";
 
 interface Props { id: string; onBack: () => void }
 
@@ -107,6 +109,8 @@ export function AssetDetail({ id, onBack }: Props) {
       {meta1 && <div style={{ color: "var(--ink-soft, #999)", marginTop: 4 }}>{meta1}</div>}
       {meta2 && <div style={{ color: "var(--ink-soft, #999)", marginTop: 2 }}>{meta2}</div>}
 
+      <AssetSpendStrip assetId={id} />
+
       {asset.notes.trim() && (
         <>
           <h2 style={{ marginTop: 32, fontSize: 18 }}>Notes</h2>
@@ -122,6 +126,7 @@ export function AssetDetail({ id, onBack }: Props) {
 
       <h2 style={{ marginTop: 32, fontSize: 18 }}>Maintenance</h2>
       <MaintenanceSection assetId={id} />
+      <HistoryBlock assetId={id} />
 
       <h2 style={{ marginTop: 32, fontSize: 18 }}>Documents</h2>
       <DocumentList assetId={id} />

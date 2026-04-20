@@ -4,6 +4,7 @@ import { useMaintenanceStore } from "../../lib/maintenance/state";
 import type { MaintenanceSchedule } from "../../lib/maintenance/ipc";
 import { ScheduleRow } from "./DueSoon/ScheduleRow";
 import { ScheduleDrawer } from "./DueSoon/ScheduleDrawer";
+import { LogCompletionDrawer } from "./LogCompletionDrawer";
 
 interface Props { assetId: string }
 
@@ -11,6 +12,8 @@ export function MaintenanceSection({ assetId }: Props) {
   const { schedulesByAsset, loadForAsset, markDone, deleteSchedule } = useMaintenanceStore();
   const [editing, setEditing] = useState<MaintenanceSchedule | null>(null);
   const [adding, setAdding] = useState(false);
+  const [logDrawerOpen, setLogDrawerOpen] = useState(false);
+  const [logActiveSched, setLogActiveSched] = useState<MaintenanceSchedule | null>(null);
 
   useEffect(() => { void loadForAsset(assetId); }, [assetId, loadForAsset]);
 
@@ -30,6 +33,7 @@ export function MaintenanceSection({ assetId }: Props) {
               key={s.id}
               schedule={s}
               onMarkDone={() => void markDone(s.id)}
+              onLogCompletion={() => { setLogActiveSched(s); setLogDrawerOpen(true); }}
               onEdit={() => setEditing(s)}
               onDelete={() => void deleteSchedule(s.id)}
             />
@@ -56,6 +60,18 @@ export function MaintenanceSection({ assetId }: Props) {
           lockAsset
           onClose={() => setEditing(null)}
           onSaved={() => { setEditing(null); void loadForAsset(assetId); }}
+        />
+      )}
+      {logActiveSched && (
+        <LogCompletionDrawer
+          open={logDrawerOpen}
+          mode={{
+            kind: "schedule_completion",
+            assetId: logActiveSched.asset_id,
+            scheduleId: logActiveSched.id,
+            taskName: logActiveSched.task,
+          }}
+          onClose={() => { setLogDrawerOpen(false); setLogActiveSched(null); }}
         />
       )}
     </div>

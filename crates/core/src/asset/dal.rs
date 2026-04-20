@@ -24,9 +24,16 @@ pub fn insert_asset(conn: &Connection, draft: &AssetDraft) -> Result<String> {
                              hero_attachment_uuid, created_at, updated_at)
          VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?10)",
         params![
-            id, draft.name, draft.category.as_str(),
-            draft.make, draft.model, draft.serial_number, draft.purchase_date,
-            draft.notes, draft.hero_attachment_uuid, now,
+            id,
+            draft.name,
+            draft.category.as_str(),
+            draft.make,
+            draft.model,
+            draft.serial_number,
+            draft.purchase_date,
+            draft.notes,
+            draft.hero_attachment_uuid,
+            now,
         ],
     )?;
     Ok(id)
@@ -78,7 +85,9 @@ pub fn list_assets(conn: &Connection, filter: &AssetListFilter) -> Result<Vec<As
     let refs: Vec<&dyn rusqlite::ToSql> = params.iter().map(|b| b.as_ref()).collect();
     let rows = stmt.query_map(refs.as_slice(), row_to_asset)?;
     let mut out = Vec::new();
-    for row in rows { out.push(row?); }
+    for row in rows {
+        out.push(row?);
+    }
     Ok(out)
 }
 
@@ -89,21 +98,57 @@ pub fn update_asset(conn: &Connection, id: &str, draft: &AssetDraft) -> Result<(
                           purchase_date = ?6, notes = ?7, hero_attachment_uuid = ?8, updated_at = ?9
          WHERE id = ?10",
         params![
-            draft.name, draft.category.as_str(),
-            draft.make, draft.model, draft.serial_number, draft.purchase_date,
-            draft.notes, draft.hero_attachment_uuid, now, id,
+            draft.name,
+            draft.category.as_str(),
+            draft.make,
+            draft.model,
+            draft.serial_number,
+            draft.purchase_date,
+            draft.notes,
+            draft.hero_attachment_uuid,
+            now,
+            id,
         ],
     )?;
     Ok(())
 }
 
 pub fn soft_delete_asset(conn: &Connection, id: &str) -> Result<()> {
-    conn.execute("UPDATE asset SET deleted_at = ?1 WHERE id = ?2", params![now_secs(), id])?;
+    let now = now_secs();
+    // L4c: cascade soft-delete to linked maintenance_event rows using the same timestamp
+    // so restore_asset can revert exactly this cascade.
+    conn.execute(
+        "UPDATE maintenance_event SET deleted_at = ?1 WHERE asset_id = ?2 AND deleted_at IS NULL",
+        params![now, id],
+    )?;
+    conn.execute(
+        "UPDATE asset SET deleted_at = ?1 WHERE id = ?2 AND deleted_at IS NULL",
+        params![now, id],
+    )?;
     Ok(())
 }
 
 pub fn restore_asset(conn: &Connection, id: &str) -> Result<()> {
-    conn.execute("UPDATE asset SET deleted_at = NULL WHERE id = ?1", params![id])?;
+    // Find the asset's current deleted_at timestamp; use it to restore only the events
+    // that were trashed in the same cascade.
+    let deleted_at: Option<i64> = conn
+        .query_row(
+            "SELECT deleted_at FROM asset WHERE id = ?1",
+            params![id],
+            |r| r.get(0),
+        )
+        .optional()?
+        .flatten();
+    if let Some(ts) = deleted_at {
+        conn.execute(
+            "UPDATE maintenance_event SET deleted_at = NULL WHERE asset_id = ?1 AND deleted_at = ?2",
+            params![id, ts],
+        )?;
+    }
+    conn.execute(
+        "UPDATE asset SET deleted_at = NULL WHERE id = ?1",
+        params![id],
+    )?;
     Ok(())
 }
 
@@ -125,6 +170,12 @@ pub fn permanent_delete_asset(conn: &Connection, id: &str) -> Result<()> {
     conn.execute(
         "UPDATE attachment SET deleted_at = ?1 WHERE entity_type = 'asset' AND entity_id = ?2 AND deleted_at IS NULL",
         params![now, id],
+    )?;
+    // L4c: hard-delete events first (FK ordering — events reference asset_id + schedule_id,
+    // so they must be removed before schedules and the asset itself).
+    conn.execute(
+        "DELETE FROM maintenance_event WHERE asset_id = ?1",
+        params![id],
     )?;
     // Hard-delete linked maintenance schedules (L4b). Soft-delete alone isn't possible
     // here because the FK on asset_id blocks the asset hard-delete while any schedule
@@ -175,7 +226,10 @@ mod tests {
         AssetDraft {
             name: name.into(),
             category: cat,
-            make: None, model: None, serial_number: None, purchase_date: None,
+            make: None,
+            model: None,
+            serial_number: None,
+            purchase_date: None,
             notes: String::new(),
             hero_attachment_uuid: None,
         }
@@ -231,16 +285,24 @@ mod tests {
         let all = list_assets(&conn, &AssetListFilter::default()).unwrap();
         assert_eq!(all.len(), 3);
 
-        let appliances = list_assets(&conn, &AssetListFilter {
-            category: Some(AssetCategory::Appliance),
-            ..Default::default()
-        }).unwrap();
+        let appliances = list_assets(
+            &conn,
+            &AssetListFilter {
+                category: Some(AssetCategory::Appliance),
+                ..Default::default()
+            },
+        )
+        .unwrap();
         assert_eq!(appliances.len(), 2);
 
-        let search = list_assets(&conn, &AssetListFilter {
-            search: Some("boil".into()),
-            ..Default::default()
-        }).unwrap();
+        let search = list_assets(
+            &conn,
+            &AssetListFilter {
+                search: Some("boil".into()),
+                ..Default::default()
+            },
+        )
+        .unwrap();
         assert_eq!(search.len(), 1);
         assert_eq!(search[0].name, "Boiler");
     }
@@ -270,9 +332,20 @@ mod tests {
         let (_d, conn) = fresh();
         let id = insert_asset(&conn, &draft("X", AssetCategory::Other)).unwrap();
         set_hero_attachment(&conn, &id, Some("uuid-123")).unwrap();
-        assert_eq!(get_asset(&conn, &id).unwrap().unwrap().hero_attachment_uuid.as_deref(), Some("uuid-123"));
+        assert_eq!(
+            get_asset(&conn, &id)
+                .unwrap()
+                .unwrap()
+                .hero_attachment_uuid
+                .as_deref(),
+            Some("uuid-123")
+        );
         set_hero_attachment(&conn, &id, None).unwrap();
-        assert!(get_asset(&conn, &id).unwrap().unwrap().hero_attachment_uuid.is_none());
+        assert!(get_asset(&conn, &id)
+            .unwrap()
+            .unwrap()
+            .hero_attachment_uuid
+            .is_none());
     }
 
     #[test]
@@ -298,13 +371,152 @@ mod tests {
         assert!(get_asset_including_trashed(&conn, &id).unwrap().is_none());
 
         // Attachment row should be soft-deleted (deleted_at IS NOT NULL).
-        let att_trashed: Option<i64> = conn.query_row(
-            "SELECT deleted_at FROM attachment WHERE entity_type = 'asset' AND entity_id = ?1",
-            rusqlite::params![id],
-            |r| r.get(0),
-        ).optional().unwrap().flatten();
-        assert!(att_trashed.is_some(), "attachment should be soft-deleted post-purge");
+        let att_trashed: Option<i64> = conn
+            .query_row(
+                "SELECT deleted_at FROM attachment WHERE entity_type = 'asset' AND entity_id = ?1",
+                rusqlite::params![id],
+                |r| r.get(0),
+            )
+            .optional()
+            .unwrap()
+            .flatten();
+        assert!(
+            att_trashed.is_some(),
+            "attachment should be soft-deleted post-purge"
+        );
     }
+
+    // ── L4c: maintenance_event cascade tests ─────────────────────────────────
+
+    #[test]
+    fn soft_delete_asset_cascades_events() {
+        let (_d, conn) = fresh();
+        let asset_id = insert_asset(&conn, &draft("Boiler", AssetCategory::Appliance)).unwrap();
+        let sched_draft = crate::maintenance::MaintenanceScheduleDraft {
+            asset_id: asset_id.clone(),
+            task: "Service".into(),
+            interval_months: 12,
+            last_done_date: None,
+            notes: String::new(),
+        };
+        let sched_id = crate::maintenance::dal::insert_schedule(&conn, &sched_draft).unwrap();
+        crate::maintenance::dal::mark_done(&conn, &sched_id, "2026-04-20", None).unwrap();
+        assert_eq!(
+            crate::maintenance::event_dal::list_for_asset(&conn, &asset_id)
+                .unwrap()
+                .len(),
+            1
+        );
+        soft_delete_asset(&conn, &asset_id).unwrap();
+        assert_eq!(
+            crate::maintenance::event_dal::list_for_asset(&conn, &asset_id)
+                .unwrap()
+                .len(),
+            0,
+            "events should be soft-deleted with the asset"
+        );
+    }
+
+    #[test]
+    fn restore_asset_restores_events_from_same_cascade() {
+        let (_d, conn) = fresh();
+        let asset_id = insert_asset(&conn, &draft("Boiler", AssetCategory::Appliance)).unwrap();
+        let sched_draft = crate::maintenance::MaintenanceScheduleDraft {
+            asset_id: asset_id.clone(),
+            task: "Service".into(),
+            interval_months: 12,
+            last_done_date: None,
+            notes: String::new(),
+        };
+        let sched_id = crate::maintenance::dal::insert_schedule(&conn, &sched_draft).unwrap();
+        crate::maintenance::dal::mark_done(&conn, &sched_id, "2026-04-20", None).unwrap();
+        soft_delete_asset(&conn, &asset_id).unwrap();
+        restore_asset(&conn, &asset_id).unwrap();
+        assert_eq!(
+            crate::maintenance::event_dal::list_for_asset(&conn, &asset_id)
+                .unwrap()
+                .len(),
+            1,
+            "events should be restored when asset is restored"
+        );
+    }
+
+    #[test]
+    fn restore_asset_does_not_resurrect_earlier_deleted_events() {
+        // Event trashed at ts=100 (before asset); asset trashed at ts=200.
+        // Restoring asset should restore only the rows that were trashed at ts=200.
+        let (_d, conn) = fresh();
+        let asset_id = insert_asset(&conn, &draft("Boiler", AssetCategory::Appliance)).unwrap();
+        let sched_draft = crate::maintenance::MaintenanceScheduleDraft {
+            asset_id: asset_id.clone(),
+            task: "Service".into(),
+            interval_months: 12,
+            last_done_date: None,
+            notes: String::new(),
+        };
+        let sched_id = crate::maintenance::dal::insert_schedule(&conn, &sched_draft).unwrap();
+        let event_id =
+            crate::maintenance::dal::mark_done(&conn, &sched_id, "2026-04-20", None).unwrap();
+
+        // Manually trash the event at ts=100
+        conn.execute(
+            "UPDATE maintenance_event SET deleted_at = 100 WHERE id = ?1",
+            rusqlite::params![event_id],
+        )
+        .unwrap();
+        // Manually trash the asset at ts=200
+        conn.execute(
+            "UPDATE asset SET deleted_at = 200 WHERE id = ?1",
+            rusqlite::params![asset_id],
+        )
+        .unwrap();
+
+        restore_asset(&conn, &asset_id).unwrap();
+
+        // Event still trashed — its deleted_at=100 doesn't match asset's 200.
+        let row: Option<i64> = conn
+            .query_row(
+                "SELECT deleted_at FROM maintenance_event WHERE id = ?1",
+                rusqlite::params![event_id],
+                |r| r.get(0),
+            )
+            .unwrap();
+        assert_eq!(
+            row,
+            Some(100),
+            "pre-existing deleted event must not be resurrected"
+        );
+    }
+
+    #[test]
+    fn permanent_delete_asset_hard_deletes_events() {
+        let (_d, conn) = fresh();
+        let asset_id = insert_asset(&conn, &draft("Boiler", AssetCategory::Appliance)).unwrap();
+        let sched_draft = crate::maintenance::MaintenanceScheduleDraft {
+            asset_id: asset_id.clone(),
+            task: "Service".into(),
+            interval_months: 12,
+            last_done_date: None,
+            notes: String::new(),
+        };
+        let sched_id = crate::maintenance::dal::insert_schedule(&conn, &sched_draft).unwrap();
+        crate::maintenance::dal::mark_done(&conn, &sched_id, "2026-04-20", None).unwrap();
+        soft_delete_asset(&conn, &asset_id).unwrap();
+        permanent_delete_asset(&conn, &asset_id).unwrap();
+        let count: i64 = conn
+            .query_row(
+                "SELECT COUNT(*) FROM maintenance_event WHERE asset_id = ?1",
+                rusqlite::params![asset_id],
+                |r| r.get(0),
+            )
+            .unwrap();
+        assert_eq!(
+            count, 0,
+            "events should be hard-deleted when asset is permanently purged"
+        );
+    }
+
+    // ── end L4c cascade tests ─────────────────────────────────────────────────
 
     #[test]
     fn permanent_delete_cascades_to_maintenance_schedules() {
@@ -313,24 +525,34 @@ mod tests {
 
         // Insert a schedule directly (skipping the mod.rs type to avoid circular test deps;
         // the test verifies the cascade SQL runs regardless of schedule validity).
-        let today = chrono::Local::now().date_naive().format("%Y-%m-%d").to_string();
+        let today = chrono::Local::now()
+            .date_naive()
+            .format("%Y-%m-%d")
+            .to_string();
         conn.execute(
             "INSERT INTO maintenance_schedule
                (id, asset_id, task, interval_months, next_due_date, created_at, updated_at)
              VALUES ('sched1', ?1, 'Service', 12, ?2, 0, 0)",
             rusqlite::params![asset_id, today],
-        ).unwrap();
+        )
+        .unwrap();
 
         // Trash + permanent-delete the asset.
         soft_delete_asset(&conn, &asset_id).unwrap();
         permanent_delete_asset(&conn, &asset_id).unwrap();
 
         // The schedule should be hard-deleted (FK on asset_id requires full removal).
-        let sched_row: Option<String> = conn.query_row(
-            "SELECT id FROM maintenance_schedule WHERE id = 'sched1'",
-            [],
-            |r| r.get(0),
-        ).optional().unwrap();
-        assert!(sched_row.is_none(), "schedule should be hard-deleted when asset is purged");
+        let sched_row: Option<String> = conn
+            .query_row(
+                "SELECT id FROM maintenance_schedule WHERE id = 'sched1'",
+                [],
+                |r| r.get(0),
+            )
+            .optional()
+            .unwrap();
+        assert!(
+            sched_row.is_none(),
+            "schedule should be hard-deleted when asset is purged"
+        );
     }
 }

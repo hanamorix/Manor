@@ -3,6 +3,7 @@ import { useBonesViewStore, type BonesSubview } from "../../lib/bones/view-state
 const TABS: { key: BonesSubview; label: string }[] = [
   { key: "assets", label: "Assets" },
   { key: "due_soon", label: "Due soon" },
+  { key: "spend", label: "Spend" },
 ];
 
 export function BonesSubNav() {
