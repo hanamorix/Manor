@@ -361,6 +361,22 @@ pub fn suggest_transactions(
     Ok(rows)
 }
 
+pub fn restore_event(conn: &Connection, id: &str) -> Result<()> {
+    conn.execute(
+        "UPDATE maintenance_event SET deleted_at = NULL WHERE id = ?1",
+        params![id],
+    )?;
+    Ok(())
+}
+
+pub fn permanent_delete_event(conn: &Connection, id: &str) -> Result<()> {
+    conn.execute(
+        "DELETE FROM maintenance_event WHERE id = ?1 AND deleted_at IS NOT NULL",
+        params![id],
+    )?;
+    Ok(())
+}
+
 pub fn search_transactions(
     conn: &Connection,
     query: &str,
@@ -782,5 +798,27 @@ mod tests {
             !rows2.is_empty(),
             "search for 'boiler' should match description"
         );
+    }
+
+    #[test]
+    fn restore_and_permanent_delete_event_round_trip() {
+        let (_d, conn, asset_id) = fresh();
+        let id = insert_event(&conn, &draft(&asset_id)).unwrap();
+        conn.execute(
+            "UPDATE maintenance_event SET deleted_at = 1 WHERE id = ?1",
+            params![id],
+        )
+        .unwrap();
+        restore_event(&conn, &id).unwrap();
+        let got = get_event(&conn, &id).unwrap().unwrap();
+        assert!(got.deleted_at.is_none());
+        // Soft-delete again, then permanent-delete.
+        conn.execute(
+            "UPDATE maintenance_event SET deleted_at = 2 WHERE id = ?1",
+            params![id],
+        )
+        .unwrap();
+        permanent_delete_event(&conn, &id).unwrap();
+        assert!(get_event(&conn, &id).unwrap().is_none());
     }
 }
