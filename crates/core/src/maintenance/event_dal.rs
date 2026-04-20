@@ -1,6 +1,7 @@
 //! Maintenance event DAL (L4c).
 
 use super::event::{EventSource, EventWithContext, MaintenanceEvent, MaintenanceEventDraft};
+use crate::ledger::transaction::Transaction;
 use anyhow::{anyhow, Result};
 use chrono::NaiveDate;
 use rusqlite::{params, Connection, Row};
@@ -285,6 +286,102 @@ pub fn list_for_asset(conn: &Connection, asset_id: &str) -> Result<Vec<EventWith
                 transaction_date: row.get("tx_date")?,
             })
         })?
+        .collect::<std::result::Result<Vec<_>, _>>()?;
+    Ok(rows)
+}
+
+fn tx_from_row(row: &Row) -> rusqlite::Result<Transaction> {
+    Ok(Transaction {
+        id: row.get("id")?,
+        bank_account_id: row.get("bank_account_id")?,
+        amount_pence: row.get("amount_pence")?,
+        currency: row.get("currency")?,
+        description: row.get("description")?,
+        merchant: row.get("merchant")?,
+        category_id: row.get("category_id")?,
+        date: row.get("date")?,
+        source: row.get("source")?,
+        note: row.get("note")?,
+        recurring_payment_id: row.get("recurring_payment_id")?,
+        created_at: row.get("created_at")?,
+    })
+}
+
+pub fn suggest_transactions(
+    conn: &Connection,
+    completed_date: &str,
+    cost_pence: Option<i64>,
+    exclude_event_id: Option<&str>,
+    limit: usize,
+) -> Result<Vec<Transaction>> {
+    let exclude = exclude_event_id.unwrap_or("");
+    let lim = limit as i64;
+    let rows = match cost_pence {
+        Some(c) => {
+            let mut stmt = conn.prepare(
+                "SELECT lt.id, lt.bank_account_id, lt.amount_pence, lt.currency,
+                        lt.description, lt.merchant, lt.category_id, lt.date,
+                        lt.source, lt.note, lt.recurring_payment_id, lt.created_at
+                 FROM ledger_transaction lt
+                 LEFT JOIN maintenance_event me
+                     ON me.transaction_id = lt.id AND me.deleted_at IS NULL
+                 WHERE lt.deleted_at IS NULL
+                   AND (me.id IS NULL OR me.id = ?1)
+                   AND date(lt.date, 'unixepoch') BETWEEN date(?2, '-7 days')
+                                                      AND date(?2, '+2 days')
+                 ORDER BY ABS(lt.amount_pence + ?3) ASC
+                 LIMIT ?4",
+            )?;
+            let v = stmt
+                .query_map(params![exclude, completed_date, c, lim], tx_from_row)?
+                .collect::<std::result::Result<Vec<_>, _>>()?;
+            v
+        }
+        None => {
+            let mut stmt = conn.prepare(
+                "SELECT lt.id, lt.bank_account_id, lt.amount_pence, lt.currency,
+                        lt.description, lt.merchant, lt.category_id, lt.date,
+                        lt.source, lt.note, lt.recurring_payment_id, lt.created_at
+                 FROM ledger_transaction lt
+                 LEFT JOIN maintenance_event me
+                     ON me.transaction_id = lt.id AND me.deleted_at IS NULL
+                 WHERE lt.deleted_at IS NULL
+                   AND (me.id IS NULL OR me.id = ?1)
+                   AND date(lt.date, 'unixepoch') BETWEEN date(?2, '-7 days')
+                                                      AND date(?2, '+2 days')
+                 ORDER BY lt.date DESC
+                 LIMIT ?3",
+            )?;
+            let v = stmt
+                .query_map(params![exclude, completed_date, lim], tx_from_row)?
+                .collect::<std::result::Result<Vec<_>, _>>()?;
+            v
+        }
+    };
+    Ok(rows)
+}
+
+pub fn search_transactions(
+    conn: &Connection,
+    query: &str,
+    limit: usize,
+) -> Result<Vec<Transaction>> {
+    let like = format!("%{}%", query);
+    let mut stmt = conn.prepare(
+        "SELECT lt.id, lt.bank_account_id, lt.amount_pence, lt.currency,
+                lt.description, lt.merchant, lt.category_id, lt.date,
+                lt.source, lt.note, lt.recurring_payment_id, lt.created_at
+         FROM ledger_transaction lt
+         LEFT JOIN maintenance_event me
+             ON me.transaction_id = lt.id AND me.deleted_at IS NULL
+         WHERE lt.deleted_at IS NULL
+           AND me.id IS NULL
+           AND (lt.description LIKE ?1 COLLATE NOCASE OR lt.merchant LIKE ?1 COLLATE NOCASE)
+         ORDER BY lt.date DESC
+         LIMIT ?2",
+    )?;
+    let rows = stmt
+        .query_map(params![like, limit as i64], tx_from_row)?
         .collect::<std::result::Result<Vec<_>, _>>()?;
     Ok(rows)
 }
@@ -592,5 +689,98 @@ mod tests {
         // fresh()'s base asset is Appliance with no events, so appliance total = 10000 from Boiler 2
         assert_eq!(appliance.total_lifetime_pence, 10000);
         assert_eq!(vehicle.total_lifetime_pence, 25000);
+    }
+
+    #[test]
+    fn suggest_with_cost_ranks_by_amount_proximity() {
+        let (_d, conn, _asset_id) = fresh();
+        // Three transactions on 2026-04-20 (unix = 1776513600 = 2026-04-20 00:00 UTC)
+        let date_ts = 1776513600i64;
+        conn.execute(
+            "INSERT INTO ledger_transaction (amount_pence, currency, description, date, source)
+             VALUES (-10000, 'GBP', 'Tesco',       ?1, 'manual'),
+                    (-14500, 'GBP', 'British Gas', ?1, 'manual'),
+                    (-20000, 'GBP', 'Argos',       ?1, 'manual')",
+            params![date_ts],
+        )
+        .unwrap();
+        let rows = suggest_transactions(&conn, "2026-04-20", Some(14500), None, 3).unwrap();
+        assert_eq!(rows.len(), 3);
+        assert_eq!(rows[0].description, "British Gas"); // closest match first
+    }
+
+    #[test]
+    fn suggest_without_cost_orders_by_date_desc() {
+        let (_d, conn, _asset_id) = fresh();
+        let base_ts = 1776513600i64; // 2026-04-20
+        conn.execute(
+            "INSERT INTO ledger_transaction (amount_pence, currency, description, date, source)
+             VALUES (-10000, 'GBP', 'Earlier', ?1, 'manual'),
+                    (-10000, 'GBP', 'Later',   ?2, 'manual')",
+            params![base_ts - 86400, base_ts], // Earlier = one day before, Later = same day
+        )
+        .unwrap();
+        let rows = suggest_transactions(&conn, "2026-04-20", None, None, 5).unwrap();
+        assert!(!rows.is_empty());
+        assert_eq!(rows[0].description, "Later");
+    }
+
+    #[test]
+    fn suggest_excludes_already_linked() {
+        let (_d, conn, asset_id) = fresh();
+        let date_ts = 1776513600i64;
+        conn.execute(
+            "INSERT INTO ledger_transaction (amount_pence, currency, description, date, source)
+             VALUES (-14500, 'GBP', 'British Gas', ?1, 'manual')",
+            params![date_ts],
+        )
+        .unwrap();
+        let tx_id = conn.last_insert_rowid();
+        let mut d = draft(&asset_id);
+        d.transaction_id = Some(tx_id);
+        insert_event(&conn, &d).unwrap();
+        let rows = suggest_transactions(&conn, "2026-04-20", Some(14500), None, 3).unwrap();
+        assert!(rows.iter().all(|t| t.id != tx_id));
+    }
+
+    #[test]
+    fn suggest_includes_self_when_exclude_event_id_set() {
+        let (_d, conn, asset_id) = fresh();
+        let date_ts = 1776513600i64;
+        conn.execute(
+            "INSERT INTO ledger_transaction (amount_pence, currency, description, date, source)
+             VALUES (-14500, 'GBP', 'British Gas', ?1, 'manual')",
+            params![date_ts],
+        )
+        .unwrap();
+        let tx_id = conn.last_insert_rowid();
+        let mut d = draft(&asset_id);
+        d.transaction_id = Some(tx_id);
+        let event_id = insert_event(&conn, &d).unwrap();
+        let rows =
+            suggest_transactions(&conn, "2026-04-20", Some(14500), Some(&event_id), 3).unwrap();
+        assert!(rows.iter().any(|t| t.id == tx_id));
+    }
+
+    #[test]
+    fn search_matches_description_and_merchant() {
+        let (_d, conn, _asset_id) = fresh();
+        let date_ts = 1776513600i64;
+        conn.execute(
+            "INSERT INTO ledger_transaction (amount_pence, currency, description, merchant, date, source)
+             VALUES (-14500, 'GBP', 'Boiler service', 'British Gas Ltd', ?1, 'manual')",
+            params![date_ts],
+        )
+        .unwrap();
+        let rows = search_transactions(&conn, "british", 10).unwrap();
+        assert!(
+            !rows.is_empty(),
+            "search for 'british' should match merchant"
+        );
+        let rows2 = search_transactions(&conn, "boiler", 10).unwrap();
+        assert!(
+            !rows2.is_empty(),
+            "search for 'boiler' should match description"
+        );
     }
 }
