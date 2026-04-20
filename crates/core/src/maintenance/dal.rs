@@ -10,22 +10,35 @@ fn now_secs() -> i64 {
 }
 
 fn today_local() -> String {
-    chrono::Local::now().date_naive().format("%Y-%m-%d").to_string()
+    chrono::Local::now()
+        .date_naive()
+        .format("%Y-%m-%d")
+        .to_string()
 }
 
 pub fn insert_schedule(conn: &Connection, draft: &MaintenanceScheduleDraft) -> Result<String> {
     let id = Uuid::new_v4().to_string();
     let now = now_secs();
     let today = today_local();
-    let next_due = due::compute_next_due(draft.last_done_date.as_deref(), draft.interval_months, &today)?;
+    let next_due = due::compute_next_due(
+        draft.last_done_date.as_deref(),
+        draft.interval_months,
+        &today,
+    )?;
     conn.execute(
         "INSERT INTO maintenance_schedule
            (id, asset_id, task, interval_months, last_done_date, next_due_date, notes,
             created_at, updated_at)
          VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?8)",
         params![
-            id, draft.asset_id, draft.task, draft.interval_months,
-            draft.last_done_date, next_due, draft.notes, now,
+            id,
+            draft.asset_id,
+            draft.task,
+            draft.interval_months,
+            draft.last_done_date,
+            next_due,
+            draft.notes,
+            now,
         ],
     )?;
     Ok(id)
@@ -37,7 +50,9 @@ pub fn get_schedule(conn: &Connection, id: &str) -> Result<Option<MaintenanceSch
                 created_at, updated_at, deleted_at
          FROM maintenance_schedule WHERE id = ?1 AND deleted_at IS NULL",
     )?;
-    stmt.query_row(params![id], row_to_schedule).optional().map_err(Into::into)
+    stmt.query_row(params![id], row_to_schedule)
+        .optional()
+        .map_err(Into::into)
 }
 
 pub fn list_for_asset(conn: &Connection, asset_id: &str) -> Result<Vec<MaintenanceSchedule>> {
@@ -50,7 +65,9 @@ pub fn list_for_asset(conn: &Connection, asset_id: &str) -> Result<Vec<Maintenan
     )?;
     let rows = stmt.query_map(params![asset_id], row_to_schedule)?;
     let mut out = Vec::new();
-    for row in rows { out.push(row?); }
+    for row in rows {
+        out.push(row?);
+    }
     Ok(out)
 }
 
@@ -64,11 +81,16 @@ pub fn list_due_before(conn: &Connection, cutoff_date: &str) -> Result<Vec<Maint
     )?;
     let rows = stmt.query_map(params![cutoff_date], row_to_schedule)?;
     let mut out = Vec::new();
-    for row in rows { out.push(row?); }
+    for row in rows {
+        out.push(row?);
+    }
     Ok(out)
 }
 
-pub fn list_due_today_and_overdue(conn: &Connection, today: &str) -> Result<Vec<MaintenanceSchedule>> {
+pub fn list_due_today_and_overdue(
+    conn: &Connection,
+    today: &str,
+) -> Result<Vec<MaintenanceSchedule>> {
     // "Due today" and "overdue" both satisfy next_due_date <= today.
     list_due_before(conn, today)
 }
@@ -83,7 +105,11 @@ pub fn overdue_count(conn: &Connection, today: &str) -> Result<i64> {
     Ok(count)
 }
 
-pub fn update_schedule(conn: &Connection, id: &str, draft: &MaintenanceScheduleDraft) -> Result<()> {
+pub fn update_schedule(
+    conn: &Connection,
+    id: &str,
+    draft: &MaintenanceScheduleDraft,
+) -> Result<()> {
     let now = now_secs();
 
     // Preserve the original creation date as fallback_start when last_done is None,
@@ -100,34 +126,74 @@ pub fn update_schedule(conn: &Connection, id: &str, draft: &MaintenanceScheduleD
         .format("%Y-%m-%d")
         .to_string();
 
-    let next_due = due::compute_next_due(draft.last_done_date.as_deref(), draft.interval_months, &fallback)?;
+    let next_due = due::compute_next_due(
+        draft.last_done_date.as_deref(),
+        draft.interval_months,
+        &fallback,
+    )?;
     conn.execute(
         "UPDATE maintenance_schedule
          SET asset_id = ?1, task = ?2, interval_months = ?3,
              last_done_date = ?4, next_due_date = ?5, notes = ?6, updated_at = ?7
          WHERE id = ?8",
         params![
-            draft.asset_id, draft.task, draft.interval_months,
-            draft.last_done_date, next_due, draft.notes, now, id,
+            draft.asset_id,
+            draft.task,
+            draft.interval_months,
+            draft.last_done_date,
+            next_due,
+            draft.notes,
+            now,
+            id,
         ],
     )?;
     Ok(())
 }
 
-pub fn mark_done(conn: &Connection, id: &str, today: &str) -> Result<()> {
-    let mut stmt = conn.prepare(
-        "SELECT interval_months FROM maintenance_schedule WHERE id = ?1 AND deleted_at IS NULL",
-    )?;
-    let interval: i32 = stmt.query_row(params![id], |r| r.get(0))?;
-    let next_due = due::compute_next_due(Some(today), interval, today)?;
+pub fn mark_done(
+    conn: &Connection,
+    schedule_id: &str,
+    today: &str,
+    event_draft: Option<&crate::maintenance::event::MaintenanceEventDraft>,
+) -> Result<String> {
+    // Load schedule (get_schedule already excludes soft-deleted rows via AND deleted_at IS NULL)
+    let schedule =
+        get_schedule(conn, schedule_id)?.ok_or_else(|| anyhow::anyhow!("Schedule not found"))?;
+
+    // Compute next due date
+    let next_due = due::compute_next_due(Some(today), schedule.interval_months, today)?;
     let now = now_secs();
+
+    // Bump schedule dates
     conn.execute(
         "UPDATE maintenance_schedule
          SET last_done_date = ?1, next_due_date = ?2, updated_at = ?3
          WHERE id = ?4",
-        params![today, next_due, now, id],
+        params![today, next_due, now, schedule_id],
     )?;
-    Ok(())
+
+    // Build or use the provided event draft
+    let minimal: crate::maintenance::event::MaintenanceEventDraft;
+    let draft = match event_draft {
+        Some(d) => d,
+        None => {
+            minimal = crate::maintenance::event::MaintenanceEventDraft {
+                asset_id: schedule.asset_id.clone(),
+                schedule_id: Some(schedule.id.clone()),
+                title: schedule.task.clone(),
+                completed_date: today.to_string(),
+                cost_pence: None,
+                currency: "GBP".to_string(),
+                notes: String::new(),
+                transaction_id: None,
+            };
+            &minimal
+        }
+    };
+
+    // Insert the event and return its id
+    let event_id = crate::maintenance::event_dal::insert_event(conn, draft)?;
+    Ok(event_id)
 }
 
 pub fn soft_delete_schedule(conn: &Connection, id: &str) -> Result<()> {
@@ -182,7 +248,10 @@ mod tests {
         let asset = AssetDraft {
             name: "Boiler".into(),
             category: AssetCategory::Appliance,
-            make: None, model: None, serial_number: None, purchase_date: None,
+            make: None,
+            model: None,
+            serial_number: None,
+            purchase_date: None,
             notes: String::new(),
             hero_attachment_uuid: None,
         };
@@ -239,10 +308,59 @@ mod tests {
     fn mark_done_bumps_both_dates() {
         let (_d, conn, asset_id) = fresh();
         let id = insert_schedule(&conn, &simple_draft(&asset_id)).unwrap();
-        mark_done(&conn, &id, "2025-06-15").unwrap();
+        mark_done(&conn, &id, "2025-06-15", None).unwrap();
         let s = get_schedule(&conn, &id).unwrap().unwrap();
         assert_eq!(s.last_done_date.as_deref(), Some("2025-06-15"));
         assert_eq!(s.next_due_date, "2026-06-15");
+    }
+
+    #[test]
+    fn mark_done_silent_inserts_minimal_event() {
+        use crate::maintenance::event_dal;
+        let (_d, conn, asset_id) = fresh();
+        let id = insert_schedule(&conn, &simple_draft(&asset_id)).unwrap();
+        let event_id = mark_done(&conn, &id, "2026-04-20", None).unwrap();
+        let events = event_dal::list_for_asset(&conn, &asset_id).unwrap();
+        assert_eq!(events.len(), 1);
+        let e = &events[0].event;
+        assert_eq!(e.id, event_id);
+        assert_eq!(e.title, "Annual service");
+        assert_eq!(e.completed_date, "2026-04-20");
+        assert_eq!(e.cost_pence, None);
+        assert_eq!(e.notes, "");
+        assert_eq!(e.transaction_id, None);
+    }
+
+    #[test]
+    fn mark_done_with_draft_uses_caller_draft() {
+        use crate::maintenance::event::MaintenanceEventDraft;
+        use crate::maintenance::event_dal;
+        let (_d, conn, asset_id) = fresh();
+        let sched_id = insert_schedule(&conn, &simple_draft(&asset_id)).unwrap();
+        let draft = MaintenanceEventDraft {
+            asset_id: asset_id.clone(),
+            schedule_id: Some(sched_id.clone()),
+            title: "Annual service — upgraded parts".into(),
+            completed_date: "2026-04-20".into(),
+            cost_pence: Some(18000),
+            currency: "GBP".into(),
+            notes: "Replaced pump".into(),
+            transaction_id: None,
+        };
+        mark_done(&conn, &sched_id, "2026-04-20", Some(&draft)).unwrap();
+        let events = event_dal::list_for_asset(&conn, &asset_id).unwrap();
+        assert_eq!(events[0].event.cost_pence, Some(18000));
+        assert_eq!(events[0].event.notes, "Replaced pump");
+    }
+
+    #[test]
+    fn mark_done_still_bumps_schedule_dates() {
+        let (_d, conn, asset_id) = fresh();
+        let sched_id = insert_schedule(&conn, &simple_draft(&asset_id)).unwrap();
+        mark_done(&conn, &sched_id, "2026-04-20", None).unwrap();
+        let sched = get_schedule(&conn, &sched_id).unwrap().unwrap();
+        assert_eq!(sched.last_done_date.as_deref(), Some("2026-04-20"));
+        assert_eq!(sched.next_due_date, "2027-04-20");
     }
 
     #[test]
@@ -251,21 +369,24 @@ mod tests {
         let a = insert_schedule(&conn, &{
             let mut d = simple_draft(&asset_id);
             d.task = "Task A".into();
-            d.last_done_date = Some("2024-06-15".into());  // next_due 2025-06-15
+            d.last_done_date = Some("2024-06-15".into()); // next_due 2025-06-15
             d
-        }).unwrap();
+        })
+        .unwrap();
         let b = insert_schedule(&conn, &{
             let mut d = simple_draft(&asset_id);
             d.task = "Task B".into();
-            d.last_done_date = Some("2024-01-15".into());  // next_due 2025-01-15
+            d.last_done_date = Some("2024-01-15".into()); // next_due 2025-01-15
             d
-        }).unwrap();
+        })
+        .unwrap();
         let c = insert_schedule(&conn, &{
             let mut d = simple_draft(&asset_id);
             d.task = "Task C".into();
-            d.last_done_date = Some("2024-03-15".into());  // next_due 2025-03-15
+            d.last_done_date = Some("2024-03-15".into()); // next_due 2025-03-15
             d
-        }).unwrap();
+        })
+        .unwrap();
         soft_delete_schedule(&conn, &c).unwrap();
 
         let list = list_for_asset(&conn, &asset_id).unwrap();
@@ -280,15 +401,17 @@ mod tests {
         insert_schedule(&conn, &{
             let mut d = simple_draft(&asset_id);
             d.task = "Past".into();
-            d.last_done_date = Some("2023-06-15".into());  // next_due 2024-06-15
+            d.last_done_date = Some("2023-06-15".into()); // next_due 2024-06-15
             d
-        }).unwrap();
+        })
+        .unwrap();
         insert_schedule(&conn, &{
             let mut d = simple_draft(&asset_id);
             d.task = "Future".into();
-            d.last_done_date = Some("2026-01-15".into());  // next_due 2027-01-15
+            d.last_done_date = Some("2026-01-15".into()); // next_due 2027-01-15
             d
-        }).unwrap();
+        })
+        .unwrap();
 
         let list = list_due_before(&conn, "2025-01-01").unwrap();
         assert_eq!(list.len(), 1);
@@ -302,12 +425,14 @@ mod tests {
             let mut d = simple_draft(&asset_id);
             d.last_done_date = Some("2023-06-15".into());
             d
-        }).unwrap();
+        })
+        .unwrap();
         let id2 = insert_schedule(&conn, &{
             let mut d = simple_draft(&asset_id);
             d.last_done_date = Some("2023-07-15".into());
             d
-        }).unwrap();
+        })
+        .unwrap();
         assert_eq!(overdue_count(&conn, "2025-01-01").unwrap(), 2);
         soft_delete_schedule(&conn, &id2).unwrap();
         assert_eq!(overdue_count(&conn, "2025-01-01").unwrap(), 1);
@@ -328,13 +453,21 @@ mod tests {
         let (_d, conn, asset_id) = fresh();
         let id = insert_schedule(&conn, &simple_draft(&asset_id)).unwrap();
         permanent_delete_schedule(&conn, &id).unwrap();
-        assert!(get_schedule(&conn, &id).unwrap().is_some(), "active row survives permanent_delete");
+        assert!(
+            get_schedule(&conn, &id).unwrap().is_some(),
+            "active row survives permanent_delete"
+        );
         soft_delete_schedule(&conn, &id).unwrap();
         permanent_delete_schedule(&conn, &id).unwrap();
         // Verify the row is gone (even including trashed).
-        let row: Option<i64> = conn.query_row(
-            "SELECT 1 FROM maintenance_schedule WHERE id = ?1", params![id], |r| r.get(0),
-        ).optional().unwrap();
+        let row: Option<i64> = conn
+            .query_row(
+                "SELECT 1 FROM maintenance_schedule WHERE id = ?1",
+                params![id],
+                |r| r.get(0),
+            )
+            .optional()
+            .unwrap();
         assert!(row.is_none());
     }
 
@@ -351,7 +484,8 @@ mod tests {
         conn.execute(
             "UPDATE maintenance_schedule SET created_at = ?1 WHERE id = ?2",
             params![aged, id],
-        ).unwrap();
+        )
+        .unwrap();
 
         // Change interval; last_done stays None.
         let mut draft = simple_draft(&asset_id);
@@ -369,8 +503,7 @@ mod tests {
             .format("%Y-%m-%d")
             .to_string();
         assert_ne!(
-            updated.next_due_date,
-            today_plus_24mo,
+            updated.next_due_date, today_plus_24mo,
             "update_schedule should anchor on created_at, not today"
         );
         let _ = original_next_due;
