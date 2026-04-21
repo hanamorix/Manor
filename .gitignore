@@ -32,8 +32,12 @@ Thumbs.db
 # TypeScript incremental build info
 *.tsbuildinfo
 
-# Vite-emitted .d.ts from vite.config.ts
+# Vite-emitted sibling files for vite.config.ts
 apps/desktop/vite.config.d.ts
+apps/desktop/vite.config.js
+
+# Source material (originals Hana keeps locally, not packaged)
+material/
 
 # Misc
 *.log
