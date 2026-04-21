@@ -115,6 +115,23 @@ mod tests {
     }
 
     #[test]
+    fn rejects_ipv4_mapped_loopback() {
+        // ::ffff:127.0.0.1 — common SSRF bypass: v6 syntax pointing at v4 loopback.
+        assert_eq!(
+            vet_url("http://[::ffff:127.0.0.1]/").unwrap_err(),
+            SsrfError::PrivateAddress,
+        );
+    }
+
+    #[test]
+    fn rejects_ipv4_mapped_private() {
+        assert_eq!(
+            vet_url("http://[::ffff:10.0.0.1]/").unwrap_err(),
+            SsrfError::PrivateAddress,
+        );
+    }
+
+    #[test]
     fn rejects_bad_url() {
         assert_eq!(vet_url("not a url").unwrap_err(), SsrfError::BadUrl);
         assert_eq!(vet_url("http://").unwrap_err(), SsrfError::BadUrl);
