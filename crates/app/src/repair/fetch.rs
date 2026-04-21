@@ -27,7 +27,7 @@ pub async fn fetch_and_trim(client: &reqwest::Client, url: &str) -> Result<Strin
 /// Callers (including tests) that have already validated the URL may call this directly.
 async fn fetch_and_trim_inner(client: &reqwest::Client, vetted: url::Url) -> Result<String> {
     let url_str = vetted.as_str().to_string();
-    let resp = client
+    let mut resp = client
         .get(vetted)
         .send()
         .await
@@ -42,15 +42,19 @@ async fn fetch_and_trim_inner(client: &reqwest::Client, vetted: url::Url) -> Res
     if !ctype.contains("text/html") {
         return Err(FetchError::NotHtml(url_str.clone(), ctype).into());
     }
-    if let Some(len) = resp.content_length() {
-        if len > MAX_BODY_BYTES {
-            return Err(FetchError::TooLarge(url_str.clone()).into());
-        }
-    }
-    let body = resp
-        .text()
+    // Stream body with cap — do NOT trust Content-Length header.
+    let mut body_bytes = Vec::<u8>::new();
+    while let Some(chunk) = resp
+        .chunk()
         .await
-        .map_err(|_| FetchError::FetchFailed(url_str))?;
+        .map_err(|_| FetchError::FetchFailed(url_str.clone()))?
+    {
+        if body_bytes.len() + chunk.len() > MAX_BODY_BYTES as usize {
+            return Err(FetchError::TooLarge(url_str).into());
+        }
+        body_bytes.extend_from_slice(&chunk);
+    }
+    let body = String::from_utf8_lossy(&body_bytes).into_owned();
     Ok(trim_html_to_excerpt(&body))
 }
 

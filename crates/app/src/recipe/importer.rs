@@ -66,7 +66,7 @@ pub async fn preview_inner(
         .build()
         .context("building http client")?;
 
-    let resp = client
+    let mut resp = client
         .get(parsed_url.clone())
         .send()
         .await
@@ -81,19 +81,15 @@ pub async fn preview_inner(
     if !ctype.contains("text/html") {
         return Err(ImportError::NotHtml(ctype).into());
     }
-    if let Some(len) = resp.content_length() {
-        if len > MAX_BODY_BYTES {
+    // Stream body with cap — do NOT trust Content-Length header.
+    let mut body_bytes = Vec::<u8>::new();
+    while let Some(chunk) = resp.chunk().await.map_err(|_| ImportError::FetchFailed)? {
+        if body_bytes.len() + chunk.len() > MAX_BODY_BYTES as usize {
             return Err(ImportError::TooLarge.into());
         }
+        body_bytes.extend_from_slice(&chunk);
     }
-
-    let body = resp
-        .text()
-        .await
-        .map_err(|_| ImportError::FetchFailed)?;
-    if body.len() as u64 > MAX_BODY_BYTES {
-        return Err(ImportError::TooLarge.into());
-    }
+    let body = String::from_utf8_lossy(&body_bytes).into_owned();
 
     // Try JSON-LD first — zero network cost, most recipe sites embed it.
     if let Some(mut imp) = parse_jsonld(&body) {
@@ -150,7 +146,7 @@ async fn download_hero_image(url: &str) -> Result<HeroImageData> {
         .build()
         .context("building http client for image")?;
 
-    let resp = client.get(vetted).send().await.context("fetching hero image")?;
+    let mut resp = client.get(vetted).send().await.context("fetching hero image")?;
 
     let ctype = resp
         .headers()
@@ -169,19 +165,17 @@ async fn download_hero_image(url: &str) -> Result<HeroImageData> {
         return Err(anyhow::anyhow!("unsupported image type: {}", ctype));
     };
 
-    if let Some(len) = resp.content_length() {
-        if len > MAX_IMAGE_BYTES {
-            return Err(anyhow::anyhow!("hero image too large ({} bytes)", len));
+    // Stream body with cap — do NOT trust Content-Length header.
+    let mut raw = Vec::<u8>::new();
+    while let Some(chunk) = resp.chunk().await.context("reading image bytes")? {
+        if raw.len() + chunk.len() > MAX_IMAGE_BYTES as usize {
+            return Err(anyhow::anyhow!("hero image too large (> {} bytes)", MAX_IMAGE_BYTES));
         }
-    }
-
-    let raw = resp.bytes().await.context("reading image bytes")?;
-    if raw.len() as u64 > MAX_IMAGE_BYTES {
-        return Err(anyhow::anyhow!("hero image too large ({} bytes)", raw.len()));
+        raw.extend_from_slice(&chunk);
     }
 
     Ok(HeroImageData {
-        bytes: raw.to_vec(),
+        bytes: raw,
         mime_type: ctype,
         original_name: format!("hero.{}", ext),
     })
