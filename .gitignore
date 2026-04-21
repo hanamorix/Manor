@@ -11,6 +11,11 @@ apps/desktop/src-tauri/gen/
 # Superpowers brainstorm / visual-companion session state
 .superpowers/
 
+# Internal planning docs, design bible, and Claude project instructions
+docs/superpowers/
+.impeccable.md
+CLAUDE.md
+
 # OS
 .DS_Store
 Thumbs.db
