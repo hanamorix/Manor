@@ -44,7 +44,7 @@ pub async fn preview(
     url: &str,
     llm_client: Option<&dyn LlmClient>,
 ) -> Result<ImportPreview> {
-    let parsed_url = reqwest::Url::parse(url).map_err(|_| ImportError::BadUrl)?;
+    let parsed_url = manor_core::net::ssrf::vet_url(url).map_err(|_| ImportError::BadUrl)?;
     let host = parsed_url.host_str().unwrap_or("").to_string();
 
     let client = reqwest::Client::builder()
@@ -128,13 +128,16 @@ struct HeroImageData {
 
 /// Fetch hero image bytes from a URL. Pure async HTTP — no DB, no lock.
 async fn download_hero_image(url: &str) -> Result<HeroImageData> {
+    let vetted = manor_core::net::ssrf::vet_url(url)
+        .context("hero image URL rejected by SSRF guard")?;
+
     let client = reqwest::Client::builder()
         .timeout(Duration::from_secs(FETCH_TIMEOUT_SECS))
         .user_agent(USER_AGENT_STRING)
         .build()
         .context("building http client for image")?;
 
-    let resp = client.get(url).send().await.context("fetching hero image")?;
+    let resp = client.get(vetted).send().await.context("fetching hero image")?;
 
     let ctype = resp
         .headers()
@@ -240,6 +243,31 @@ pub async fn fetch_and_link_hero_arc(
     let conn = db.lock().map_err(|e| anyhow::anyhow!("db lock: {e}"))?;
     let _ = manor_core::recipe::dal::set_hero_attachment(&conn, recipe_id, &att_uuid);
     Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[tokio::test]
+    async fn preview_rejects_loopback_url() {
+        let err = preview("http://127.0.0.1:8080/recipe", None).await.unwrap_err();
+        let msg = format!("{err}");
+        assert!(
+            msg.contains("URL") || msg.contains("private") || msg.contains("scheme") || msg.contains("rejected"),
+            "got error message: {msg}",
+        );
+    }
+
+    #[tokio::test]
+    async fn preview_rejects_file_scheme() {
+        let err = preview("file:///etc/passwd", None).await.unwrap_err();
+        let msg = format!("{err}");
+        assert!(
+            msg.contains("URL") || msg.contains("scheme"),
+            "got error message: {msg}",
+        );
+    }
 }
 
 fn to_preview(imp: ImportedRecipe) -> ImportPreview {
