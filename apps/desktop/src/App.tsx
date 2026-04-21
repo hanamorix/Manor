@@ -32,6 +32,9 @@ const mainStyle: React.CSSProperties = {
   overflow: "auto",
   position: "relative",
   zIndex: 0,
+  // Reserve room for the fixed chat bar + avatar column so key buttons
+  // at the end of any view can scroll above them.
+  paddingBottom: 120,
 };
 
 const viewFallback = (

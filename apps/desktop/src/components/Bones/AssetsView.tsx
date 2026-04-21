@@ -99,7 +99,7 @@ export function AssetsView() {
       {loadStatus.kind === "idle" && assets.length > 0 && (
         <div style={{
           display: "grid",
-          gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))",
+          gridTemplateColumns: "repeat(auto-fill, minmax(240px, 1fr))",
           gap: 16,
         }}>
           {assets.map((a) => (
