@@ -31,9 +31,11 @@ plist.workspace = true
 csv.workspace = true
 tiny_http.workspace = true
 urlencoding.workspace = true
+url.workspace = true
 uuid.workspace = true
 scraper = "0.20"
 rand = "0.8"
+dirs = "5"
 
 [dev-dependencies]
 wiremock.workspace = true

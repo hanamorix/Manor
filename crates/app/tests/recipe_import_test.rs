@@ -18,7 +18,7 @@ async fn preview_succeeds_via_jsonld() {
         .mount(&server).await;
 
     let url = format!("{}/tomato", server.uri());
-    let preview = manor_app::recipe::importer::preview(&url, None).await
+    let preview = manor_app::recipe::importer::preview_inner(url::Url::parse(&url).unwrap(), None).await
         .expect("preview succeeds");
     assert_eq!(preview.recipe_draft.title, "Tomato soup");
     assert_eq!(preview.import_method, manor_core::recipe::ImportMethod::JsonLd);
@@ -34,7 +34,7 @@ async fn fails_on_non_html() {
         .mount(&server).await;
 
     let url = format!("{}/pdf", server.uri());
-    let err = manor_app::recipe::importer::preview(&url, None).await.unwrap_err();
+    let err = manor_app::recipe::importer::preview_inner(url::Url::parse(&url).unwrap(), None).await.unwrap_err();
     assert!(err.to_string().to_lowercase().contains("not html") || err.to_string().to_lowercase().contains("html"));
 }
 
@@ -59,7 +59,12 @@ async fn falls_back_to_llm_when_no_jsonld() {
     let stub = StubLlm { response: r#"{"title":"Onion dinner","servings":4,"prep_time_mins":null,"cook_time_mins":null,"instructions":"1. Cook.","ingredients":[{"quantity_text":null,"ingredient_name":"onions","note":null}]}"#.into() };
 
     let url = format!("{}/blog-post", server.uri());
-    let preview = manor_app::recipe::importer::preview(&url, Some(&stub)).await.unwrap();
+    let preview = manor_app::recipe::importer::preview_inner(
+        url::Url::parse(&url).unwrap(),
+        Some(&stub),
+    )
+    .await
+    .unwrap();
     assert_eq!(preview.recipe_draft.title, "Onion dinner");
     assert_eq!(preview.import_method, manor_core::recipe::ImportMethod::Llm);
 }

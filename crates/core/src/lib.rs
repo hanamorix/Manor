@@ -8,6 +8,7 @@ pub mod household;
 pub mod ledger;
 pub mod maintenance;
 pub mod meal_plan;
+pub mod net;
 pub mod note;
 pub mod pdf_extract;
 pub mod person;

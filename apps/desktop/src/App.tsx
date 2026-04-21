@@ -1,18 +1,23 @@
-import { useEffect, useState } from "react";
+import { Suspense, lazy, useEffect, useState } from "react";
 import Assistant from "./components/Assistant/Assistant";
-import Today from "./components/Today/Today";
 import SettingsModal from "./components/Settings/SettingsModal";
 import Sidebar from "./components/Nav/Sidebar";
-import ChoresView from "./components/Chores/ChoresView";
-import TimeBlocksView from "./components/TimeBlocks/TimeBlocksView";
-import LedgerView from "./components/Ledger/LedgerView";
-import { HearthTab } from "./components/Hearth/HearthTab";
-import { BonesTab } from "./components/Bones/BonesTab";
-import Wizard from "./components/Wizard/Wizard";
 import { useSettingsStore } from "./lib/settings/state";
 import { useNavStore } from "./lib/nav";
 import { useWizardStore } from "./lib/wizard/state";
 import { settingGet } from "./lib/foundation/ipc";
+
+const Today = lazy(() => import("./components/Today/Today"));
+const ChoresView = lazy(() => import("./components/Chores/ChoresView"));
+const TimeBlocksView = lazy(() => import("./components/TimeBlocks/TimeBlocksView"));
+const LedgerView = lazy(() => import("./components/Ledger/LedgerView"));
+const HearthTab = lazy(() =>
+  import("./components/Hearth/HearthTab").then((m) => ({ default: m.HearthTab })),
+);
+const BonesTab = lazy(() =>
+  import("./components/Bones/BonesTab").then((m) => ({ default: m.BonesTab })),
+);
+const Wizard = lazy(() => import("./components/Wizard/Wizard"));
 
 const ONBOARDING_KEY = "onboarding_completed";
 
@@ -28,6 +33,10 @@ const mainStyle: React.CSSProperties = {
   position: "relative",
   zIndex: 0,
 };
+
+const viewFallback = (
+  <div style={{ padding: 40, color: "var(--ink-soft)" }}>Loading…</div>
+);
 
 export default function App() {
   const setModalOpen = useSettingsStore((s) => s.setModalOpen);
@@ -61,7 +70,11 @@ export default function App() {
   }
 
   if (showWizard) {
-    return <Wizard />;
+    return (
+      <Suspense fallback={viewFallback}>
+        <Wizard />
+      </Suspense>
+    );
   }
 
   return (
@@ -69,12 +82,14 @@ export default function App() {
       <div style={shellStyle}>
         <Sidebar />
         <div style={mainStyle}>
-          {view === "today" && <Today />}
-          {view === "chores" && <ChoresView />}
-          {view === "timeblocks" && <TimeBlocksView />}
-          {view === "ledger" && <LedgerView />}
-          {view === "bones" && <BonesTab />}
-          {view === "hearth" && <HearthTab />}
+          <Suspense fallback={viewFallback}>
+            {view === "today" && <Today />}
+            {view === "chores" && <ChoresView />}
+            {view === "timeblocks" && <TimeBlocksView />}
+            {view === "ledger" && <LedgerView />}
+            {view === "bones" && <BonesTab />}
+            {view === "hearth" && <HearthTab />}
+          </Suspense>
         </div>
       </div>
       <Assistant />

@@ -1,6 +1,7 @@
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { open as openUrl } from "@tauri-apps/plugin-shell";
+import { isSafeExternalScheme } from "../../lib/ui/scheme";
 
 interface Props {
   body: string;
@@ -17,8 +18,8 @@ export function RepairMarkdown({ body }: Props) {
             href={href}
             onClick={(e) => {
               e.preventDefault();
-              if (href) {
-                void openUrl(href);
+              if (isSafeExternalScheme(href)) {
+                void openUrl(href!);
               }
             }}
             style={{ color: "var(--link, #0366d6)", textDecoration: "underline", cursor: "pointer" }}

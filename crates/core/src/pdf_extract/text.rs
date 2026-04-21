@@ -7,6 +7,18 @@ pub const MAX_PDF_BYTES: u64 = 10 * 1024 * 1024; // 10 MB
 pub const MIN_TEXT_CHARS: usize = 500;
 pub const OLLAMA_CAP_BYTES: usize = 32 * 1024;
 pub const CLAUDE_CAP_BYTES: usize = 200 * 1024;
+/// Maximum decompressed text characters from a PDF. Roughly 20× the raw byte cap —
+/// large enough for legitimate dense manuals (a 10 MB raw PDF typically yields
+/// 100-500 KB of text), small enough to reject FlateDecode bombs that expand
+/// unbounded.
+pub const MAX_DECOMPRESSED_CHARS: usize = 2_000_000;
+
+fn enforce_decompressed_cap(text: &str) -> Result<&str, ExtractError> {
+    if text.chars().count() > MAX_DECOMPRESSED_CHARS {
+        return Err(ExtractError::TooLarge(MAX_PDF_BYTES / (1024 * 1024)));
+    }
+    Ok(text)
+}
 
 pub fn extract_text_from_pdf(path: &Path) -> Result<String, ExtractError> {
     let meta = std::fs::metadata(path).map_err(|e| ExtractError::ReadFailed(e.to_string()))?;
@@ -17,6 +29,7 @@ pub fn extract_text_from_pdf(path: &Path) -> Result<String, ExtractError> {
     let text = pdf_extract::extract_text_from_mem(&bytes)
         .map_err(|e| ExtractError::ParseFailed(e.to_string()))?;
     let trimmed = text.trim();
+    enforce_decompressed_cap(trimmed)?;
     if trimmed.chars().count() < MIN_TEXT_CHARS {
         return Err(ExtractError::ImageOnly);
     }
@@ -89,5 +102,18 @@ mod tests {
         let input = format!("{}€€€", prefix); // € is 3 bytes in UTF-8
         let out = cap_for_tier(&input, false);
         assert!(out.len() <= OLLAMA_CAP_BYTES);
+    }
+
+    #[test]
+    fn enforce_decompressed_cap_rejects_overlimit_text() {
+        let huge = "x".repeat(MAX_DECOMPRESSED_CHARS + 1);
+        let err = enforce_decompressed_cap(&huge).unwrap_err();
+        assert!(matches!(err, ExtractError::TooLarge(_)), "got: {err:?}");
+    }
+
+    #[test]
+    fn enforce_decompressed_cap_accepts_at_limit_text() {
+        let at_limit = "x".repeat(MAX_DECOMPRESSED_CHARS);
+        assert!(enforce_decompressed_cap(&at_limit).is_ok());
     }
 }

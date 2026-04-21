@@ -1,4 +1,4 @@
-import manorFace from "../../assets/avatars/manor_face.png";
+import manorFace from "../../assets/avatars/manor_face.webp";
 
 interface AvatarProps {
   /** Rendered height in px. Width scales from the image's intrinsic aspect ratio. */

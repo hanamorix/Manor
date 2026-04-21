@@ -17,8 +17,10 @@ pub async fn duckduckgo_top_n(
         "https://html.duckduckgo.com/html/?q={}",
         urlencoding::encode(query)
     );
+    let vetted = manor_core::net::ssrf::vet_url(&url)
+        .map_err(|e| anyhow::anyhow!("url rejected: {e}"))?;
     let resp = client
-        .get(&url)
+        .get(vetted)
         .send()
         .await
         .context("duckduckgo request failed")?;
@@ -72,7 +74,11 @@ pub async fn youtube_top_n(
         "https://www.youtube.com/results?search_query={}",
         urlencoding::encode(query)
     );
-    let resp = match client.get(&url).send().await {
+    let vetted = match manor_core::net::ssrf::vet_url(&url) {
+        Ok(u) => u,
+        Err(_) => return Ok(Vec::new()), // sidecar — never fail pipeline
+    };
+    let resp = match client.get(vetted).send().await {
         Ok(r) => r,
         Err(_) => return Ok(Vec::new()), // sidecar — never fail pipeline
     };

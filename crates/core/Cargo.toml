@@ -10,6 +10,7 @@ description = "Manor core library"
 [dependencies]
 anyhow.workspace = true
 thiserror.workspace = true
+reqwest.workspace = true
 serde.workspace = true
 serde_json.workspace = true
 tokio.workspace = true
@@ -26,6 +27,7 @@ age.workspace = true
 tar.workspace = true
 flate2.workspace = true
 bytemuck.workspace = true
+url.workspace = true
 scraper = "0.20"
 async-trait = "0.1"
 pdf-extract = "0.7"
@@ -33,3 +35,5 @@ pdf-extract = "0.7"
 [dev-dependencies]
 tempfile.workspace = true
 proptest.workspace = true
+wiremock.workspace = true
+tokio.workspace = true

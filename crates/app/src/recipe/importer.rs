@@ -44,7 +44,20 @@ pub async fn preview(
     url: &str,
     llm_client: Option<&dyn LlmClient>,
 ) -> Result<ImportPreview> {
-    let parsed_url = reqwest::Url::parse(url).map_err(|_| ImportError::BadUrl)?;
+    let vetted = manor_core::net::ssrf::vet_url(url).map_err(|_| ImportError::BadUrl)?;
+    preview_inner(vetted, llm_client).await
+}
+
+/// Run a preview against a pre-vetted URL. Test-only entry point: wiremock binds
+/// to 127.0.0.1 which the SSRF guard correctly blocks, so integration tests that
+/// exercise content-type, JSON-LD, or LLM-fallback behaviour (not SSRF) bypass
+/// the guard by calling this directly.
+#[doc(hidden)]
+pub async fn preview_inner(
+    parsed_url: url::Url,
+    llm_client: Option<&dyn LlmClient>,
+) -> Result<ImportPreview> {
+    let url = parsed_url.as_str().to_string();
     let host = parsed_url.host_str().unwrap_or("").to_string();
 
     let client = reqwest::Client::builder()
@@ -53,7 +66,7 @@ pub async fn preview(
         .build()
         .context("building http client")?;
 
-    let resp = client
+    let mut resp = client
         .get(parsed_url.clone())
         .send()
         .await
@@ -68,23 +81,19 @@ pub async fn preview(
     if !ctype.contains("text/html") {
         return Err(ImportError::NotHtml(ctype).into());
     }
-    if let Some(len) = resp.content_length() {
-        if len > MAX_BODY_BYTES {
+    // Stream body with cap — do NOT trust Content-Length header.
+    let mut body_bytes = Vec::<u8>::new();
+    while let Some(chunk) = resp.chunk().await.map_err(|_| ImportError::FetchFailed)? {
+        if body_bytes.len() + chunk.len() > MAX_BODY_BYTES as usize {
             return Err(ImportError::TooLarge.into());
         }
+        body_bytes.extend_from_slice(&chunk);
     }
-
-    let body = resp
-        .text()
-        .await
-        .map_err(|_| ImportError::FetchFailed)?;
-    if body.len() as u64 > MAX_BODY_BYTES {
-        return Err(ImportError::TooLarge.into());
-    }
+    let body = String::from_utf8_lossy(&body_bytes).into_owned();
 
     // Try JSON-LD first — zero network cost, most recipe sites embed it.
     if let Some(mut imp) = parse_jsonld(&body) {
-        imp.source_url = url.to_string();
+        imp.source_url = url.clone();
         imp.source_host = host.clone();
         return Ok(to_preview(imp));
     }
@@ -97,7 +106,7 @@ pub async fn preview(
     let mut imp = extract_via_llm(&text, client, /*via_remote=*/ false)
         .await
         .map_err(|_| ImportError::ExtractionFailed)?;
-    imp.source_url = url.to_string();
+    imp.source_url = url;
     imp.source_host = host;
     Ok(to_preview(imp))
 }
@@ -128,13 +137,16 @@ struct HeroImageData {
 
 /// Fetch hero image bytes from a URL. Pure async HTTP — no DB, no lock.
 async fn download_hero_image(url: &str) -> Result<HeroImageData> {
+    let vetted = manor_core::net::ssrf::vet_url(url)
+        .context("hero image URL rejected by SSRF guard")?;
+
     let client = reqwest::Client::builder()
         .timeout(Duration::from_secs(FETCH_TIMEOUT_SECS))
         .user_agent(USER_AGENT_STRING)
         .build()
         .context("building http client for image")?;
 
-    let resp = client.get(url).send().await.context("fetching hero image")?;
+    let mut resp = client.get(vetted).send().await.context("fetching hero image")?;
 
     let ctype = resp
         .headers()
@@ -153,19 +165,17 @@ async fn download_hero_image(url: &str) -> Result<HeroImageData> {
         return Err(anyhow::anyhow!("unsupported image type: {}", ctype));
     };
 
-    if let Some(len) = resp.content_length() {
-        if len > MAX_IMAGE_BYTES {
-            return Err(anyhow::anyhow!("hero image too large ({} bytes)", len));
+    // Stream body with cap — do NOT trust Content-Length header.
+    let mut raw = Vec::<u8>::new();
+    while let Some(chunk) = resp.chunk().await.context("reading image bytes")? {
+        if raw.len() + chunk.len() > MAX_IMAGE_BYTES as usize {
+            return Err(anyhow::anyhow!("hero image too large (> {} bytes)", MAX_IMAGE_BYTES));
         }
-    }
-
-    let raw = resp.bytes().await.context("reading image bytes")?;
-    if raw.len() as u64 > MAX_IMAGE_BYTES {
-        return Err(anyhow::anyhow!("hero image too large ({} bytes)", raw.len()));
+        raw.extend_from_slice(&chunk);
     }
 
     Ok(HeroImageData {
-        bytes: raw.to_vec(),
+        bytes: raw,
         mime_type: ctype,
         original_name: format!("hero.{}", ext),
     })
@@ -240,6 +250,31 @@ pub async fn fetch_and_link_hero_arc(
     let conn = db.lock().map_err(|e| anyhow::anyhow!("db lock: {e}"))?;
     let _ = manor_core::recipe::dal::set_hero_attachment(&conn, recipe_id, &att_uuid);
     Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[tokio::test]
+    async fn preview_rejects_loopback_url() {
+        let err = preview("http://127.0.0.1:8080/recipe", None).await.unwrap_err();
+        let msg = format!("{err}");
+        assert!(
+            msg.contains("URL") || msg.contains("private") || msg.contains("scheme") || msg.contains("rejected"),
+            "got error message: {msg}",
+        );
+    }
+
+    #[tokio::test]
+    async fn preview_rejects_file_scheme() {
+        let err = preview("file:///etc/passwd", None).await.unwrap_err();
+        let msg = format!("{err}");
+        assert!(
+            msg.contains("URL") || msg.contains("scheme"),
+            "got error message: {msg}",
+        );
+    }
 }
 
 fn to_preview(imp: ImportedRecipe) -> ImportPreview {

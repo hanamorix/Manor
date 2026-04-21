@@ -73,12 +73,12 @@ impl Message {
 /// Insert a new message. Returns the new row id.
 /// User messages are always inserted with `seen=true`; assistant/system messages with `seen=false`.
 pub fn insert(conn: &Connection, conversation_id: i64, role: Role, content: &str) -> Result<i64> {
-    let now_ms = Utc::now().timestamp_millis();
+    let now_s = Utc::now().timestamp();
     let seen = matches!(role, Role::User) as i64;
     conn.execute(
         "INSERT INTO message (conversation_id, role, content, created_at, seen)
          VALUES (?1, ?2, ?3, ?4, ?5)",
-        params![conversation_id, role.as_str(), content, now_ms, seen],
+        params![conversation_id, role.as_str(), content, now_s, seen],
     )?;
     Ok(conn.last_insert_rowid())
 }
@@ -205,5 +205,24 @@ mod tests {
         assert_eq!(unread_count(&conn, cid).unwrap(), 2);
         mark_seen(&conn, &[a, b]).unwrap();
         assert_eq!(unread_count(&conn, cid).unwrap(), 0);
+    }
+
+    #[test]
+    fn insert_stores_created_at_in_seconds() {
+        let (_d, conn, cid) = fresh_conn();
+        let id = insert(&conn, cid, Role::User, "hi").unwrap();
+        let now_secs = chrono::Utc::now().timestamp();
+        let stored: i64 = conn
+            .query_row(
+                "SELECT created_at FROM message WHERE id = ?1",
+                [id],
+                |r| r.get(0),
+            )
+            .unwrap();
+        // Must be within 5 seconds of now, in seconds (not ms).
+        assert!(
+            (stored - now_secs).abs() < 5,
+            "stored {stored} is not within 5s of now {now_secs} — likely ms vs s unit mismatch",
+        );
     }
 }
