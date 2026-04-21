@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
+import { useEphemeralStreamingVisibility } from "./useEphemeralStreamingVisibility";
 import Avatar from "./Avatar";
 import ChatDock from "./ChatDock";
 import ChatHistoryPanel from "./ChatHistoryPanel";
@@ -40,17 +41,12 @@ export default function Assistant() {
   const setPendingProposals = useTodayStore((s) => s.setPendingProposals);
 
   const [isHistoryOpen, setIsHistoryOpen] = useState(false);
-  const [ephemeralVisible, setEphemeralVisible] = useState(false);
-  const ephemeralTimerRef = useRef<number | null>(null);
 
-  const clearEphemeralTimer = () => {
-    if (ephemeralTimerRef.current !== null) {
-      window.clearTimeout(ephemeralTimerRef.current);
-      ephemeralTimerRef.current = null;
-    }
-  };
-
-  useEffect(() => () => clearEphemeralTimer(), []);
+  const {
+    visible: ephemeralVisible,
+    startRequest,
+    hide: hideEphemeral,
+  } = useEphemeralStreamingVisibility(EPHEMERAL_FADE_MS);
 
   useEffect(() => {
     void (async () => {
@@ -79,8 +75,7 @@ export default function Assistant() {
   useEffect(() => {
     if (!isHistoryOpen) return;
     dockRef.current?.focus();
-    clearEphemeralTimer();
-    setEphemeralVisible(false);
+    hideEphemeral();
     const unseenIds = messages
       .filter((m) => !m.seen && m.id > 0)
       .map((m) => m.id);
@@ -164,13 +159,13 @@ export default function Assistant() {
 
     let assistantDbId: number | null = null;
     const assistantBubbleId = newBubbleId();
+    const request = startRequest();
 
     const onEvent = (chunk: StreamChunk) => {
       if (chunk.type === "Started") {
         assistantDbId = chunk.value;
         beginAssistantMessage(assistantDbId);
-        clearEphemeralTimer();
-        setEphemeralVisible(true);
+        request.onStarted();
         enqueueBubble({
           id: assistantBubbleId,
           kind: "assistant",
@@ -182,8 +177,7 @@ export default function Assistant() {
         if (assistantDbId === null) {
           assistantDbId = -Date.now();
           beginAssistantMessage(assistantDbId);
-          clearEphemeralTimer();
-          setEphemeralVisible(true);
+          request.onStarted();
           enqueueBubble({
             id: assistantBubbleId,
             kind: "assistant",
@@ -201,11 +195,7 @@ export default function Assistant() {
         endAssistantMessage();
         setBubbleTtl(assistantBubbleId, 8000);
         void getUnreadCount().then(setUnreadCount);
-        clearEphemeralTimer();
-        ephemeralTimerRef.current = window.setTimeout(() => {
-          setEphemeralVisible(false);
-          ephemeralTimerRef.current = null;
-        }, EPHEMERAL_FADE_MS);
+        request.onDone();
       } else if (chunk.type === "Error") {
         const errorMessage =
           chunk.value === "OllamaUnreachable"
