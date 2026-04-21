@@ -44,7 +44,20 @@ pub async fn preview(
     url: &str,
     llm_client: Option<&dyn LlmClient>,
 ) -> Result<ImportPreview> {
-    let parsed_url = manor_core::net::ssrf::vet_url(url).map_err(|_| ImportError::BadUrl)?;
+    let vetted = manor_core::net::ssrf::vet_url(url).map_err(|_| ImportError::BadUrl)?;
+    preview_inner(vetted, llm_client).await
+}
+
+/// Run a preview against a pre-vetted URL. Test-only entry point: wiremock binds
+/// to 127.0.0.1 which the SSRF guard correctly blocks, so integration tests that
+/// exercise content-type, JSON-LD, or LLM-fallback behaviour (not SSRF) bypass
+/// the guard by calling this directly.
+#[doc(hidden)]
+pub async fn preview_inner(
+    parsed_url: url::Url,
+    llm_client: Option<&dyn LlmClient>,
+) -> Result<ImportPreview> {
+    let url = parsed_url.as_str().to_string();
     let host = parsed_url.host_str().unwrap_or("").to_string();
 
     let client = reqwest::Client::builder()
@@ -84,7 +97,7 @@ pub async fn preview(
 
     // Try JSON-LD first — zero network cost, most recipe sites embed it.
     if let Some(mut imp) = parse_jsonld(&body) {
-        imp.source_url = url.to_string();
+        imp.source_url = url.clone();
         imp.source_host = host.clone();
         return Ok(to_preview(imp));
     }
@@ -97,7 +110,7 @@ pub async fn preview(
     let mut imp = extract_via_llm(&text, client, /*via_remote=*/ false)
         .await
         .map_err(|_| ImportError::ExtractionFailed)?;
-    imp.source_url = url.to_string();
+    imp.source_url = url;
     imp.source_host = host;
     Ok(to_preview(imp))
 }
