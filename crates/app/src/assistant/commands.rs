@@ -87,6 +87,18 @@ fn display_name_for_url(url: &str) -> String {
     }
 }
 
+/// Returns true if the stream produced an Error event AND zero token fragments were persisted.
+/// Call sites use this to decide whether the empty assistant row should be deleted.
+fn stream_ended_with_unusable_error(
+    chunks_to_persist: &[String],
+    events: &[StreamChunk],
+) -> bool {
+    chunks_to_persist.is_empty()
+        && events
+            .iter()
+            .any(|e| matches!(e, StreamChunk::Error(_)))
+}
+
 #[tauri::command]
 pub async fn send_message(
     state: State<'_, Db>,
@@ -94,14 +106,14 @@ pub async fn send_message(
     on_event: Channel<StreamChunk>,
 ) -> Result<(), String> {
     // 1. Persist user message + placeholder assistant row, build chat history.
-    let (assistant_row_id, history) = {
+    let (assistant_row_id, conversation_id, history) = {
         let conn = state.0.lock().map_err(|e| e.to_string())?;
         let conv = conversation::get_or_create_default(&conn).map_err(|e| e.to_string())?;
         message::insert(&conn, conv.id, Role::User, &content).map_err(|e| e.to_string())?;
         let assistant_row_id =
             message::insert(&conn, conv.id, Role::Assistant, "").map_err(|e| e.to_string())?;
         let recent = message::list(&conn, conv.id, CONTEXT_WINDOW, 0).map_err(|e| e.to_string())?;
-        (assistant_row_id, recent)
+        (assistant_row_id, conv.id, recent)
     };
 
     // 2. Tell the frontend the real assistant row id (Phase 2 contract).
@@ -156,13 +168,31 @@ pub async fn send_message(
     drop(tx); // close the channel so recv_handle finishes
     let (chunks_to_persist, events) = recv_handle.await.map_err(|e| e.to_string())?;
 
+    // 5a. If the stream errored with zero tokens, delete the empty assistant row and
+    //     replay the error event so the UI can show the toast, then bail out.
+    if stream_ended_with_unusable_error(&chunks_to_persist, &events) {
+        {
+            let conn = state.0.lock().map_err(|e| e.to_string())?;
+            conn.execute(
+                "DELETE FROM message WHERE id = ?1 AND content = ''",
+                [assistant_row_id],
+            )
+            .map_err(|e| e.to_string())?;
+        }
+        // Still replay the Error event so the UI shows the error toast.
+        for event in events {
+            on_event.send(event).map_err(|e| e.to_string())?;
+        }
+        return Ok(());
+    }
+
     // 5. Persist all token chunks and capture the rationale.
     let rationale = {
         let conn = state.0.lock().map_err(|e| e.to_string())?;
         for frag in &chunks_to_persist {
             message::append_content(&conn, assistant_row_id, frag).map_err(|e| e.to_string())?;
         }
-        let msgs = message::list(&conn, 1, 1, 0).map_err(|e| e.to_string())?;
+        let msgs = message::list(&conn, conversation_id, 1, 0).map_err(|e| e.to_string())?;
         msgs.first()
             .filter(|m| m.id == assistant_row_id)
             .map(|m| m.content.clone())
@@ -748,4 +778,32 @@ pub async fn delete_event(
     })
     .await
     .map_err(|e| e.to_string())?
+}
+
+#[cfg(test)]
+mod tests_send_message {
+    use super::*;
+    use crate::assistant::ollama::ErrorCode;
+
+    #[test]
+    fn cleanup_triggers_when_error_and_no_tokens() {
+        let events = vec![StreamChunk::Error(ErrorCode::OllamaUnreachable)];
+        assert!(stream_ended_with_unusable_error(&[], &events));
+    }
+
+    #[test]
+    fn cleanup_skipped_when_tokens_present() {
+        let events = vec![
+            StreamChunk::Token("hi".to_string()),
+            StreamChunk::Error(ErrorCode::OllamaUnreachable),
+        ];
+        let chunks = vec!["hi".to_string()];
+        assert!(!stream_ended_with_unusable_error(&chunks, &events));
+    }
+
+    #[test]
+    fn cleanup_skipped_when_no_error() {
+        let events = vec![StreamChunk::Done];
+        assert!(!stream_ended_with_unusable_error(&[], &events));
+    }
 }
