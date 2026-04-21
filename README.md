@@ -5,6 +5,12 @@ calendar, chores, money, meals, and home maintenance.
 
 **Status: early development, v0.1 Heartbeat in progress.**
 
+## Install
+
+Grab the latest DMG from [Releases](../../releases) and drag `Manor.app`
+into your Applications folder. macOS will ask you to right-click → Open the
+first time — see [docs/INSTALL.md](docs/INSTALL.md) for the full flow.
+
 ## Stack
 
 - **Shell:** Tauri 2 + React + TypeScript

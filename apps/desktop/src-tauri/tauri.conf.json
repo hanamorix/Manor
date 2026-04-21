@@ -28,6 +28,11 @@
   "bundle": {
     "active": true,
     "targets": "dmg",
+    "category": "Productivity",
+    "shortDescription": "A quiet household assistant.",
+    "longDescription": "Manor is a local-first personal assistant for your household — tasks, ledger, recipes, maintenance, repair notes — with an optional chat companion that runs on-device via Ollama or against Anthropic's API.",
+    "copyright": "© 2026 Hanamori. Open source under the licence in the repository.",
+    "publisher": "Hanamori",
     "icon": [
       "icons/32x32.png",
       "icons/128x128.png",
@@ -36,7 +41,14 @@
       "icons/icon.ico"
     ],
     "macOS": {
-      "minimumSystemVersion": "11.0"
+      "minimumSystemVersion": "11.0",
+      "signingIdentity": "-",
+      "dmg": {
+        "background": null,
+        "windowSize": { "width": 540, "height": 360 },
+        "appPosition": { "x": 160, "y": 170 },
+        "applicationFolderPosition": { "x": 380, "y": 170 }
+      }
     }
   }
 }
