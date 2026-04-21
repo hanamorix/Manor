@@ -11,6 +11,17 @@ export default defineConfig({
     watch: { ignored: ["**/src-tauri/**"] },
   },
   envPrefix: ["VITE_", "TAURI_"],
+  build: {
+    chunkSizeWarningLimit: 300,
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          "react-vendor": ["react", "react-dom"],
+          "markdown": ["react-markdown", "remark-gfm"],
+        },
+      },
+    },
+  },
   test: {
     environment: "jsdom",
     globals: false,
