@@ -18,11 +18,20 @@ pub enum FetchError {
 }
 
 pub async fn fetch_and_trim(client: &reqwest::Client, url: &str) -> Result<String> {
+    let vetted = manor_core::net::ssrf::vet_url(url)
+        .map_err(|e| anyhow::anyhow!("URL rejected: {e}"))?;
+    fetch_and_trim_inner(client, vetted).await
+}
+
+/// Inner fetch logic that operates on an already-vetted URL.
+/// Callers (including tests) that have already validated the URL may call this directly.
+async fn fetch_and_trim_inner(client: &reqwest::Client, vetted: url::Url) -> Result<String> {
+    let url_str = vetted.as_str().to_string();
     let resp = client
-        .get(url)
+        .get(vetted)
         .send()
         .await
-        .map_err(|_| FetchError::FetchFailed(url.to_string()))?;
+        .map_err(|_| FetchError::FetchFailed(url_str.clone()))?;
 
     let ctype = resp
         .headers()
@@ -31,17 +40,17 @@ pub async fn fetch_and_trim(client: &reqwest::Client, url: &str) -> Result<Strin
         .unwrap_or("")
         .to_string();
     if !ctype.contains("text/html") {
-        return Err(FetchError::NotHtml(url.to_string(), ctype).into());
+        return Err(FetchError::NotHtml(url_str.clone(), ctype).into());
     }
     if let Some(len) = resp.content_length() {
         if len > MAX_BODY_BYTES {
-            return Err(FetchError::TooLarge(url.to_string()).into());
+            return Err(FetchError::TooLarge(url_str.clone()).into());
         }
     }
     let body = resp
         .text()
         .await
-        .map_err(|_| FetchError::FetchFailed(url.to_string()))?;
+        .map_err(|_| FetchError::FetchFailed(url_str))?;
     Ok(trim_html_to_excerpt(&body))
 }
 
@@ -125,6 +134,28 @@ fn truncate_to_byte_budget(s: &str, budget: usize) -> String {
 mod tests {
     use super::*;
 
+    #[tokio::test]
+    async fn fetch_rejects_loopback() {
+        let client = reqwest::Client::new();
+        let err = fetch_and_trim(&client, "http://127.0.0.1/").await.unwrap_err();
+        let msg = format!("{err}");
+        assert!(
+            msg.contains("URL") || msg.contains("private") || msg.contains("scheme") || msg.contains("rejected"),
+            "got: {msg}",
+        );
+    }
+
+    #[tokio::test]
+    async fn fetch_rejects_file_scheme() {
+        let client = reqwest::Client::new();
+        let err = fetch_and_trim(&client, "file:///etc/passwd").await.unwrap_err();
+        let msg = format!("{err}");
+        assert!(
+            msg.contains("URL") || msg.contains("scheme") || msg.contains("rejected"),
+            "got: {msg}",
+        );
+    }
+
     #[test]
     fn trim_strips_nav_script_style() {
         let html = r##"
@@ -204,7 +235,10 @@ mod tests {
             .timeout(std::time::Duration::from_secs(5))
             .build()
             .unwrap();
-        let err = fetch_and_trim(&client, &server.uri())
+        // Use fetch_and_trim_inner directly: wiremock binds to 127.0.0.1 which the SSRF
+        // guard correctly blocks. This test covers content-type checking, not SSRF.
+        let vetted = url::Url::parse(&server.uri()).unwrap();
+        let err = fetch_and_trim_inner(&client, vetted)
             .await
             .unwrap_err()
             .to_string();
@@ -230,7 +264,10 @@ mod tests {
             .timeout(std::time::Duration::from_secs(5))
             .build()
             .unwrap();
-        let text = fetch_and_trim(&client, &server.uri()).await.unwrap();
+        // Use fetch_and_trim_inner directly: wiremock binds to 127.0.0.1 which the SSRF
+        // guard correctly blocks. This test covers HTML-trimming, not SSRF.
+        let vetted = url::Url::parse(&server.uri()).unwrap();
+        let text = fetch_and_trim_inner(&client, vetted).await.unwrap();
         assert_eq!(text, "From wiremock");
     }
 }
