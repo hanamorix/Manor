@@ -183,39 +183,6 @@ pub fn register(builder: Builder<Wry>) -> Builder<Wry> {
                 });
             }
 
-            // Phase 5d: register pending OAuth callbacks map for bank connect flow.
-            app.manage::<ledger::bank_commands::PendingCallbacks>(std::sync::Arc::new(
-                tokio::sync::Mutex::new(std::collections::HashMap::new()),
-            ));
-
-            // Phase 5d: bank sync every 6 hours.
-            {
-                let db = app.state::<assistant::commands::Db>().inner().clone_arc();
-                tauri::async_runtime::spawn(async move {
-                    let client = ledger::gocardless::GoCardlessClient::default_prod();
-                    loop {
-                        tokio::time::sleep(std::time::Duration::from_secs(6 * 60 * 60)).await;
-                        let handle = tokio::runtime::Handle::current();
-                        let db = db.clone();
-                        let client = client.clone();
-                        let _ = tauri::async_runtime::spawn_blocking(move || {
-                            if let Ok(mut conn) = db.lock() {
-                                let ctx = ledger::bank_sync::SyncContext {
-                                    client: &client,
-                                    allow_rate_limit_bypass: false,
-                                };
-                                if let Err(e) =
-                                    handle.block_on(ledger::bank_sync::sync_all(&mut conn, &ctx))
-                                {
-                                    tracing::warn!("bank sync tick failed: {e}");
-                                }
-                            }
-                        })
-                        .await;
-                    }
-                });
-            }
-
             Ok(())
         })
         .invoke_handler(tauri::generate_handler![
@@ -287,16 +254,6 @@ pub fn register(builder: Builder<Wry>) -> Builder<Wry> {
             ledger::commands::ledger_preview_csv,
             ledger::commands::ledger_import_csv,
             ledger::commands::ledger_ai_month_review,
-            ledger::bank_commands::ledger_bank_credentials_status,
-            ledger::bank_commands::ledger_bank_save_credentials,
-            ledger::bank_commands::ledger_bank_list_institutions,
-            ledger::bank_commands::ledger_bank_begin_connect,
-            ledger::bank_commands::ledger_bank_complete_connect,
-            ledger::bank_commands::ledger_bank_list_accounts,
-            ledger::bank_commands::ledger_bank_sync_now,
-            ledger::bank_commands::ledger_bank_disconnect,
-            ledger::bank_commands::ledger_bank_reconnect,
-            ledger::bank_commands::ledger_bank_cancel_connect,
             ledger::bank_commands::ledger_bank_autocat_pending,
             foundation::commands::setting_get,
             foundation::commands::setting_set,

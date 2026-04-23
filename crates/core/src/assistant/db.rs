@@ -93,17 +93,43 @@ mod tests {
         // Simulate post-V22 state with a plain in-memory connection (no refinery).
         let conn = rusqlite::Connection::open_in_memory().unwrap();
 
+        // Mirror the post-V22 schema so V23's table rebuild can SELECT the
+        // columns it expects. This is the minimum set of columns the rebuild
+        // copies over, including the UNIQUE and indexes V23 has to drop.
         conn.execute_batch(
-            "CREATE TABLE ledger_transaction (id INTEGER PRIMARY KEY, source TEXT);
-             CREATE TABLE bank_account (id INTEGER);
+            "CREATE TABLE category (id INTEGER PRIMARY KEY);
+             CREATE TABLE bank_account (id INTEGER PRIMARY KEY);
+             CREATE TABLE ledger_transaction (
+                id                    INTEGER PRIMARY KEY,
+                bank_account_id       INTEGER REFERENCES bank_account(id),
+                external_id           TEXT,
+                amount_pence          INTEGER NOT NULL,
+                currency              TEXT    NOT NULL DEFAULT 'GBP',
+                description           TEXT    NOT NULL,
+                merchant              TEXT,
+                category_id           INTEGER REFERENCES category(id),
+                date                  INTEGER NOT NULL,
+                source                TEXT    NOT NULL DEFAULT 'manual',
+                note                  TEXT,
+                created_at            INTEGER NOT NULL DEFAULT (unixepoch()),
+                deleted_at            INTEGER,
+                recurring_payment_id  INTEGER,
+                UNIQUE(bank_account_id, external_id)
+             );
+             CREATE INDEX idx_ledger_transaction_date ON ledger_transaction(date);
+             CREATE INDEX idx_ledger_transaction_category ON ledger_transaction(category_id);
+             CREATE INDEX idx_ledger_transaction_bank_account ON ledger_transaction(bank_account_id);
              CREATE TABLE gocardless_institution_cache (country TEXT);",
         )
         .unwrap();
 
         conn.execute_batch(
-            "INSERT INTO ledger_transaction (source) VALUES ('sync');
-             INSERT INTO ledger_transaction (source) VALUES ('csv_import');
-             INSERT INTO ledger_transaction (source) VALUES ('manual');",
+            "INSERT INTO ledger_transaction (amount_pence, description, date, source)
+                VALUES (-500, 'Old synced tx', 1700000000, 'sync');
+             INSERT INTO ledger_transaction (amount_pence, description, date, source)
+                VALUES (1000, 'CSV tx', 1700000001, 'csv_import');
+             INSERT INTO ledger_transaction (amount_pence, description, date, source)
+                VALUES (-200, 'Manual tx', 1700000002, 'manual');",
         )
         .unwrap();
 

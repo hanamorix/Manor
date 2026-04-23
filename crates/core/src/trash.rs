@@ -30,7 +30,6 @@ const REGISTRY: &[(&str, &str)] = &[
     ("ledger_transaction", "description"),
     ("budget", "CAST(category_id AS TEXT)"),
     ("category", "name"),
-    ("bank_account", "account_name"),
     ("remote_call_log", "user_visible_reason"),
     // recipe uses TEXT (UUID) primary key; recipe_ingredient cascades via FK.
     ("recipe", "title"),

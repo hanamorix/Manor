@@ -184,9 +184,9 @@ pub fn auto_insert_due(conn: &mut Connection, now: DateTime<Utc>) -> Result<usiz
         let signed = -amount_pence.abs();
         tx.execute(
             "INSERT INTO ledger_transaction
-             (bank_account_id, amount_pence, currency, description, merchant,
+             (amount_pence, currency, description, merchant,
               category_id, date, source, note, recurring_payment_id, created_at)
-             VALUES (NULL, ?1, ?2, ?3, NULL, ?4, ?5, 'recurring', NULL, ?6, ?7)",
+             VALUES (?1, ?2, ?3, NULL, ?4, ?5, 'recurring', NULL, ?6, ?7)",
             params![
                 signed,
                 currency,

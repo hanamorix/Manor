@@ -293,7 +293,6 @@ pub fn list_for_asset(conn: &Connection, asset_id: &str) -> Result<Vec<EventWith
 fn tx_from_row(row: &Row) -> rusqlite::Result<Transaction> {
     Ok(Transaction {
         id: row.get("id")?,
-        bank_account_id: row.get("bank_account_id")?,
         amount_pence: row.get("amount_pence")?,
         currency: row.get("currency")?,
         description: row.get("description")?,
@@ -319,7 +318,7 @@ pub fn suggest_transactions(
     let rows = match cost_pence {
         Some(c) => {
             let mut stmt = conn.prepare(
-                "SELECT lt.id, lt.bank_account_id, lt.amount_pence, lt.currency,
+                "SELECT lt.id, lt.amount_pence, lt.currency,
                         lt.description, lt.merchant, lt.category_id, lt.date,
                         lt.source, lt.note, lt.recurring_payment_id, lt.created_at
                  FROM ledger_transaction lt
@@ -339,7 +338,7 @@ pub fn suggest_transactions(
         }
         None => {
             let mut stmt = conn.prepare(
-                "SELECT lt.id, lt.bank_account_id, lt.amount_pence, lt.currency,
+                "SELECT lt.id, lt.amount_pence, lt.currency,
                         lt.description, lt.merchant, lt.category_id, lt.date,
                         lt.source, lt.note, lt.recurring_payment_id, lt.created_at
                  FROM ledger_transaction lt
@@ -384,7 +383,7 @@ pub fn search_transactions(
 ) -> Result<Vec<Transaction>> {
     let like = format!("%{}%", query);
     let mut stmt = conn.prepare(
-        "SELECT lt.id, lt.bank_account_id, lt.amount_pence, lt.currency,
+        "SELECT lt.id, lt.amount_pence, lt.currency,
                 lt.description, lt.merchant, lt.category_id, lt.date,
                 lt.source, lt.note, lt.recurring_payment_id, lt.created_at
          FROM ledger_transaction lt
