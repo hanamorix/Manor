@@ -1,7 +1,7 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
   "productName": "Manor",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "identifier": "com.hanamorix.manor",
   "build": {
     "beforeDevCommand": "pnpm --filter manor-desktop dev",
@@ -30,8 +30,8 @@
     "targets": "dmg",
     "category": "Productivity",
     "shortDescription": "A quiet household assistant.",
-    "longDescription": "Manor is a local-first personal assistant for your household — tasks, ledger, recipes, maintenance, repair notes — with an optional chat companion that runs on-device via Ollama or against Anthropic's API.",
-    "copyright": "© 2026 Hanamori. Open source under the licence in the repository.",
+    "longDescription": "Manor is a local-first personal assistant for your household \u2014 tasks, ledger, recipes, maintenance, repair notes \u2014 with an optional chat companion that runs on-device via Ollama or against Anthropic's API.",
+    "copyright": "\u00a9 2026 Hanamori. Open source under the licence in the repository.",
     "publisher": "Hanamori",
     "icon": [
       "icons/32x32.png",
@@ -45,9 +45,18 @@
       "signingIdentity": "-",
       "dmg": {
         "background": null,
-        "windowSize": { "width": 540, "height": 360 },
-        "appPosition": { "x": 160, "y": 170 },
-        "applicationFolderPosition": { "x": 380, "y": 170 }
+        "windowSize": {
+          "width": 540,
+          "height": 360
+        },
+        "appPosition": {
+          "x": 160,
+          "y": 170
+        },
+        "applicationFolderPosition": {
+          "x": 380,
+          "y": 170
+        }
       }
     }
   }
