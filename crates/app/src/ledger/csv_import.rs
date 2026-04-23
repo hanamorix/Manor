@@ -117,9 +117,9 @@ pub fn do_import(conn: &mut Connection, rows: Vec<PreviewRow>) -> Result<ImportR
         }
         let res = tx.execute(
             "INSERT INTO ledger_transaction
-             (bank_account_id, amount_pence, currency, description, merchant,
+             (amount_pence, currency, description, merchant,
               category_id, date, source, note, created_at)
-             VALUES (NULL, ?1, 'GBP', ?2, NULL, ?3, ?4, 'csv_import', NULL, ?5)",
+             VALUES (?1, 'GBP', ?2, NULL, ?3, ?4, 'csv_import', NULL, ?5)",
             params![
                 row.amount_pence,
                 row.description,

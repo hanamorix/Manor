@@ -232,6 +232,12 @@ export async function importCsv(rows: PreviewRow[]): Promise<ImportResult> {
   return invoke<ImportResult>("ledger_import_csv", { args: { rows } });
 }
 
+/// Suggest categories for recently-imported, uncategorised CSV rows via Ollama.
+/// Best-effort; silently returns 0 if the local model is unreachable.
+export async function autocatPending(): Promise<number> {
+  return invoke<number>("ledger_bank_autocat_pending");
+}
+
 // AI Month Review — streams via Channel
 import { Channel } from "@tauri-apps/api/core";
 export type StreamChunk =

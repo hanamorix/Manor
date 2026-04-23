@@ -172,6 +172,20 @@ export default function CsvImportDrawer({ onClose, onImported }: Props) {
         {/* Body */}
         <div style={{ flex: 1, overflow: "auto", padding: "20px" }}>
           <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+            <div
+              style={{
+                fontSize: "var(--text-xs)",
+                color: "var(--ink-soft)",
+                lineHeight: 1.5,
+                marginBottom: -4,
+              }}
+            >
+              Export a CSV from your bank's app or online banking, then drop it here.
+              Manor detects duplicates and skips them, so re-importing is safe. Built-in
+              layouts: Monzo, Starling, Barclays, HSBC, Natwest. Any other bank: pick
+              Generic and map the columns.
+            </div>
+
             {/* Preset selector */}
             <div>
               <label style={labelStyle}>Bank preset</label>

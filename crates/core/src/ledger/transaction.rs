@@ -8,7 +8,6 @@ use serde::{Deserialize, Serialize};
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
 pub struct Transaction {
     pub id: i64,
-    pub bank_account_id: Option<i64>,
     pub amount_pence: i64,
     pub currency: String,
     pub description: String,
@@ -25,7 +24,6 @@ impl Transaction {
     fn from_row(row: &Row) -> rusqlite::Result<Self> {
         Ok(Self {
             id: row.get("id")?,
-            bank_account_id: row.get("bank_account_id")?,
             amount_pence: row.get("amount_pence")?,
             currency: row.get("currency")?,
             description: row.get("description")?,
@@ -55,9 +53,9 @@ pub fn insert(
     let now = Utc::now().timestamp();
     conn.execute(
         "INSERT INTO ledger_transaction
-         (bank_account_id, amount_pence, currency, description, merchant,
+         (amount_pence, currency, description, merchant,
           category_id, date, source, note, created_at)
-         VALUES (NULL, ?1, ?2, ?3, ?4, ?5, ?6, 'manual', ?7, ?8)",
+         VALUES (?1, ?2, ?3, ?4, ?5, ?6, 'manual', ?7, ?8)",
         params![
             amount_pence,
             currency,
@@ -85,9 +83,9 @@ pub fn insert_recurring(
     let now = Utc::now().timestamp();
     conn.execute(
         "INSERT INTO ledger_transaction
-         (bank_account_id, amount_pence, currency, description, merchant,
+         (amount_pence, currency, description, merchant,
           category_id, date, source, note, recurring_payment_id, created_at)
-         VALUES (NULL, ?1, ?2, ?3, NULL, ?4, ?5, 'recurring', NULL, ?6, ?7)",
+         VALUES (?1, ?2, ?3, NULL, ?4, ?5, 'recurring', NULL, ?6, ?7)",
         params![
             amount_pence,
             currency,
@@ -135,7 +133,7 @@ pub fn list_by_month(conn: &Connection, year: i32, month: u32) -> Result<Vec<Tra
     let start = month_start_ts(year, month);
     let end = month_end_ts(year, month);
     let mut stmt = conn.prepare(
-        "SELECT id, bank_account_id, amount_pence, currency, description, merchant,
+        "SELECT id, amount_pence, currency, description, merchant,
                 category_id, date, source, note, recurring_payment_id, created_at
          FROM ledger_transaction
          WHERE deleted_at IS NULL AND date >= ?1 AND date < ?2
@@ -168,7 +166,7 @@ pub(crate) fn month_end_ts(year: i32, month: u32) -> i64 {
 
 fn get(conn: &Connection, id: i64) -> Result<Transaction> {
     let mut stmt = conn.prepare(
-        "SELECT id, bank_account_id, amount_pence, currency, description, merchant,
+        "SELECT id, amount_pence, currency, description, merchant,
                 category_id, date, source, note, recurring_payment_id, created_at
          FROM ledger_transaction WHERE id = ?1",
     )?;
@@ -212,7 +210,7 @@ mod tests {
         assert_eq!(tx.merchant, Some("Tesco".to_string()));
         assert_eq!(tx.category_id, Some(1));
         assert_eq!(tx.source, "manual");
-        assert!(tx.bank_account_id.is_none());
+        assert_eq!(tx.source, "manual");
     }
 
     #[test]
