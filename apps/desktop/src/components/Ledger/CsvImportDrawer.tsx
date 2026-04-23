@@ -131,7 +131,7 @@ export default function CsvImportDrawer({ onClose, onImported }: Props) {
           right: 0,
           top: 0,
           bottom: 0,
-          width: 600,
+          width: 880,
           background: "var(--paper)",
           boxShadow: "var(--shadow-lg)",
           zIndex: 1100,
@@ -170,23 +170,18 @@ export default function CsvImportDrawer({ onClose, onImported }: Props) {
         </div>
 
         {/* Body */}
-        <div style={{ flex: 1, overflow: "auto", padding: "20px" }}>
-          <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-            <div
-              style={{
-                fontSize: "var(--text-xs)",
-                color: "var(--ink-soft)",
-                lineHeight: 1.5,
-                marginBottom: -4,
-              }}
-            >
-              Export a CSV from your bank's app or online banking, then drop it here.
-              Manor detects duplicates and skips them, so re-importing is safe. Built-in
-              layouts: Monzo, Starling, Barclays, HSBC, Natwest. Any other bank: pick
-              Generic and map the columns.
-            </div>
-
-            {/* Preset selector */}
+        <div style={{ flex: 1, overflow: "hidden", display: "flex" }}>
+          {/* Left column — import form */}
+          <div
+            style={{
+              flex: "0 0 600px",
+              overflow: "auto",
+              padding: "20px",
+              borderRight: "1px solid var(--hairline)",
+            }}
+          >
+            <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+              {/* Preset selector */}
             <div>
               <label style={labelStyle}>Bank preset</label>
               <select
@@ -378,7 +373,19 @@ export default function CsvImportDrawer({ onClose, onImported }: Props) {
                 </div>
               </div>
             )}
+            </div>
           </div>
+
+          {/* Right column — preset-aware help (populated in Task 3) */}
+          <aside
+            style={{
+              flex: "0 0 240px",
+              overflow: "auto",
+              padding: "20px",
+            }}
+          >
+            {/* Side column content comes in Task 3 */}
+          </aside>
         </div>
 
         {/* Footer */}
