@@ -82,7 +82,11 @@ pub async fn extract_and_propose(
     // 5. Build LlmClient + invoke.
     let (schedules, remote_call_log_id) = match tier {
         TierRequest::Ollama => {
-            let client = OllamaExtractClient;
+            let model = {
+                let conn = db.lock().map_err(|e| anyhow!("db lock: {e}"))?;
+                crate::assistant::ollama::resolve_model(&conn)
+            };
+            let client = OllamaExtractClient::new(model);
             let schedules = extract_schedules_via_llm(&capped, &client).await?;
             (schedules, None)
         }

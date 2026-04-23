@@ -1,7 +1,7 @@
 //! Repair-note synthesis (L4d).
 
 use crate::assistant::ollama::{
-    ChatMessage, ChatRole, OllamaClient, DEFAULT_ENDPOINT, DEFAULT_MODEL,
+    ChatMessage, ChatRole, OllamaClient, DEFAULT_ENDPOINT,
 };
 use anyhow::Result;
 use async_trait::async_trait;
@@ -66,12 +66,22 @@ pub trait SynthBackend: Send + Sync {
     async fn synth(&self, input: &SynthInput<'_>) -> Result<String>;
 }
 
-pub struct OllamaSynth;
+pub struct OllamaSynth {
+    model: String,
+}
+
+impl OllamaSynth {
+    /// Caller must resolve the model from `ai.default_model` via
+    /// `crate::assistant::ollama::resolve_model` before constructing this.
+    pub fn new(model: String) -> Self {
+        Self { model }
+    }
+}
 
 #[async_trait]
 impl SynthBackend for OllamaSynth {
     async fn synth(&self, input: &SynthInput<'_>) -> Result<String> {
-        let client = OllamaClient::new(DEFAULT_ENDPOINT, DEFAULT_MODEL);
+        let client = OllamaClient::new(DEFAULT_ENDPOINT, &self.model);
         let messages = vec![
             ChatMessage {
                 role: ChatRole::System,

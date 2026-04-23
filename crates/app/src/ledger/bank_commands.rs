@@ -390,7 +390,7 @@ pub async fn ledger_bank_cancel_connect(
 pub async fn ledger_bank_autocat_pending(
     state: State<'_, Db>,
 ) -> CmdResult<usize> {
-    use crate::assistant::ollama::{OllamaClient, DEFAULT_ENDPOINT, DEFAULT_MODEL};
+    use crate::assistant::ollama::{resolve_model, OllamaClient, DEFAULT_ENDPOINT};
 
     // 1. Collect uncategorised sync rows < 7 days old (hot window), limit 50.
     #[derive(Clone)]
@@ -401,7 +401,7 @@ pub async fn ledger_bank_autocat_pending(
         amount_pence: i64,
     }
 
-    let (pendings, categories) = {
+    let (pendings, categories, model) = {
         let conn = state.0.lock().map_err(|e| err("lock_poisoned", e))?;
         let cutoff = chrono::Utc::now().timestamp() - 7 * 86_400;
         let mut stmt = conn
@@ -430,7 +430,8 @@ pub async fn ledger_bank_autocat_pending(
             .map_err(|e| err("db", e))?;
 
         let cats = manor_core::ledger::category::list(&conn).map_err(map_anyhow)?;
-        (rows, cats)
+        let model = resolve_model(&conn);
+        (rows, cats, model)
     };
 
     if pendings.is_empty() {
@@ -471,7 +472,7 @@ pub async fn ledger_bank_autocat_pending(
     );
 
     // 3. Call Ollama (non-streaming). If Ollama is unreachable, no-op.
-    let client = OllamaClient::new(DEFAULT_ENDPOINT, DEFAULT_MODEL);
+    let client = OllamaClient::new(DEFAULT_ENDPOINT, &model);
     let response = match client.complete(&prompt).await {
         Ok(r) => r,
         Err(_) => return Ok(0),

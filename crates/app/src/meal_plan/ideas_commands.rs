@@ -1,7 +1,7 @@
 //! Meal ideas Tauri commands — library sample + LLM titles + LLM expand.
 
 use crate::assistant::commands::Db;
-use crate::assistant::ollama::{OllamaClient, DEFAULT_ENDPOINT, DEFAULT_MODEL};
+use crate::assistant::ollama::{resolve_model, OllamaClient, DEFAULT_ENDPOINT};
 use crate::recipe::llm_adapter::OllamaLlmAdapter;
 use crate::recipe::importer::ImportPreview;
 use manor_core::meal_plan::ideas::library_ranked;
@@ -35,9 +35,7 @@ const TITLES_PROMPT: &str = "You suggest 3 home-cookable dinner recipes. Output 
 pub async fn meal_ideas_llm_titles(state: State<'_, Db>) -> Result<Vec<IdeaTitle>, String> {
     let model = {
         let conn = state.0.lock().map_err(|e| e.to_string())?;
-        manor_core::setting::get(&conn, "ai.default_model")
-            .unwrap_or(None)
-            .unwrap_or_else(|| DEFAULT_MODEL.to_string())
+        resolve_model(&conn)
     };
     let adapter = OllamaLlmAdapter(OllamaClient::new(DEFAULT_ENDPOINT, &model));
     run_titles(&adapter).await
@@ -71,9 +69,7 @@ const EXPAND_PROMPT_PREFIX: &str = "You extract structured recipe data from a re
 pub async fn meal_ideas_llm_expand(state: State<'_, Db>, title: String, blurb: String) -> Result<ImportPreview, String> {
     let model = {
         let conn = state.0.lock().map_err(|e| e.to_string())?;
-        manor_core::setting::get(&conn, "ai.default_model")
-            .unwrap_or(None)
-            .unwrap_or_else(|| DEFAULT_MODEL.to_string())
+        resolve_model(&conn)
     };
     let adapter = OllamaLlmAdapter(OllamaClient::new(DEFAULT_ENDPOINT, &model));
     run_expand(&adapter, &title, &blurb).await

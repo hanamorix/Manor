@@ -4,7 +4,6 @@ use crate::assistant::ollama::{ChatMessage, ChatRole, OllamaClient, StreamChunk}
 use manor_core::ledger::{budget::MonthlySummary, contract::RenewalAlert};
 use tokio::sync::mpsc;
 
-pub const REVIEW_MODEL: &str = "qwen2.5:7b-instruct";
 pub const REVIEW_ENDPOINT: &str = "http://127.0.0.1:11434";
 
 pub fn build_prompt(
@@ -74,8 +73,10 @@ fn month_name(m: u32) -> &'static str {
 }
 
 /// Run the review stream. Emits Token chunks on `out`; final Done is the caller's job.
-pub async fn stream_review(prompt: String, out: mpsc::Sender<StreamChunk>) {
-    let client = OllamaClient::new(REVIEW_ENDPOINT, REVIEW_MODEL);
+/// `model` is the Ollama tag to request — caller resolves it from the `ai.default_model`
+/// setting (see `assistant::ollama::resolve_model`).
+pub async fn stream_review(prompt: String, model: String, out: mpsc::Sender<StreamChunk>) {
+    let client = OllamaClient::new(REVIEW_ENDPOINT, &model);
     let msgs = vec![ChatMessage {
         role: ChatRole::User,
         content: prompt,

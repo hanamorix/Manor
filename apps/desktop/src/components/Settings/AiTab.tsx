@@ -385,7 +385,18 @@ export default function AiTab() {
       );
       setStatus(s);
       const stored = await settingGet(DEFAULT_MODEL_KEY);
-      setSelected(stored ?? "qwen2.5:7b-instruct");
+      if (stored) {
+        setSelected(stored);
+      } else if (s.models.length > 0) {
+        // Auto-persist the first installed model so the backend fallback (which
+        // reads this setting) doesn't request a hardcoded tag that may not exist
+        // on this system — the failure mode that broke older Ollama users.
+        const first = s.models[0];
+        await settingSet(DEFAULT_MODEL_KEY, first);
+        setSelected(first);
+      } else {
+        setSelected("");
+      }
       setLoading(false);
     })();
   }, []);

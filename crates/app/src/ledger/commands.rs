@@ -396,14 +396,15 @@ pub async fn ledger_ai_month_review(
     args: AiReviewArgs,
     on_event: Channel<StreamChunk>,
 ) -> Result<(), String> {
-    let (summary, renewals, use_remote) = {
+    let (summary, renewals, use_remote, model) = {
         let conn = state.0.lock().map_err(|e| e.to_string())?;
         let s = manor_core::ledger::budget::monthly_summary(&conn, args.year, args.month)
             .map_err(|e| e.to_string())?;
         let r = manor_core::ledger::contract::check_renewals(&conn, chrono::Utc::now().timestamp())
             .map_err(|e| e.to_string())?;
         let use_remote = should_use_remote(&conn);
-        (s, r, use_remote)
+        let model = crate::assistant::ollama::resolve_model(&conn);
+        (s, r, use_remote, model)
     };
     let prompt = ai_review::build_prompt(args.year, args.month, &summary, &renewals);
 
@@ -447,7 +448,7 @@ pub async fn ledger_ai_month_review(
     // Local Ollama streaming path.
     let (tx, mut rx) = mpsc::channel::<StreamChunk>(64);
     let stream_task = tokio::spawn(async move {
-        ai_review::stream_review(prompt, tx).await;
+        ai_review::stream_review(prompt, model, tx).await;
     });
     while let Some(chunk) = rx.recv().await {
         on_event.send(chunk).map_err(|e| e.to_string())?;

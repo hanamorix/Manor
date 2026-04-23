@@ -94,6 +94,17 @@
   --shadow-lg: 0 12px 28px rgba(31, 31, 31, 0.12), 0 4px 10px rgba(31, 31, 31, 0.08);
 }
 
+/* Manor avatar — the face art is dark line-work on transparent, which disappears
+   into the dark palette. Invert in dark mode so it reads white against black. */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .manor-avatar-img {
+    filter: invert(1);
+  }
+}
+:root[data-theme="dark"] .manor-avatar-img {
+  filter: invert(1);
+}
+
 html, body {
   font-family: var(--font-body);
   font-size: var(--text-md);

@@ -1,7 +1,7 @@
 //! Tauri commands for the Recipe library — CRUD over `manor_core::recipe`.
 
 use crate::assistant::commands::Db;
-use crate::assistant::ollama::{OllamaClient, DEFAULT_ENDPOINT, DEFAULT_MODEL};
+use crate::assistant::ollama::{resolve_model, OllamaClient, DEFAULT_ENDPOINT};
 use crate::recipe::importer::{self, ImportPreview};
 use crate::recipe::llm_adapter::OllamaLlmAdapter;
 use manor_core::recipe::{
@@ -70,8 +70,15 @@ pub fn recipe_restore(id: String, state: State<'_, Db>) -> Result<(), String> {
 /// Fetch, parse and preview a recipe from a URL.
 /// Uses JSON-LD first; falls back to Ollama LLM extraction when JSON-LD is absent.
 #[tauri::command]
-pub async fn recipe_import_preview(url: String) -> Result<ImportPreview, String> {
-    let adapter = OllamaLlmAdapter(OllamaClient::new(DEFAULT_ENDPOINT, DEFAULT_MODEL));
+pub async fn recipe_import_preview(
+    state: State<'_, Db>,
+    url: String,
+) -> Result<ImportPreview, String> {
+    let model = {
+        let conn = state.0.lock().map_err(|e| e.to_string())?;
+        resolve_model(&conn)
+    };
+    let adapter = OllamaLlmAdapter(OllamaClient::new(DEFAULT_ENDPOINT, &model));
     importer::preview(&url, Some(&adapter))
         .await
         .map_err(|e| e.to_string())

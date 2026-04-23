@@ -1,7 +1,7 @@
 //! Tauri commands exposed to the frontend Assistant + Today view.
 
 use crate::assistant::ollama::{
-    ChatMessage, ChatRole, OllamaClient, StreamChunk, DEFAULT_ENDPOINT, DEFAULT_MODEL,
+    resolve_model, ChatMessage, ChatRole, OllamaClient, StreamChunk, DEFAULT_ENDPOINT,
 };
 use crate::assistant::prompts::SYSTEM_PROMPT;
 use crate::assistant::tools;
@@ -149,9 +149,7 @@ pub async fn send_message(
     // 4. Run the Ollama stream with tools declared.
     let model = {
         let conn = state.0.lock().map_err(|e| e.to_string())?;
-        manor_core::setting::get(&conn, "ai.default_model")
-            .unwrap_or(None)
-            .unwrap_or_else(|| DEFAULT_MODEL.to_string())
+        resolve_model(&conn)
     };
     let client = OllamaClient::new(DEFAULT_ENDPOINT, &model);
     let tools_vec = tools::all_tools();

@@ -11,6 +11,7 @@ export default function Avatar({ height = 72, onClick }: AvatarProps) {
     <img
       src={manorFace}
       alt="Manor"
+      className="manor-avatar-img"
       style={{
         height,
         width: "auto",
@@ -28,7 +29,8 @@ export default function Avatar({ height = 72, onClick }: AvatarProps) {
   return (
     <button
       onClick={onClick}
-      aria-label="Open conversation with Manor"
+      aria-label="Toggle conversation with Manor"
+      data-assistant-toggle="true"
       style={{
         border: "none",
         background: "transparent",

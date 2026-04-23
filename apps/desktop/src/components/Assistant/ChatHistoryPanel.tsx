@@ -47,12 +47,17 @@ export default function ChatHistoryPanel({ isOpen, messages, onCollapse }: Props
   const panelRef = useRef<HTMLDivElement>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
 
-  // Outside click closes the panel.
+  // Outside click closes the panel — but the avatar button is a toggle, so clicks
+  // landing on anything marked `data-assistant-toggle` are handled by that button's
+  // own onClick; otherwise mousedown-close would race with the avatar's click-toggle
+  // and the panel would immediately reopen.
   useEffect(() => {
     if (!isOpen) return;
     const handler = (e: MouseEvent) => {
-      const target = e.target as Node | null;
-      if (panelRef.current && target && !panelRef.current.contains(target)) {
+      const target = e.target as Element | null;
+      if (!target) return;
+      if (target.closest?.("[data-assistant-toggle]")) return;
+      if (panelRef.current && !panelRef.current.contains(target)) {
         onCollapse();
       }
     };

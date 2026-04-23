@@ -62,7 +62,13 @@ pub async fn run_repair_search(
     tier: TierRequest,
 ) -> Result<PipelineOutcome> {
     let backend: Box<dyn SynthBackend> = match tier {
-        TierRequest::Ollama => Box::new(OllamaSynth),
+        TierRequest::Ollama => {
+            let model = {
+                let conn = db.lock().map_err(|e| anyhow!("db lock: {e}"))?;
+                crate::assistant::ollama::resolve_model(&conn)
+            };
+            Box::new(OllamaSynth::new(model))
+        }
         TierRequest::Claude => Box::new(ClaudeSynth { db: db.clone() }),
     };
     run_pipeline_with_backend(db, asset_id, symptom, tier, backend.as_ref()).await

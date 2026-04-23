@@ -7,6 +7,17 @@ use tokio::sync::mpsc;
 pub const DEFAULT_ENDPOINT: &str = "http://localhost:11434";
 pub const DEFAULT_MODEL: &str = "qwen2.5:7b-instruct";
 
+/// Read the user-selected model from the `ai.default_model` setting.
+/// Falls back to `DEFAULT_MODEL` if the setting is missing, blank, or
+/// the DB read fails. Every Ollama call path should route through here
+/// so the model-picker in Settings → AI is honoured everywhere.
+pub fn resolve_model(conn: &rusqlite::Connection) -> String {
+    manor_core::setting::get(conn, "ai.default_model")
+        .unwrap_or(None)
+        .filter(|s| !s.trim().is_empty())
+        .unwrap_or_else(|| DEFAULT_MODEL.to_string())
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
 #[serde(rename_all = "lowercase")]
 pub enum ChatRole {
