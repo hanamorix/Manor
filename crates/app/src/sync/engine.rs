@@ -241,8 +241,17 @@ mod tests {
         )
     }
 
+    /// Build two mock events with DTSTART anchored to `Utc::now()` so the
+    /// fixture stays inside the rolling `[-7d, +14d]` window the sync engine
+    /// applies at runtime. Previously these were hardcoded absolute dates,
+    /// which meant the test silently drifted out of the window as wall-clock
+    /// time moved past the baked-in 2026-04-15/16 anchors.
     fn report_body_three_events() -> String {
-        r#"<?xml version="1.0"?>
+        let day1 = Utc::now() + Duration::days(1);
+        let day2 = Utc::now() + Duration::days(2);
+        let ics_ts = |dt: chrono::DateTime<Utc>| dt.format("%Y%m%dT%H%M%SZ").to_string();
+        format!(
+            r#"<?xml version="1.0"?>
 <D:multistatus xmlns:D="DAV:" xmlns:C="urn:ietf:params:xml:ns:caldav">
   <D:response><D:href>/home/cal1/1.ics</D:href><D:propstat><D:prop>
     <D:getetag>"etag1"</D:getetag>
@@ -250,8 +259,8 @@ mod tests {
 VERSION:2.0
 BEGIN:VEVENT
 UID:one
-DTSTART:20260415T100000Z
-DTEND:20260415T110000Z
+DTSTART:{start1}
+DTEND:{end1}
 SUMMARY:One
 END:VEVENT
 END:VCALENDAR</C:calendar-data></D:prop><D:status>HTTP/1.1 200 OK</D:status></D:propstat></D:response>
@@ -261,12 +270,17 @@ END:VCALENDAR</C:calendar-data></D:prop><D:status>HTTP/1.1 200 OK</D:status></D:
 VERSION:2.0
 BEGIN:VEVENT
 UID:two
-DTSTART:20260416T120000Z
-DTEND:20260416T130000Z
+DTSTART:{start2}
+DTEND:{end2}
 SUMMARY:Two
 END:VEVENT
 END:VCALENDAR</C:calendar-data></D:prop><D:status>HTTP/1.1 200 OK</D:status></D:propstat></D:response>
-</D:multistatus>"#.to_string()
+</D:multistatus>"#,
+            start1 = ics_ts(day1),
+            end1 = ics_ts(day1 + Duration::hours(1)),
+            start2 = ics_ts(day2),
+            end2 = ics_ts(day2 + Duration::hours(1)),
+        )
     }
 
     async fn mount_happy_path(server: &MockServer) {
