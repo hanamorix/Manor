@@ -1,16 +1,15 @@
 import { useEffect, useState } from "react";
-import { Wallet } from "lucide-react";
+import { Upload, Wallet } from "lucide-react";
 import { useLedgerStore } from "../../lib/ledger/state";
 import {
   listCategories,
   listTransactions,
   listBudgets,
   getMonthlySummary,
+  autocatPending,
 } from "../../lib/ledger/ipc";
 import { AVATAR_FOOTPRINT_PX } from "../../lib/layout";
-import { PageHeader } from "../../lib/ui";
-import { SyncStatusPill } from "./SyncStatusPill";
-import * as bankIpc from "../../lib/ledger/bank-ipc";
+import { PageHeader, Button } from "../../lib/ui";
 import MonthReviewPanel from "./MonthReviewPanel";
 import RecurringSection from "./RecurringSection";
 import ContractsSection from "./ContractsSection";
@@ -39,7 +38,7 @@ export default function LedgerView() {
   // Debounced autocat trigger: fire 2s after mount so it doesn't block initial render.
   useEffect(() => {
     const t = setTimeout(() => {
-      bankIpc.autocatPending().catch(() => {});
+      autocatPending().catch(() => {});
     }, 2000);
     return () => clearTimeout(t);
   }, []);
@@ -76,9 +75,16 @@ export default function LedgerView() {
           })}
           meta={
             <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
-              <SyncStatusPill />
-              <button onClick={() => setShowBudgets(true)}>Budgets</button>
-              <button onClick={() => setShowImport(true)}>Import CSV</button>
+              <Button variant="secondary" onClick={() => setShowBudgets(true)}>
+                Budgets
+              </Button>
+              <Button
+                variant="secondary"
+                icon={Upload}
+                onClick={() => setShowImport(true)}
+              >
+                Import CSV
+              </Button>
             </div>
           }
         />

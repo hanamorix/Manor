@@ -158,6 +158,22 @@ pub fn register(builder: Builder<Wry>) -> Builder<Wry> {
                 }
             });
 
+            // v0.1.2 cleanup: the GoCardless integration was removed. Best-effort
+            // purge of any stale Keychain entries the user stored in v0.1.0 /
+            // v0.1.1 so macOS Keychain Access doesn't show phantom "manor :
+            // gocardless-*" items. Silent on failure — the user can also delete
+            // them by hand.
+            for account in [
+                "gocardless-secret-id",
+                "gocardless-secret-key",
+                "gocardless-access-token",
+                "gocardless-refresh-token",
+            ] {
+                if let Ok(entry) = keyring::Entry::new("manor", account) {
+                    let _ = entry.delete_credential();
+                }
+            }
+
             // Recipe: sweep crash-orphan staged hero-image attachments (entity_id IS NULL,
             // entity_type='recipe', older than 24h). Soft-fails silently on any error.
             {

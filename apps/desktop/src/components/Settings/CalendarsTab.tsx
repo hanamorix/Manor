@@ -4,7 +4,6 @@ import { useSettingsStore } from "../../lib/settings/state";
 import { listCalendarAccounts } from "../../lib/settings/ipc";
 import AccountRow from "./AccountRow";
 import AddAccountForm from "./AddAccountForm";
-import { BankAccountsSection } from "./BankAccountsSection";
 import { SectionLabel, Button } from "../../lib/ui";
 
 export default function CalendarsTab() {
@@ -34,8 +33,6 @@ export default function CalendarsTab() {
       {accounts.map((a) => <AccountRow key={a.id} account={a} />)}
 
       {adding && <AddAccountForm onClose={() => setAdding(false)} />}
-
-      <BankAccountsSection />
     </div>
   );
 }
