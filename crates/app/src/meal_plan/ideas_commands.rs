@@ -32,8 +32,14 @@ pub fn meal_ideas_library_sample(state: State<'_, Db>) -> Result<Vec<Recipe>, St
 const TITLES_PROMPT: &str = "You suggest 3 home-cookable dinner recipes. Output JSON exactly:\n[\n  {\"title\": str, \"blurb\": str (one sentence, <100 chars, includes timing hint)},\n  {\"title\": str, \"blurb\": str},\n  {\"title\": str, \"blurb\": str}\n]\nVary cuisines. Prefer weeknight-accessible ingredients. No prose before or after the JSON.";
 
 #[tauri::command]
-pub async fn meal_ideas_llm_titles() -> Result<Vec<IdeaTitle>, String> {
-    let adapter = OllamaLlmAdapter(OllamaClient::new(DEFAULT_ENDPOINT, DEFAULT_MODEL));
+pub async fn meal_ideas_llm_titles(state: State<'_, Db>) -> Result<Vec<IdeaTitle>, String> {
+    let model = {
+        let conn = state.0.lock().map_err(|e| e.to_string())?;
+        manor_core::setting::get(&conn, "ai.default_model")
+            .unwrap_or(None)
+            .unwrap_or_else(|| DEFAULT_MODEL.to_string())
+    };
+    let adapter = OllamaLlmAdapter(OllamaClient::new(DEFAULT_ENDPOINT, &model));
     run_titles(&adapter).await
 }
 
@@ -62,8 +68,14 @@ async fn run_titles(client: &dyn LlmClient) -> Result<Vec<IdeaTitle>, String> {
 const EXPAND_PROMPT_PREFIX: &str = "You extract structured recipe data from a recipe description. Output JSON with this exact shape:\n{\n  \"title\": str,\n  \"servings\": int|null,\n  \"prep_time_mins\": int|null,\n  \"cook_time_mins\": int|null,\n  \"instructions\": str (markdown, numbered steps),\n  \"ingredients\": [\n    {\"quantity_text\": str|null, \"ingredient_name\": str, \"note\": str|null}\n  ]\n}\nIf a field is not clearly stated, use reasonable defaults for a 2-serving weeknight meal. You may invent plausible ingredient quantities.\nOutput ONLY the JSON.\n\nRecipe description:\n";
 
 #[tauri::command]
-pub async fn meal_ideas_llm_expand(title: String, blurb: String) -> Result<ImportPreview, String> {
-    let adapter = OllamaLlmAdapter(OllamaClient::new(DEFAULT_ENDPOINT, DEFAULT_MODEL));
+pub async fn meal_ideas_llm_expand(state: State<'_, Db>, title: String, blurb: String) -> Result<ImportPreview, String> {
+    let model = {
+        let conn = state.0.lock().map_err(|e| e.to_string())?;
+        manor_core::setting::get(&conn, "ai.default_model")
+            .unwrap_or(None)
+            .unwrap_or_else(|| DEFAULT_MODEL.to_string())
+    };
+    let adapter = OllamaLlmAdapter(OllamaClient::new(DEFAULT_ENDPOINT, &model));
     run_expand(&adapter, &title, &blurb).await
 }
 

@@ -147,7 +147,13 @@ pub async fn send_message(
     }
 
     // 4. Run the Ollama stream with tools declared.
-    let client = OllamaClient::new(DEFAULT_ENDPOINT, DEFAULT_MODEL);
+    let model = {
+        let conn = state.0.lock().map_err(|e| e.to_string())?;
+        manor_core::setting::get(&conn, "ai.default_model")
+            .unwrap_or(None)
+            .unwrap_or_else(|| DEFAULT_MODEL.to_string())
+    };
+    let client = OllamaClient::new(DEFAULT_ENDPOINT, &model);
     let tools_vec = tools::all_tools();
     let (tx, mut rx) = mpsc::channel::<StreamChunk>(64);
 
