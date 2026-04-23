@@ -9,6 +9,7 @@ import {
 import { useLedgerStore } from "../../lib/ledger/state";
 import { useOverlay } from "../../lib/overlay/state";
 import { Button } from "../../lib/ui";
+import { HELP_BY_PRESET } from "./csv-import-help";
 
 interface Props {
   onClose: () => void;
@@ -150,8 +151,19 @@ export default function CsvImportDrawer({ onClose, onImported }: Props) {
             borderBottom: "1px solid var(--hairline)",
           }}
         >
-          <div style={{ fontSize: "var(--text-lg)", fontWeight: 600, color: "var(--ink)" }}>
-            Import CSV
+          <div>
+            <div style={{ fontSize: "var(--text-lg)", fontWeight: 600, color: "var(--ink)" }}>
+              Import CSV
+            </div>
+            <div
+              style={{
+                fontSize: "var(--text-xs)",
+                color: "var(--ink-soft)",
+                marginTop: 2,
+              }}
+            >
+              Your CSV stays on this Mac. Manor reads it locally — no server, no upload.
+            </div>
           </div>
           <button
             onClick={onClose}
@@ -384,7 +396,39 @@ export default function CsvImportDrawer({ onClose, onImported }: Props) {
               padding: "20px",
             }}
           >
-            {/* Side column content comes in Task 3 */}
+            {(() => {
+              const help = HELP_BY_PRESET[preset] ?? HELP_BY_PRESET.generic;
+              return (
+                <>
+                  <div
+                    style={{
+                      fontSize: "var(--text-sm)",
+                      fontWeight: 600,
+                      color: "var(--ink)",
+                      marginBottom: 14,
+                    }}
+                  >
+                    {help.title}
+                  </div>
+                  <ol
+                    style={{
+                      margin: 0,
+                      paddingLeft: 18,
+                      fontSize: "var(--text-xs)",
+                      color: "var(--ink-soft)",
+                      lineHeight: 1.55,
+                      display: "flex",
+                      flexDirection: "column",
+                      gap: 8,
+                    }}
+                  >
+                    {help.steps.map((s, i) => (
+                      <li key={i}>{s}</li>
+                    ))}
+                  </ol>
+                </>
+              );
+            })()}
           </aside>
         </div>
 
