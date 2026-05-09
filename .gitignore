@@ -12,7 +12,8 @@ apps/desktop/src-tauri/gen/
 .superpowers/
 
 # Internal planning docs, design bible, and Claude project instructions
-docs/superpowers/
+docs/superpowers/*
+!docs/superpowers/README.md
 .impeccable.md
 CLAUDE.md
 

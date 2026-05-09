@@ -3,7 +3,7 @@
 use crate::assistant::commands::Db;
 use keyring::Entry;
 use manor_core::snapshot;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 use tauri::{AppHandle, Manager, State};
 
 const KEYRING_SERVICE: &str = "manor";
@@ -18,6 +18,28 @@ fn passphrase() -> Result<String, String> {
 
 fn data_dir(app: &AppHandle) -> Result<PathBuf, String> {
     app.path().app_data_dir().map_err(|e| e.to_string())
+}
+
+fn default_data_dir() -> Result<PathBuf, String> {
+    dirs::data_dir()
+        .map(|base| base.join("com.hanamorix.manor"))
+        .ok_or_else(|| "could not resolve application data dir".to_string())
+}
+
+fn create_backup_from_data_dir(data: &Path, out_dir: &Path) -> Result<PathBuf, String> {
+    let pass = passphrase()?;
+    let db = data.join("manor.db");
+    let att = data.join("attachments");
+    let out = out_dir.join(snapshot::default_filename(chrono::Utc::now()));
+    snapshot::create(&db, &att, &out, &pass).map_err(|e| e.to_string())?;
+    Ok(out)
+}
+
+/// Entry point used by the launchd CLI mode. This deliberately does not need a
+/// Tauri AppHandle, so scheduled backups can run while the UI is closed.
+pub fn run_scheduled_backup(out_dir: PathBuf) -> Result<PathBuf, String> {
+    let data = default_data_dir()?;
+    create_backup_from_data_dir(&data, &out_dir)
 }
 
 #[derive(serde::Serialize)]
@@ -49,12 +71,9 @@ pub fn backup_create_now(
     _state: State<'_, Db>,
     out_dir: String,
 ) -> Result<String, String> {
-    let pass = passphrase()?;
     let data = data_dir(&app)?;
-    let db = data.join("manor.db");
-    let att = data.join("attachments");
-    let out = PathBuf::from(&out_dir).join(snapshot::default_filename(chrono::Utc::now()));
-    snapshot::create(&db, &att, &out, &pass).map_err(|e| e.to_string())?;
+    let out_dir = PathBuf::from(&out_dir);
+    let out = create_backup_from_data_dir(&data, &out_dir)?;
     Ok(out.to_string_lossy().into_owned())
 }
 
@@ -97,7 +116,6 @@ use crate::safety::launchd;
 
 #[derive(serde::Deserialize)]
 pub struct ScheduleArgs {
-    pub program_path: String,
     pub out_dir: String,
     pub weekday: u8,
     pub hour: u8,
@@ -106,8 +124,9 @@ pub struct ScheduleArgs {
 
 #[tauri::command]
 pub fn backup_schedule_install(args: ScheduleArgs) -> Result<(), String> {
+    let program_path = std::env::current_exe().map_err(|e| e.to_string())?;
     launchd::install(
-        &PathBuf::from(&args.program_path),
+        &program_path,
         &PathBuf::from(&args.out_dir),
         args.weekday,
         args.hour,

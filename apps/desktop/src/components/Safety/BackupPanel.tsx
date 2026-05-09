@@ -68,10 +68,7 @@ export default function BackupPanel({ defaultOutDir }: Props) {
     if (scheduled) {
       await backupScheduleUninstall();
     } else {
-      // programPath is the app binary — caller passes it in; here we punt to a placeholder
-      // that Phase E's Settings tab will replace with the actual resolved binary path.
       await backupScheduleInstall({
-        programPath: "/Applications/Manor.app/Contents/MacOS/manor-desktop",
         outDir,
         weekday,
         hour,

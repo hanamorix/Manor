@@ -50,7 +50,6 @@ export async function backupRestore(
 }
 
 export interface ScheduleArgs {
-  programPath: string;
   outDir: string;
   weekday: number; // 0 Sun – 6 Sat
   hour: number;
