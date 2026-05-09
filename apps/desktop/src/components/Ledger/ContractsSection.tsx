@@ -48,7 +48,7 @@ function CountdownPill({ days, alertDays }: PillProps) {
     label = `${days}d`;
   } else {
     bg = "var(--paper-muted)";
-    color = "var(--ink-faint)";
+    color = "var(--ink-soft)";
     label = `${days}d`;
   }
 
@@ -138,9 +138,9 @@ export default function ContractsSection() {
             }}
           >
             {expanded ? (
-              <ChevronDown size={14} strokeWidth={1.8} color="var(--ink-faint)" />
+              <ChevronDown size={14} strokeWidth={1.8} color="var(--ink-soft)" />
             ) : (
-              <ChevronRight size={14} strokeWidth={1.8} color="var(--ink-faint)" />
+              <ChevronRight size={14} strokeWidth={1.8} color="var(--ink-soft)" />
             )}
             <h3
               style={{
@@ -151,7 +151,7 @@ export default function ContractsSection() {
               }}
             >
               Contracts{" "}
-              <span style={{ color: "var(--ink-faint)", fontWeight: 500 }}>
+              <span style={{ color: "var(--ink-soft)", fontWeight: 500 }}>
                 ({contracts.length})
               </span>
             </h3>
@@ -170,7 +170,7 @@ export default function ContractsSection() {
                   padding: "12px 0",
                   textAlign: "center",
                   fontSize: "var(--text-sm)",
-                  color: "var(--ink-faint)",
+                  color: "var(--ink-soft)",
                 }}
               >
                 No contracts yet.
@@ -211,7 +211,7 @@ export default function ContractsSection() {
                       <div
                         style={{
                           fontSize: 11,
-                          color: "var(--ink-faint)",
+                          color: "var(--ink-soft)",
                           marginTop: 1,
                         }}
                       >
@@ -243,7 +243,7 @@ export default function ContractsSection() {
                           background: "none",
                           border: "none",
                           cursor: "pointer",
-                          color: "var(--ink-faint)",
+                          color: "var(--ink-soft)",
                           padding: "2px 4px",
                           display: "inline-flex",
                           alignItems: "center",
@@ -259,7 +259,7 @@ export default function ContractsSection() {
                           background: "none",
                           border: "none",
                           cursor: "pointer",
-                          color: "var(--ink-faint)",
+                          color: "var(--ink-soft)",
                           padding: "2px 4px",
                           display: "inline-flex",
                           alignItems: "center",

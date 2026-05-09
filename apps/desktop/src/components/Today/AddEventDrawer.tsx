@@ -107,7 +107,7 @@ export default function AddEventDrawer({ accountId, defaultCalendarUrl, calendar
       >
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "18px 20px 14px", borderBottom: "1px solid var(--hairline)" }}>
           <div style={{ fontSize: "var(--text-lg)", fontWeight: 600 }}>Add Event</div>
-          <button onClick={onClose} aria-label="Close" style={{ background: "none", border: "none", cursor: "pointer", color: "var(--ink-faint)", padding: 0, display: "inline-flex", alignItems: "center" }}>
+          <button onClick={onClose} aria-label="Close" style={{ background: "none", border: "none", cursor: "pointer", color: "var(--ink-soft)", padding: 0, display: "inline-flex", alignItems: "center" }}>
             <X size={18} strokeWidth={1.8} />
           </button>
         </div>

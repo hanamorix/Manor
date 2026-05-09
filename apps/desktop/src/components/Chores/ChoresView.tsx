@@ -89,7 +89,7 @@ export default function ChoresView() {
           </span>
           <button
             onClick={() => dismissFairnessNudge(n.chore_id)}
-            style={{ float: "right", background: "transparent", border: "none", color: "var(--ink-faint)", cursor: "pointer", fontSize: 12 }}
+            style={{ float: "right", background: "transparent", border: "none", color: "var(--ink-soft)", cursor: "pointer", fontSize: 12 }}
           >
             Dismiss
           </button>
@@ -99,7 +99,7 @@ export default function ChoresView() {
       <section style={sectionStyle}>
         <SectionLabel icon={Sparkles}>Due soon</SectionLabel>
         {dueSoon.length === 0 && dueTodayAndOverdue.length === 0 ? (
-          <p style={{ color: "var(--ink-faint)", fontSize: "var(--text-sm)", margin: 0 }}>Nothing in the next 7 days.</p>
+          <p style={{ color: "var(--ink-soft)", fontSize: "var(--text-sm)", margin: 0 }}>Nothing in the next 7 days.</p>
         ) : (
           <ul style={{ listStyle: "none", padding: 0, margin: 0 }}>
             {dueSoon.map((c) => {
@@ -146,14 +146,14 @@ export default function ChoresView() {
       <section style={sectionStyle}>
         <SectionLabel icon={Sparkles}>All chores</SectionLabel>
         {allChores.length === 0 ? (
-          <p style={{ color: "var(--ink-faint)", fontSize: "var(--text-sm)", margin: 0 }}>No chores yet — add your first one.</p>
+          <p style={{ color: "var(--ink-soft)", fontSize: "var(--text-sm)", margin: 0 }}>No chores yet — add your first one.</p>
         ) : (
           <ul style={{ listStyle: "none", padding: 0, margin: 0 }}>
             {[...allChores].sort((a, b) => a.title.localeCompare(b.title)).map((c) => (
               <li key={c.id} style={rowStyle} onClick={() => setEditing(c)}>
                 <span style={{ fontSize: 18 }}>{c.emoji}</span>
                 <span style={{ flex: 1, fontSize: 14 }}>{c.title}</span>
-                <span style={{ fontSize: 11, color: "var(--ink-faint)" }}>{c.rotation === "none" ? "" : c.rotation}</span>
+                <span style={{ fontSize: 11, color: "var(--ink-soft)" }}>{c.rotation === "none" ? "" : c.rotation}</span>
               </li>
             ))}
           </ul>

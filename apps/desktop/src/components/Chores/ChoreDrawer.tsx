@@ -210,7 +210,7 @@ export default function ChoreDrawer({ chore, onClose }: Props) {
         {tab === "history" && chore && (
           <div>
             {history.length === 0 ? (
-              <p style={{ color: "var(--ink-faint)", fontSize: 13 }}>No completions yet.</p>
+              <p style={{ color: "var(--ink-soft)", fontSize: 13 }}>No completions yet.</p>
             ) : (
               <ul style={{ listStyle: "none", padding: 0, margin: 0 }}>
                 {history.map((h) => (
@@ -218,7 +218,7 @@ export default function ChoreDrawer({ chore, onClose }: Props) {
                     <div style={{ color: "var(--ink)" }}>
                       {new Date(h.completed_at).toLocaleString()}
                     </div>
-                    <div style={{ color: "var(--ink-faint)", fontSize: 12 }}>
+                    <div style={{ color: "var(--ink-soft)", fontSize: 12 }}>
                       {h.completed_by ? `by person #${h.completed_by}` : "completed"}
                     </div>
                   </li>

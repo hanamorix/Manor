@@ -52,7 +52,7 @@ export default function TransactionFeed({ transactions, categories, onAdd }: Pro
             textAlign: "center",
             padding: "24px 0",
             fontSize: "var(--text-sm)",
-            color: "var(--ink-faint)",
+            color: "var(--ink-soft)",
           }}
         >
           No transactions this month.

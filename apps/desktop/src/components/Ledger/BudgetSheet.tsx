@@ -106,7 +106,7 @@ export default function BudgetSheet({ categories, budgets, onClose, onChanged }:
         >
           <div>
             <div style={{ fontSize: "var(--text-lg)", fontWeight: 600 }}>Monthly Budgets</div>
-            <div style={{ fontSize: "var(--text-xs)", color: "var(--ink-faint)", marginTop: 2 }}>
+            <div style={{ fontSize: "var(--text-xs)", color: "var(--ink-soft)", marginTop: 2 }}>
               Leave blank to skip tracking a category
             </div>
           </div>
@@ -117,7 +117,7 @@ export default function BudgetSheet({ categories, budgets, onClose, onChanged }:
               border: "none",
               fontSize: 20,
               cursor: "pointer",
-              color: "var(--ink-faint)",
+              color: "var(--ink-soft)",
               lineHeight: 1,
               padding: 0,
             }}
@@ -144,7 +144,7 @@ export default function BudgetSheet({ categories, budgets, onClose, onChanged }:
                 <span style={{ fontSize: "var(--text-md)", fontWeight: 500 }}>{cat.name}</span>
               </div>
               <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                <span style={{ fontSize: "var(--text-sm)", color: "var(--ink-faint)" }}>£</span>
+                <span style={{ fontSize: "var(--text-sm)", color: "var(--ink-soft)" }}>£</span>
                 <input
                   style={inputStyle}
                   type="number"
@@ -155,7 +155,7 @@ export default function BudgetSheet({ categories, budgets, onClose, onChanged }:
                     setDrafts((d) => ({ ...d, [cat.id]: e.target.value }))
                   }
                 />
-                <span style={{ fontSize: "var(--text-xs)", color: "var(--ink-faint)" }}>/mo</span>
+                <span style={{ fontSize: "var(--text-xs)", color: "var(--ink-soft)" }}>/mo</span>
               </div>
             </div>
           ))}

@@ -181,7 +181,7 @@ export default function AddContractDrawer({ existing, onClose, onSaved }: Props)
               border: "none",
               fontSize: 20,
               cursor: "pointer",
-              color: "var(--ink-faint)",
+              color: "var(--ink-soft)",
               lineHeight: 1,
               padding: 0,
             }}

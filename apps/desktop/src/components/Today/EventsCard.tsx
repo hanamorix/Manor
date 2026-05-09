@@ -56,7 +56,7 @@ export default function EventsCard() {
       </SectionLabel>
 
       {events.length === 0 ? (
-        <p style={{ fontStyle: "italic", color: "var(--ink-faint)", margin: 0, fontSize: 13 }}>
+        <p style={{ fontStyle: "italic", color: "var(--ink-soft)", margin: 0, fontSize: 13 }}>
           No events today.
         </p>
       ) : (

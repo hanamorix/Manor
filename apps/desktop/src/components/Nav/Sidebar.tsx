@@ -91,7 +91,7 @@ function NavIcon({ view, icon: Icon, title }: NavIconProps) {
       <Icon
         size={20}
         strokeWidth={1.8}
-        color={active ? "var(--ink)" : "var(--ink-faint)"}
+        color={active ? "var(--ink)" : "var(--ink-soft)"}
       />
     </div>
   );

@@ -56,7 +56,7 @@ export default function TasksCard() {
       </SectionLabel>
 
       {tasks.length === 0 && !adding && (
-        <p style={{ color: "var(--ink-faint)", margin: 0, fontSize: 13 }}>
+        <p style={{ color: "var(--ink-soft)", margin: 0, fontSize: 13 }}>
           Nothing on your plate.
         </p>
       )}

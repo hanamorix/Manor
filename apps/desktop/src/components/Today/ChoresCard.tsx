@@ -27,7 +27,7 @@ const rowStyle: React.CSSProperties = {
 const emptyStyle: React.CSSProperties = {
   padding: "10px 4px",
   fontSize: "var(--text-sm)",
-  color: "var(--ink-faint)",
+  color: "var(--ink-soft)",
 };
 
 export default function ChoresCard() {

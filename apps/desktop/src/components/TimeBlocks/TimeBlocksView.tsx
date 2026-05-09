@@ -106,7 +106,7 @@ export default function TimeBlocksView() {
       <section style={sectionStyle}>
         <SectionLabel icon={LayoutGrid}>This week</SectionLabel>
         {weekBlocks.length === 0 ? (
-          <p style={{ color: "var(--ink-faint)", fontSize: "var(--text-sm)", margin: 0 }}>No blocks this week yet.</p>
+          <p style={{ color: "var(--ink-soft)", fontSize: "var(--text-sm)", margin: 0 }}>No blocks this week yet.</p>
         ) : (
           DAYS.map((day) => {
             const bs = byDay[day];
@@ -118,7 +118,7 @@ export default function TimeBlocksView() {
                   <div key={b.id} style={rowStyle(b.kind)} onClick={() => setEditing(b)}>
                     {(() => { const Icon = KIND_ICON[b.kind] ?? Target; return <Icon size={14} strokeWidth={1.8} color="var(--ink-soft)" aria-label={KIND_LABEL[b.kind]} />; })()}
                     <span style={{ flex: 1 }}>{b.title}</span>
-                    <span style={{ color: "var(--ink-faint)", fontSize: 12 }}>
+                    <span style={{ color: "var(--ink-soft)", fontSize: 12 }}>
                       {b.start_time}–{b.end_time}
                     </span>
                   </div>
@@ -132,13 +132,13 @@ export default function TimeBlocksView() {
       <section style={sectionStyle}>
         <SectionLabel icon={RefreshCw}>Recurring patterns</SectionLabel>
         {recurring.length === 0 ? (
-          <p style={{ color: "var(--ink-faint)", fontSize: "var(--text-sm)", margin: 0 }}>No patterns yet. Nell will suggest one when she notices a repetition.</p>
+          <p style={{ color: "var(--ink-soft)", fontSize: "var(--text-sm)", margin: 0 }}>No patterns yet. Nell will suggest one when she notices a repetition.</p>
         ) : (
           recurring.map((b) => (
             <div key={b.id} style={rowStyle(b.kind)} onClick={() => setEditing(b)}>
               {(() => { const Icon = KIND_ICON[b.kind] ?? Target; return <Icon size={14} strokeWidth={1.8} color="var(--ink-soft)" aria-label={KIND_LABEL[b.kind]} />; })()}
               <span style={{ flex: 1 }}>{b.title}</span>
-              <span style={{ color: "var(--ink-faint)", fontSize: 12 }}>
+              <span style={{ color: "var(--ink-soft)", fontSize: 12 }}>
                 {b.rrule ? rruleToEnglish(b.rrule) : ""} · {b.start_time}–{b.end_time}
               </span>
             </div>

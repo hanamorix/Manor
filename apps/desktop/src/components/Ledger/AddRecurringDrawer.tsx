@@ -150,7 +150,7 @@ export default function AddRecurringDrawer({ categories, existing, onClose, onSa
               border: "none",
               fontSize: 20,
               cursor: "pointer",
-              color: "var(--ink-faint)",
+              color: "var(--ink-soft)",
               lineHeight: 1,
               padding: 0,
             }}

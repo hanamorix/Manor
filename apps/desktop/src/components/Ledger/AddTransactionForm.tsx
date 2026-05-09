@@ -136,7 +136,7 @@ export default function AddTransactionForm({ categories, onClose, onSaved }: Pro
               border: "none",
               fontSize: 20,
               cursor: "pointer",
-              color: "var(--ink-faint)",
+              color: "var(--ink-soft)",
               lineHeight: 1,
               padding: 0,
             }}

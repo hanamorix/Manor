@@ -45,7 +45,7 @@ const pillStyle: React.CSSProperties = {
 const emptyStyle: React.CSSProperties = {
   padding: "10px 4px",
   fontSize: "var(--text-sm)",
-  color: "var(--ink-faint)",
+  color: "var(--ink-soft)",
 };
 
 const nudgeStyle: React.CSSProperties = {
@@ -256,7 +256,7 @@ export default function TimeBlocksCard() {
               onChange={(e) => setForm({ ...form, startTime: e.target.value })}
               style={{ padding: "6px 8px", borderRadius: 6, border: "1px solid var(--hairline)", fontSize: "var(--text-sm)", fontFamily: "inherit" }}
             />
-            <span style={{ color: "var(--ink-faint)" }}>→</span>
+            <span style={{ color: "var(--ink-soft)" }}>→</span>
             <input
               type="time"
               value={form.endTime}

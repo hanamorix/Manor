@@ -172,7 +172,7 @@ export default function CsvImportDrawer({ onClose, onImported }: Props) {
               border: "none",
               fontSize: 20,
               cursor: "pointer",
-              color: "var(--ink-faint)",
+              color: "var(--ink-soft)",
               lineHeight: 1,
               padding: 0,
             }}
@@ -371,7 +371,7 @@ export default function CsvImportDrawer({ onClose, onImported }: Props) {
                                 padding: "7px 10px",
                                 color: cat
                                   ? "var(--ink)"
-                                  : "var(--ink-faint)",
+                                  : "var(--ink-soft)",
                                 whiteSpace: "nowrap",
                               }}
                             >
