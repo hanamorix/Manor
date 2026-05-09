@@ -48,7 +48,7 @@ pub fn pdf_extract_pending_proposals_for_asset(
     let conn = state.0.lock().map_err(|e| e.to_string())?;
     let mut stmt = conn
         .prepare(
-            "SELECT id, kind, rationale, diff, status, proposed_at, applied_at, skill
+            "SELECT id, kind, rationale, diff, status, proposed_at, applied_at, skill, apply_errors_json
              FROM proposal
              WHERE skill = 'pdf_extract'
                AND kind = 'add_maintenance_schedule'
@@ -68,6 +68,7 @@ pub fn pdf_extract_pending_proposals_for_asset(
                 proposed_at: r.get(5)?,
                 applied_at: r.get(6)?,
                 skill: r.get(7)?,
+                apply_errors_json: r.get(8)?,
             })
         })
         .map_err(|e| e.to_string())?

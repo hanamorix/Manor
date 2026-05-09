@@ -9,6 +9,7 @@ use chrono::Utc;
 use rusqlite::{params, Connection, OptionalExtension};
 use serde::{Deserialize, Serialize};
 
+use crate::assistant::proposal_error::ApplyError;
 use crate::assistant::task;
 use crate::assistant::tolerant;
 
@@ -52,6 +53,10 @@ pub struct Proposal {
     pub proposed_at: i64,
     pub applied_at: Option<i64>,
     pub skill: String,
+    /// Raw JSON array of `ApplyError` values for partially-applied bundle
+    /// proposals. `None` for single-item proposals or fully-applied bundles.
+    /// Phase 1.G — first producer is Phase 2's bundled `add_chore`.
+    pub apply_errors_json: Option<String>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -97,12 +102,12 @@ pub fn insert(conn: &Connection, new: NewProposal<'_>) -> Result<i64> {
 pub fn list(conn: &Connection, status: Option<&str>) -> Result<Vec<Proposal>> {
     let (sql, has_filter) = match status {
         Some(_) => (
-            "SELECT id, kind, rationale, diff, status, proposed_at, applied_at, skill
+            "SELECT id, kind, rationale, diff, status, proposed_at, applied_at, skill, apply_errors_json
              FROM proposal WHERE status = ?1 ORDER BY proposed_at",
             true,
         ),
         None => (
-            "SELECT id, kind, rationale, diff, status, proposed_at, applied_at, skill
+            "SELECT id, kind, rationale, diff, status, proposed_at, applied_at, skill, apply_errors_json
              FROM proposal ORDER BY proposed_at",
             false,
         ),
@@ -118,6 +123,7 @@ pub fn list(conn: &Connection, status: Option<&str>) -> Result<Vec<Proposal>> {
             proposed_at: row.get("proposed_at")?,
             applied_at: row.get("applied_at")?,
             skill: row.get("skill")?,
+            apply_errors_json: row.get("apply_errors_json")?,
         })
     };
     let rows: Vec<Proposal> = if has_filter {
@@ -260,6 +266,42 @@ pub fn approve_add_maintenance_schedule_with_override(
 
     tx.commit()?;
     Ok(schedule_id)
+}
+
+/// Read the per-item `ApplyError` list persisted on a proposal row.
+///
+/// Returns `Ok(None)` when the column is `NULL` (single-item proposals,
+/// fully-applied bundles, or pre-1.G rows). Returns `Ok(Some(vec))` after
+/// deserialising the JSON array. Phase 1.G.
+pub fn read_apply_errors(conn: &Connection, id: i64) -> Result<Option<Vec<ApplyError>>> {
+    let raw: Option<String> = conn
+        .query_row(
+            "SELECT apply_errors_json FROM proposal WHERE id = ?1",
+            [id],
+            |r| r.get(0),
+        )
+        .optional()?
+        .ok_or_else(|| anyhow::anyhow!("proposal {id} not found"))?;
+    match raw {
+        Some(s) => Ok(Some(serde_json::from_str(&s)?)),
+        None => Ok(None),
+    }
+}
+
+/// Persist the per-item `ApplyError` list on a proposal row as a JSON array.
+///
+/// Always overwrites; pass `&[]` to clear (writes a literal `[]`, not NULL).
+/// Phase 1.G — first producer is Phase 2's bundled `add_chore`.
+pub fn write_apply_errors(conn: &Connection, id: i64, errors: &[ApplyError]) -> Result<()> {
+    let json = serde_json::to_string(errors)?;
+    let n = conn.execute(
+        "UPDATE proposal SET apply_errors_json = ?1 WHERE id = ?2",
+        params![json, id],
+    )?;
+    if n == 0 {
+        bail!("proposal {id} not found");
+    }
+    Ok(())
 }
 
 #[cfg(test)]
@@ -582,5 +624,107 @@ mod tests {
             .unwrap_err()
             .to_string();
         assert!(err.contains("not pending"), "got: {}", err);
+    }
+
+    // ── Task 1.G — apply_errors_json column + helpers ────────────────────
+
+    #[test]
+    fn v24_migration_adds_apply_errors_json_column() {
+        let (_d, conn) = fresh_conn();
+        // PRAGMA-driven probe: a SELECT of the new column on an empty table
+        // succeeds iff the migration ran.
+        conn.prepare("SELECT apply_errors_json FROM proposal LIMIT 0")
+            .expect("apply_errors_json column should exist after db::init");
+    }
+
+    #[test]
+    fn applied_proposal_has_null_apply_errors_by_default() {
+        let (_d, mut conn) = fresh_conn();
+        let pid = make_add_task_proposal(&conn, "No errors here");
+        approve_add_task(&mut conn, pid, "2026-04-15").unwrap();
+
+        // Column is NULL — round-tripping returns None.
+        let errors = read_apply_errors(&conn, pid).unwrap();
+        assert!(errors.is_none());
+
+        // And the Proposal struct read back through `list` mirrors that.
+        let row = list(&conn, None)
+            .unwrap()
+            .into_iter()
+            .find(|p| p.id == pid)
+            .unwrap();
+        assert!(row.apply_errors_json.is_none());
+    }
+
+    #[test]
+    fn write_then_read_apply_errors_round_trips() {
+        let (_d, conn) = fresh_conn();
+        let pid = make_add_task_proposal(&conn, "Bundle");
+
+        let errs = vec![
+            ApplyError::StaleReference {
+                entity: "asset".into(),
+                id: "missing".into(),
+            },
+            ApplyError::InvalidArg {
+                field: "interval_months".into(),
+                reason: "must be positive".into(),
+            },
+            ApplyError::Conflict("row vanished".into()),
+        ];
+        write_apply_errors(&conn, pid, &errs).unwrap();
+
+        let back = read_apply_errors(&conn, pid).unwrap().unwrap();
+        assert_eq!(back.len(), 3);
+        // Compare via Display since ApplyError isn't PartialEq.
+        for (a, b) in errs.iter().zip(back.iter()) {
+            assert_eq!(format!("{a}"), format!("{b}"));
+        }
+
+        // Proposal row exposes the raw JSON.
+        let row = list(&conn, None)
+            .unwrap()
+            .into_iter()
+            .find(|p| p.id == pid)
+            .unwrap();
+        let raw = row.apply_errors_json.expect("expected JSON, got NULL");
+        let parsed: serde_json::Value = serde_json::from_str(&raw).unwrap();
+        assert_eq!(parsed.as_array().unwrap().len(), 3);
+    }
+
+    #[test]
+    fn write_apply_errors_with_empty_slice_writes_empty_array_not_null() {
+        let (_d, conn) = fresh_conn();
+        let pid = make_add_task_proposal(&conn, "Empty");
+        write_apply_errors(&conn, pid, &[]).unwrap();
+        let back = read_apply_errors(&conn, pid).unwrap();
+        let v = back.expect("empty slice persists as Some(vec![]), not None");
+        assert!(v.is_empty());
+
+        // Confirm the on-disk shape is `[]`, not NULL.
+        let raw: Option<String> = conn
+            .query_row(
+                "SELECT apply_errors_json FROM proposal WHERE id = ?1",
+                [pid],
+                |r| r.get(0),
+            )
+            .unwrap();
+        assert_eq!(raw.as_deref(), Some("[]"));
+    }
+
+    #[test]
+    fn read_apply_errors_unknown_id_errors() {
+        let (_d, conn) = fresh_conn();
+        let err = read_apply_errors(&conn, 99_999).unwrap_err().to_string();
+        assert!(err.contains("not found"), "got: {err}");
+    }
+
+    #[test]
+    fn write_apply_errors_unknown_id_errors() {
+        let (_d, conn) = fresh_conn();
+        let err = write_apply_errors(&conn, 99_999, &[])
+            .unwrap_err()
+            .to_string();
+        assert!(err.contains("not found"), "got: {err}");
     }
 }
