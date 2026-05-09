@@ -51,3 +51,6 @@ jobs:
 
       - name: pnpm tsc
         run: pnpm tsc
+
+      - name: frontend tests
+        run: pnpm --filter manor-desktop test

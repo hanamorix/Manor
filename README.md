@@ -58,9 +58,9 @@ Manor **v0.1 — Heartbeat** ships five rooms:
 - **Manual library** — drop a manufacturer PDF, Manor extracts the searchable text and can pull maintenance info out of it as proposals.
 
 ### And quietly in the background
-- **Semantic search** across everything, on-device, via `sqlite-vec` embeddings.
+- **Semantic search** across everything, on-device, using local Ollama embeddings stored in SQLite.
 - **Deletion safety** — nothing's ever really gone without an undo window. Trash is real.
-- **Remote LLM, opt-in** — bring your own key for Claude / OpenAI / Gemini; Manor logs every outbound call so you can see exactly what was sent, and a budget ceiling stops runaway spend.
+- **Remote LLM, opt-in** — bring your own Claude key; Manor logs every outbound call so you can see exactly what was sent, and a budget ceiling stops runaway spend. Additional provider adapters can be added behind the same audit pipeline.
 - **Flat design** — SF Pro, SF Mono for numbers, Lucide icons, monochrome palette with automatic light/dark. Feels native. Feels quiet.
 
 ---
@@ -80,7 +80,7 @@ Full walkthrough, troubleshooting (`xattr` fix if you ever see *"Manor is damage
 
 - Everything lives in a single SQLite database under `~/Library/Application Support/com.hanamorix.manor/`.
 - The default assistant is a **local Ollama** model — nothing leaves your Mac unless you turn on a remote provider.
-- Remote LLMs (Claude / OpenAI / Gemini) are **opt-in and BYO key**. Manor stores the key in macOS Keychain, never on disk, and every outbound call is written to a transparent call log you can read any time.
+- Remote LLMs are **opt-in and BYO key**. Claude is supported today; Manor stores the key in macOS Keychain, never on disk, and every outbound call is written to a transparent call log you can read any time.
 - Budget ceilings on remote providers — set a monthly cap, Manor stops calling when you hit it.
 
 ---
@@ -88,8 +88,8 @@ Full walkthrough, troubleshooting (`xattr` fix if you ever see *"Manor is damage
 ## ✦ Built with
 
 - **Shell** — Tauri 2 · React 18 · TypeScript · Vite · Zustand
-- **Core** — Rust · SQLite (`rusqlite` + `refinery` migrations + `sqlite-vec`)
-- **AI** — Ollama (default, local) · optional Claude / OpenAI / Gemini via BYO key
+- **Core** — Rust · SQLite (`rusqlite` + `refinery` migrations)
+- **AI** — Ollama (default, local) · optional Claude via BYO key
 - **Platform** — macOS universal binary (Apple Silicon + Intel)
 - **Design** — SF Pro · SF Mono · Lucide · monochrome with auto light/dark
 
@@ -116,6 +116,7 @@ Run the tests:
 ```bash
 cargo test --workspace
 pnpm tsc
+pnpm --filter manor-desktop test
 ```
 
 Cut a signed DMG locally:
