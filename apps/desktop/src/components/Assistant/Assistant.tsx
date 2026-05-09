@@ -12,6 +12,7 @@ import { parseSlash } from "../../lib/today/slash";
 import { addTask, listTasks, listProposals } from "../../lib/today/ipc";
 import { addTransaction } from "../../lib/ledger/ipc";
 import { useTodayStore } from "../../lib/today/state";
+import { useOverlayStore } from "../../lib/overlay/state";
 
 function newBubbleId() {
   return Math.random().toString(36).slice(2, 10);
@@ -39,6 +40,12 @@ export default function Assistant() {
 
   const setTodayTasks = useTodayStore((s) => s.setTasks);
   const setPendingProposals = useTodayStore((s) => s.setPendingProposals);
+
+  // Drawers / modals call useOverlay() to bump this. While an overlay is open,
+  // the chat dock retracts so it can't cover the drawer's footer (e.g. the
+  // BudgetSheet's Save button). The avatar remains visible so the user knows
+  // Nell is still around.
+  const overlayCount = useOverlayStore((s) => s.count);
 
   const [isHistoryOpen, setIsHistoryOpen] = useState(false);
 
@@ -230,33 +237,35 @@ export default function Assistant() {
 
   return (
     <>
-      <div
-        style={{
-          position: "fixed",
-          left: MENU_WIDTH_PX + 16,
-          right: AVATAR_COLUMN_PX,
-          bottom: 16,
-          zIndex: 999,
-        }}
-      >
-        {!isHistoryOpen && (
-          <EphemeralLog
-            exchanges={lastTwoExchanges}
-            onExpand={() => setIsHistoryOpen(true)}
-            visible={ephemeralVisible}
+      {overlayCount === 0 && (
+        <div
+          style={{
+            position: "fixed",
+            left: MENU_WIDTH_PX + 16,
+            right: AVATAR_COLUMN_PX,
+            bottom: 16,
+            zIndex: 999,
+          }}
+        >
+          {!isHistoryOpen && (
+            <EphemeralLog
+              exchanges={lastTwoExchanges}
+              onExpand={() => setIsHistoryOpen(true)}
+              visible={ephemeralVisible}
+            />
+          )}
+          <ChatHistoryPanel
+            isOpen={isHistoryOpen}
+            messages={messages}
+            onCollapse={() => setIsHistoryOpen(false)}
           />
-        )}
-        <ChatHistoryPanel
-          isOpen={isHistoryOpen}
-          messages={messages}
-          onCollapse={() => setIsHistoryOpen(false)}
-        />
-        <ChatDock
-          ref={dockRef}
-          onSubmit={handleSubmit}
-          onExpand={() => setIsHistoryOpen(true)}
-        />
-      </div>
+          <ChatDock
+            ref={dockRef}
+            onSubmit={handleSubmit}
+            onExpand={() => setIsHistoryOpen(true)}
+          />
+        </div>
+      )}
 
       <div
         style={{
