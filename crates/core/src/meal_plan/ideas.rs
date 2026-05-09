@@ -30,7 +30,7 @@ pub fn library_ranked(conn: &Connection) -> Result<Vec<ScoredRecipe>> {
         })
         .collect();
 
-    scored.sort_by(|a, b| b.score.cmp(&a.score));
+    scored.sort_by_key(|b| std::cmp::Reverse(b.score));
     Ok(scored)
 }
 

@@ -114,7 +114,7 @@ pub fn list(dir: &Path) -> Result<Vec<(PathBuf, i64)>> {
             out.push((path, mtime));
         }
     }
-    out.sort_by(|a, b| b.1.cmp(&a.1));
+    out.sort_by_key(|b| std::cmp::Reverse(b.1));
     Ok(out)
 }
 
