@@ -13,6 +13,7 @@ interface AssistantStore {
   messages: Message[];
   transientBubbles: TransientBubble[];
   unreadCount: number;
+  avatarVisible: boolean;
 
   hydrateMessages: (msgs: Message[]) => void;
   beginAssistantMessage: (id: number) => void;
@@ -27,6 +28,26 @@ interface AssistantStore {
   dismissBubble: (id: string) => void;
 
   setUnreadCount: (n: number) => void;
+  setAvatarVisible: (v: boolean) => void;
+}
+
+const AVATAR_VISIBLE_KEY = "manor.assistant.avatarVisible";
+
+function loadAvatarVisible(): boolean {
+  try {
+    const raw = localStorage.getItem(AVATAR_VISIBLE_KEY);
+    return raw === null ? true : raw !== "false";
+  } catch {
+    return true;
+  }
+}
+
+function saveAvatarVisible(v: boolean): void {
+  try {
+    localStorage.setItem(AVATAR_VISIBLE_KEY, String(v));
+  } catch {
+    /* ignore */
+  }
 }
 
 const MAX_VISIBLE_BUBBLES = 3;
@@ -35,6 +56,7 @@ export const useAssistantStore = create<AssistantStore>((set) => ({
   messages: [],
   transientBubbles: [],
   unreadCount: 0,
+  avatarVisible: loadAvatarVisible(),
 
   hydrateMessages: (msgs) => set({ messages: msgs }),
 
@@ -99,4 +121,9 @@ export const useAssistantStore = create<AssistantStore>((set) => ({
     })),
 
   setUnreadCount: (n) => set({ unreadCount: n }),
+
+  setAvatarVisible: (v) => {
+    saveAvatarVisible(v);
+    set({ avatarVisible: v });
+  },
 }));

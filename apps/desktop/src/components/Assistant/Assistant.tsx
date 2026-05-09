@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
+import { EyeOff, MessageSquare } from "lucide-react";
 import { useEphemeralStreamingVisibility } from "./useEphemeralStreamingVisibility";
 import Avatar from "./Avatar";
 import ChatDock from "./ChatDock";
@@ -47,7 +48,11 @@ export default function Assistant() {
   // Nell is still around.
   const overlayCount = useOverlayStore((s) => s.count);
 
+  const avatarVisible = useAssistantStore((s) => s.avatarVisible);
+  const setAvatarVisible = useAssistantStore((s) => s.setAvatarVisible);
+
   const [isHistoryOpen, setIsHistoryOpen] = useState(false);
+  const [avatarHover, setAvatarHover] = useState(false);
 
   const {
     visible: ephemeralVisible,
@@ -275,19 +280,79 @@ export default function Assistant() {
           zIndex: 1000,
         }}
       >
-        <div style={{ position: "relative", display: "inline-block" }}>
-          <Avatar height={72} onClick={() => setIsHistoryOpen((v) => !v)} />
+        {avatarVisible ? (
           <div
+            style={{ position: "relative", display: "inline-block" }}
+            onMouseEnter={() => setAvatarHover(true)}
+            onMouseLeave={() => setAvatarHover(false)}
+          >
+            <Avatar height={72} onClick={() => setIsHistoryOpen((v) => !v)} />
+            <div
+              style={{
+                position: "absolute",
+                top: -6,
+                right: -6,
+                zIndex: 2,
+              }}
+            >
+              <UnreadBadge />
+            </div>
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                setAvatarVisible(false);
+              }}
+              aria-label="Hide Manor avatar"
+              title="Hide avatar"
+              style={{
+                position: "absolute",
+                top: -8,
+                left: -8,
+                width: 22,
+                height: 22,
+                borderRadius: 11,
+                border: "1px solid var(--hairline)",
+                background: "var(--paper)",
+                color: "var(--ink-soft)",
+                cursor: "pointer",
+                display: "inline-flex",
+                alignItems: "center",
+                justifyContent: "center",
+                padding: 0,
+                opacity: avatarHover ? 1 : 0,
+                pointerEvents: avatarHover ? "auto" : "none",
+                transition: "opacity 160ms cubic-bezier(0.2, 0.8, 0.2, 1)",
+                zIndex: 3,
+              }}
+            >
+              <EyeOff size={12} strokeWidth={1.8} />
+            </button>
+          </div>
+        ) : (
+          <button
+            type="button"
+            onClick={() => setAvatarVisible(true)}
+            aria-label="Show Manor avatar"
+            title="Show Manor"
             style={{
-              position: "absolute",
-              top: -6,
-              right: -6,
-              zIndex: 2,
+              marginBottom: 8,
+              width: 36,
+              height: 36,
+              borderRadius: 18,
+              border: "1px solid var(--hairline)",
+              background: "var(--paper)",
+              color: "var(--ink-soft)",
+              cursor: "pointer",
+              display: "inline-flex",
+              alignItems: "center",
+              justifyContent: "center",
+              padding: 0,
             }}
           >
-            <UnreadBadge />
-          </div>
-        </div>
+            <MessageSquare size={16} strokeWidth={1.8} />
+          </button>
+        )}
       </div>
     </>
   );
