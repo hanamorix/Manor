@@ -9,6 +9,7 @@ pub mod event;
 pub mod message;
 pub mod proposal;
 pub mod proposal_error;
+pub mod proposal_registry;
 pub mod task;
 pub mod time_block;
 pub mod tolerant;

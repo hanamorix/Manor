@@ -26,7 +26,7 @@ pub enum Status {
 }
 
 impl Status {
-    fn as_str(self) -> &'static str {
+    pub fn as_str(self) -> &'static str {
         match self {
             Status::Pending => "pending",
             Status::Approved => "approved",
