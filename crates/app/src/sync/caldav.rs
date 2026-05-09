@@ -239,10 +239,8 @@ fn extract_first_href(xml: &str, prop_local_name: &str) -> Option<String> {
                     href.clear();
                 }
             }
-            Ok(XmlEvent::Text(t)) => {
-                if inside_href {
-                    href.push_str(&t.unescape().unwrap_or_default());
-                }
+            Ok(XmlEvent::Text(t)) if inside_href => {
+                href.push_str(&t.unescape().unwrap_or_default());
             }
             Ok(XmlEvent::End(e)) => {
                 let name = local_name(e.name().as_ref());
@@ -402,10 +400,8 @@ fn extract_report_items(xml: &str, base_url: &str) -> Vec<ReportItem> {
                     cur_ical.push_str(&text);
                 }
             }
-            Ok(XmlEvent::CData(t)) => {
-                if in_data {
-                    cur_ical.push_str(&String::from_utf8_lossy(&t));
-                }
+            Ok(XmlEvent::CData(t)) if in_data => {
+                cur_ical.push_str(&String::from_utf8_lossy(&t));
             }
             Ok(XmlEvent::End(e)) => {
                 let name = local_name(e.name().as_ref());
