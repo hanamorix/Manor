@@ -10,6 +10,7 @@ use rusqlite::{params, Connection, OptionalExtension};
 use serde::{Deserialize, Serialize};
 
 use crate::assistant::task;
+use crate::assistant::tolerant;
 
 #[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq, Eq)]
 #[serde(rename_all = "snake_case")]
@@ -70,20 +71,8 @@ pub struct AddTaskArgs {
     /// instead of a plain string (e.g. `{year, month, day}`). We accept any
     /// JSON shape and coerce non-strings to `None` — the caller defaults to
     /// today when `None`, which is the right v0.1 behaviour anyway.
-    #[serde(default, deserialize_with = "deserialize_due_date")]
+    #[serde(default, deserialize_with = "tolerant::iso_date")]
     pub due_date: Option<String>,
-}
-
-fn deserialize_due_date<'de, D>(d: D) -> Result<Option<String>, D::Error>
-where
-    D: serde::Deserializer<'de>,
-{
-    let v = serde_json::Value::deserialize(d)?;
-    match v {
-        serde_json::Value::String(s) => Ok(Some(s)),
-        serde_json::Value::Null => Ok(None),
-        _ => Ok(None),
-    }
 }
 
 /// Insert a new proposal. Returns the new row id.
