@@ -29,8 +29,8 @@ export function HearthSubNav() {
               padding: "8px 0",
               fontSize: 14,
               fontWeight: active ? 600 : 500,
-              color: active ? "var(--ink-strong, #111)" : "var(--ink-soft, #999)",
-              borderBottom: active ? "2px solid var(--ink-strong, #111)" : "2px solid transparent",
+              color: active ? "var(--ink)" : "var(--ink-soft, #999)",
+              borderBottom: active ? "2px solid var(--ink)" : "2px solid transparent",
               cursor: "pointer",
             }}
           >

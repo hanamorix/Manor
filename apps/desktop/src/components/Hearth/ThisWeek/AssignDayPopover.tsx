@@ -82,11 +82,11 @@ export function AssignDayPopover({ recipe, entries, onPick, onClose }: Props) {
                 }}
               >
                 <div style={{ fontSize: 11, fontWeight: isToday ? 600 : 500,
-                              color: isToday ? "var(--ink-strong, #111)" : "var(--ink-soft, #999)" }}>
+                              color: isToday ? "var(--ink)" : "var(--ink-soft, #999)" }}>
                   {DAY_LABELS[i]} {day.getDate()}
                 </div>
                 <div style={{ fontSize: 11,
-                              color: filled ? "var(--ink-strong, #111)" : "var(--ink-soft, #999)",
+                              color: filled ? "var(--ink)" : "var(--ink-soft, #999)",
                               whiteSpace: "nowrap",
                               overflow: "hidden",
                               textOverflow: "ellipsis" }}>

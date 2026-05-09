@@ -69,7 +69,7 @@ export function ThisWeekView() {
             <div key={entry.entry_date} style={{ display: "flex", flexDirection: "column", gap: 6 }}>
               <div style={{
                 fontSize: 11,
-                color: isToday ? "var(--ink-strong, #111)" : "var(--ink-soft, #999)",
+                color: isToday ? "var(--ink)" : "var(--ink-soft, #999)",
                 fontWeight: isToday ? 600 : 500,
               }}>
                 {DAY_LABELS[i]} {d.getDate()}
