@@ -8,8 +8,10 @@ pub mod db;
 pub mod event;
 pub mod message;
 pub mod proposal;
+pub mod proposal_error;
 pub mod task;
 pub mod time_block;
 pub mod tolerant;
 
+pub use proposal_error::{Applied, ApplyError};
 pub use tolerant::{amount_pence, iso_date, rrule_string, IdOrName};
