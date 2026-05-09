@@ -19,6 +19,9 @@ const rowStyle: React.CSSProperties = {
   alignItems: "center",
   gap: 10,
   padding: "10px 4px",
+  paddingRight: 72,
+  minHeight: 40,
+  position: "relative",
   cursor: "pointer",
   borderRadius: "var(--radius-lg)",
   transition: "background 0.15s",
@@ -104,27 +107,32 @@ export default function ChoresCard() {
                 </button>
                 <span style={{ fontSize: 18, flexShrink: 0 }}>{c.emoji}</span>
                 <span style={{ flex: 1, fontSize: "var(--text-md)", color: "var(--ink)" }}>{c.title}</span>
-                {isHovered && (
-                  <button
-                    onClick={(e) => { e.stopPropagation(); onSkip(c.id); }}
-                    aria-label={`Skip ${c.title}`}
-                    style={{
-                      border: "none",
-                      background: "none",
-                      color: "var(--ink-soft)",
-                      fontSize: "var(--text-xs)",
-                      cursor: "pointer",
-                      display: "inline-flex",
-                      alignItems: "center",
-                      gap: 4,
-                      padding: "2px 4px",
-                      flexShrink: 0,
-                    }}
-                  >
-                    <SkipForward size={12} strokeWidth={1.8} />
-                    Skip
-                  </button>
-                )}
+                <button
+                  onClick={(e) => { e.stopPropagation(); onSkip(c.id); }}
+                  aria-label={`Skip ${c.title}`}
+                  tabIndex={isHovered ? 0 : -1}
+                  style={{
+                    position: "absolute",
+                    right: 4,
+                    top: "50%",
+                    transform: "translateY(-50%)",
+                    border: "none",
+                    background: "none",
+                    color: "var(--ink-soft)",
+                    fontSize: "var(--text-xs)",
+                    cursor: "pointer",
+                    display: "inline-flex",
+                    alignItems: "center",
+                    gap: 4,
+                    padding: "2px 4px",
+                    opacity: isHovered ? 1 : 0,
+                    pointerEvents: isHovered ? "auto" : "none",
+                    transition: "opacity 160ms cubic-bezier(0.2, 0.8, 0.2, 1)",
+                  }}
+                >
+                  <SkipForward size={12} strokeWidth={1.8} />
+                  Skip
+                </button>
               </li>
             );
           })}

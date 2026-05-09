@@ -80,6 +80,8 @@ export default function TaskRow({ task }: TaskRowProps) {
     deleteTimerRef.current = setTimeout(() => setDeleteArmed(false), DELETE_CONFIRM_MS);
   };
 
+  const showActions = hovering && !editing && !completing;
+
   return (
     <div
       onMouseEnter={() => setHovering(true)}
@@ -88,7 +90,10 @@ export default function TaskRow({ task }: TaskRowProps) {
         display: "flex",
         gap: 10,
         padding: "6px 4px",
+        paddingRight: 56,
         alignItems: "center",
+        minHeight: 32,
+        position: "relative",
         background: deleteArmed ? "var(--ink-danger)" : "transparent",
         borderRadius: 6,
         transition: "background 100ms ease",
@@ -167,46 +172,58 @@ export default function TaskRow({ task }: TaskRowProps) {
         </span>
       )}
 
-      {hovering && !editing && !completing && (
-        <div style={{ display: "flex", gap: 4, opacity: 0.6, transition: "opacity 100ms ease" }}>
-          <button
-            onClick={startEdit}
-            aria-label="edit"
-            style={{
-              width: 24,
-              height: 24,
-              padding: 0,
-              background: "transparent",
-              border: "none",
-              cursor: "pointer",
-              display: "inline-flex",
-              alignItems: "center",
-              justifyContent: "center",
-              color: "var(--ink-soft)",
-            }}
-          >
-            <Pencil size={14} strokeWidth={1.8} />
-          </button>
-          <button
-            onClick={armOrConfirmDelete}
-            aria-label={deleteArmed ? "confirm delete" : "delete"}
-            style={{
-              width: 24,
-              height: 24,
-              padding: 0,
-              background: "transparent",
-              border: "none",
-              cursor: "pointer",
-              display: "inline-flex",
-              alignItems: "center",
-              justifyContent: "center",
-              color: deleteArmed ? "var(--ink-danger)" : "var(--ink-soft)",
-            }}
-          >
-            <Trash2 size={14} strokeWidth={1.8} />
-          </button>
-        </div>
-      )}
+      <div
+        style={{
+          position: "absolute",
+          right: 4,
+          top: "50%",
+          transform: "translateY(-50%)",
+          display: "flex",
+          gap: 4,
+          opacity: showActions ? 0.6 : 0,
+          pointerEvents: showActions ? "auto" : "none",
+          transition: "opacity 160ms cubic-bezier(0.2, 0.8, 0.2, 1)",
+        }}
+      >
+        <button
+          onClick={startEdit}
+          aria-label="edit"
+          tabIndex={showActions ? 0 : -1}
+          style={{
+            width: 24,
+            height: 24,
+            padding: 0,
+            background: "transparent",
+            border: "none",
+            cursor: "pointer",
+            display: "inline-flex",
+            alignItems: "center",
+            justifyContent: "center",
+            color: "var(--ink-soft)",
+          }}
+        >
+          <Pencil size={14} strokeWidth={1.8} />
+        </button>
+        <button
+          onClick={armOrConfirmDelete}
+          aria-label={deleteArmed ? "confirm delete" : "delete"}
+          tabIndex={showActions ? 0 : -1}
+          style={{
+            width: 24,
+            height: 24,
+            padding: 0,
+            background: "transparent",
+            border: "none",
+            cursor: "pointer",
+            display: "inline-flex",
+            alignItems: "center",
+            justifyContent: "center",
+            color: deleteArmed ? "var(--ink-danger)" : "var(--ink-soft)",
+          }}
+        >
+          <Trash2 size={14} strokeWidth={1.8} />
+        </button>
+      </div>
     </div>
   );
 }
