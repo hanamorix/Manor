@@ -473,43 +473,7 @@ export default function AiTab() {
       <RemoteProvidersSection />
 
       <CallLogSection />
-
-      <DeveloperSection />
     </div>
-  );
-}
-
-function DeveloperSection() {
-  const [sandboxEnabled, setSandboxEnabled] = useState(false);
-
-  useEffect(() => {
-    void (async () => {
-      const v = await settingGet("bank_sandbox_enabled").catch(() => null);
-      setSandboxEnabled(v === "true");
-    })();
-  }, []);
-
-  const toggle = async (v: boolean) => {
-    setSandboxEnabled(v);
-    await settingSet("bank_sandbox_enabled", v ? "true" : "false");
-  };
-
-  return (
-    <section>
-      <h2 style={{ margin: "0 0 8px 0", fontSize: 15, color: "var(--ink)" }}>Developer</h2>
-      <label style={{ display: "flex", alignItems: "center", gap: 8, fontSize: "var(--text-sm)", color: "var(--ink)" }}>
-        <input
-          type="checkbox"
-          checked={sandboxEnabled}
-          onChange={(e) => void toggle(e.target.checked)}
-        />
-        Enable GoCardless sandbox institution
-      </label>
-      <p style={{ fontSize: "var(--text-xs)", color: TEXT_MUTED, marginTop: 4 }}>
-        When on, the institution picker includes a SANDBOX test bank that returns
-        deterministic fake transactions. For development only.
-      </p>
-    </section>
   );
 }
 

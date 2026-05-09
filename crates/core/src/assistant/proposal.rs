@@ -461,7 +461,8 @@ mod tests {
     fn approve_add_maintenance_schedule_inserts_and_marks_applied() {
         let (_d, mut conn) = fresh_conn();
         let asset_id = insert_test_asset(&conn);
-        let pid = insert_pending_schedule_proposal(&conn, &asset_id, "Annual service", 12, "att-uuid-1");
+        let pid =
+            insert_pending_schedule_proposal(&conn, &asset_id, "Annual service", 12, "att-uuid-1");
 
         let schedule_id = approve_add_maintenance_schedule(&mut conn, pid).unwrap();
         assert!(!schedule_id.is_empty());
@@ -538,7 +539,9 @@ mod tests {
         assert_eq!(s.notes, "edited notes");
 
         let status: String = conn
-            .query_row("SELECT status FROM proposal WHERE id = ?1", [pid], |r| r.get(0))
+            .query_row("SELECT status FROM proposal WHERE id = ?1", [pid], |r| {
+                r.get(0)
+            })
             .unwrap();
         assert_eq!(status, "applied");
     }

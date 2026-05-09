@@ -361,13 +361,15 @@ mod tests {
         let (_dir, conn, root) = fresh_env();
         // Stage an attachment, then link it to a text-keyed entity ("asset", "asset-uuid").
         let att = store(
-            &conn, &root,
+            &conn,
+            &root,
             b"fake pdf bytes",
             "manual.pdf",
             "application/pdf",
             Some("asset"),
             None,
-        ).unwrap();
+        )
+        .unwrap();
         link_to_entity(&conn, att.id, "asset", "asset-uuid-123").unwrap();
 
         let list = list_for_text_entity(&conn, "asset", "asset-uuid-123").unwrap();

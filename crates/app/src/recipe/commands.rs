@@ -20,10 +20,7 @@ pub struct ListRecipesArgs {
 }
 
 #[tauri::command]
-pub fn recipe_list(
-    args: ListRecipesArgs,
-    state: State<'_, Db>,
-) -> Result<Vec<Recipe>, String> {
+pub fn recipe_list(args: ListRecipesArgs, state: State<'_, Db>) -> Result<Vec<Recipe>, String> {
     let conn = state.0.lock().map_err(|e| e.to_string())?;
     let filter = ListFilter {
         search: args.search,
@@ -46,11 +43,7 @@ pub fn recipe_create(draft: RecipeDraft, state: State<'_, Db>) -> Result<String,
 }
 
 #[tauri::command]
-pub fn recipe_update(
-    id: String,
-    draft: RecipeDraft,
-    state: State<'_, Db>,
-) -> Result<(), String> {
+pub fn recipe_update(id: String, draft: RecipeDraft, state: State<'_, Db>) -> Result<(), String> {
     let conn = state.0.lock().map_err(|e| e.to_string())?;
     dal::update_recipe(&conn, &id, &draft).map_err(|e| e.to_string())
 }
@@ -117,13 +110,7 @@ pub async fn recipe_import_commit(
         // Lock never crosses .await — fetch_and_link_hero_arc acquires/releases
         // internally around each sync burst (HTTP runs without any lock held).
         let db_arc = state.0.clone();
-        let _ = importer::fetch_and_link_hero_arc(
-            db_arc,
-            &id,
-            Some(url),
-            &attachments_dir,
-        )
-        .await;
+        let _ = importer::fetch_and_link_hero_arc(db_arc, &id, Some(url), &attachments_dir).await;
     }
 
     Ok(id)

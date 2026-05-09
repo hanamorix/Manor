@@ -63,22 +63,34 @@ mod tests {
 
     #[test]
     fn classify_overdue_past() {
-        assert_eq!(classify("2025-06-14", "2025-06-15").unwrap(), DueBand::Overdue);
+        assert_eq!(
+            classify("2025-06-14", "2025-06-15").unwrap(),
+            DueBand::Overdue
+        );
     }
 
     #[test]
     fn classify_due_today_is_overdue() {
-        assert_eq!(classify("2025-06-15", "2025-06-15").unwrap(), DueBand::Overdue);
+        assert_eq!(
+            classify("2025-06-15", "2025-06-15").unwrap(),
+            DueBand::Overdue
+        );
     }
 
     #[test]
     fn classify_due_this_week() {
-        assert_eq!(classify("2025-06-18", "2025-06-15").unwrap(), DueBand::DueThisWeek);
+        assert_eq!(
+            classify("2025-06-18", "2025-06-15").unwrap(),
+            DueBand::DueThisWeek
+        );
     }
 
     #[test]
     fn classify_upcoming() {
-        assert_eq!(classify("2025-06-30", "2025-06-15").unwrap(), DueBand::Upcoming);
+        assert_eq!(
+            classify("2025-06-30", "2025-06-15").unwrap(),
+            DueBand::Upcoming
+        );
     }
 
     #[test]

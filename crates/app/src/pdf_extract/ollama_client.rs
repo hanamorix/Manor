@@ -18,9 +18,7 @@ impl OllamaExtractClient {
 #[async_trait]
 impl LlmClient for OllamaExtractClient {
     async fn complete(&self, prompt: &str) -> anyhow::Result<String> {
-        use crate::assistant::ollama::{
-            ChatMessage, ChatRole, OllamaClient, DEFAULT_ENDPOINT,
-        };
+        use crate::assistant::ollama::{ChatMessage, ChatRole, OllamaClient, DEFAULT_ENDPOINT};
         let client = OllamaClient::new(DEFAULT_ENDPOINT, &self.model);
         client
             .chat_collect(&[ChatMessage {

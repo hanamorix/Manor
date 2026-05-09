@@ -1,8 +1,6 @@
 //! Repair-note synthesis (L4d).
 
-use crate::assistant::ollama::{
-    ChatMessage, ChatRole, OllamaClient, DEFAULT_ENDPOINT,
-};
+use crate::assistant::ollama::{ChatMessage, ChatRole, OllamaClient, DEFAULT_ENDPOINT};
 use anyhow::Result;
 use async_trait::async_trait;
 use std::sync::{Arc, Mutex};

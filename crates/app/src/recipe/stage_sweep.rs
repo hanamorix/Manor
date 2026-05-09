@@ -113,7 +113,15 @@ mod tests {
              (uuid, original_name, mime_type, size_bytes, sha256,
               entity_type, entity_id, created_at)
              VALUES (?1, ?2, ?3, ?4, ?5, ?6, NULL, ?7)",
-            params!["recent-uuid", "hero.png", "image/png", 10i64, "abc123", "recipe", now_ts],
+            params![
+                "recent-uuid",
+                "hero.png",
+                "image/png",
+                10i64,
+                "abc123",
+                "recipe",
+                now_ts
+            ],
         )
         .unwrap();
 

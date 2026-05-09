@@ -40,10 +40,7 @@ pub enum ImportError {
 ///
 /// If `llm_client` is None, the LLM fallback is skipped — callers that only
 /// exercise the JSON-LD path (or that haven't wired a live model) pass `None`.
-pub async fn preview(
-    url: &str,
-    llm_client: Option<&dyn LlmClient>,
-) -> Result<ImportPreview> {
+pub async fn preview(url: &str, llm_client: Option<&dyn LlmClient>) -> Result<ImportPreview> {
     let vetted = manor_core::net::ssrf::vet_url(url).map_err(|_| ImportError::BadUrl)?;
     preview_inner(vetted, llm_client).await
 }
@@ -137,8 +134,8 @@ struct HeroImageData {
 
 /// Fetch hero image bytes from a URL. Pure async HTTP — no DB, no lock.
 async fn download_hero_image(url: &str) -> Result<HeroImageData> {
-    let vetted = manor_core::net::ssrf::vet_url(url)
-        .context("hero image URL rejected by SSRF guard")?;
+    let vetted =
+        manor_core::net::ssrf::vet_url(url).context("hero image URL rejected by SSRF guard")?;
 
     let client = reqwest::Client::builder()
         .timeout(Duration::from_secs(FETCH_TIMEOUT_SECS))
@@ -146,7 +143,11 @@ async fn download_hero_image(url: &str) -> Result<HeroImageData> {
         .build()
         .context("building http client for image")?;
 
-    let mut resp = client.get(vetted).send().await.context("fetching hero image")?;
+    let mut resp = client
+        .get(vetted)
+        .send()
+        .await
+        .context("fetching hero image")?;
 
     let ctype = resp
         .headers()
@@ -169,7 +170,10 @@ async fn download_hero_image(url: &str) -> Result<HeroImageData> {
     let mut raw = Vec::<u8>::new();
     while let Some(chunk) = resp.chunk().await.context("reading image bytes")? {
         if raw.len() + chunk.len() > MAX_IMAGE_BYTES as usize {
-            return Err(anyhow::anyhow!("hero image too large (> {} bytes)", MAX_IMAGE_BYTES));
+            return Err(anyhow::anyhow!(
+                "hero image too large (> {} bytes)",
+                MAX_IMAGE_BYTES
+            ));
         }
         raw.extend_from_slice(&chunk);
     }
@@ -252,31 +256,6 @@ pub async fn fetch_and_link_hero_arc(
     Ok(())
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[tokio::test]
-    async fn preview_rejects_loopback_url() {
-        let err = preview("http://127.0.0.1:8080/recipe", None).await.unwrap_err();
-        let msg = format!("{err}");
-        assert!(
-            msg.contains("URL") || msg.contains("private") || msg.contains("scheme") || msg.contains("rejected"),
-            "got error message: {msg}",
-        );
-    }
-
-    #[tokio::test]
-    async fn preview_rejects_file_scheme() {
-        let err = preview("file:///etc/passwd", None).await.unwrap_err();
-        let msg = format!("{err}");
-        assert!(
-            msg.contains("URL") || msg.contains("scheme"),
-            "got error message: {msg}",
-        );
-    }
-}
-
 fn to_preview(imp: ImportedRecipe) -> ImportPreview {
     let hero = imp.hero_image_url.clone();
     let notes = imp.parse_notes.clone();
@@ -300,5 +279,35 @@ fn to_preview(imp: ImportedRecipe) -> ImportPreview {
         import_method: method,
         parse_notes: notes,
         hero_image_url: hero,
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[tokio::test]
+    async fn preview_rejects_loopback_url() {
+        let err = preview("http://127.0.0.1:8080/recipe", None)
+            .await
+            .unwrap_err();
+        let msg = format!("{err}");
+        assert!(
+            msg.contains("URL")
+                || msg.contains("private")
+                || msg.contains("scheme")
+                || msg.contains("rejected"),
+            "got error message: {msg}",
+        );
+    }
+
+    #[tokio::test]
+    async fn preview_rejects_file_scheme() {
+        let err = preview("file:///etc/passwd", None).await.unwrap_err();
+        let msg = format!("{err}");
+        assert!(
+            msg.contains("URL") || msg.contains("scheme"),
+            "got error message: {msg}",
+        );
     }
 }

@@ -5,7 +5,9 @@ use anyhow::Result;
 use rusqlite::{params, Connection, OptionalExtension};
 use uuid::Uuid;
 
-fn now_secs() -> i64 { chrono::Utc::now().timestamp() }
+fn now_secs() -> i64 {
+    chrono::Utc::now().timestamp()
+}
 
 pub fn list_items(conn: &Connection) -> Result<Vec<ShoppingListItem>> {
     let mut stmt = conn.prepare(
@@ -32,7 +34,9 @@ pub fn list_items(conn: &Connection) -> Result<Vec<ShoppingListItem>> {
         })
     })?;
     let mut out = Vec::new();
-    for row in rows { out.push(row?); }
+    for row in rows {
+        out.push(row?);
+    }
     Ok(out)
 }
 
@@ -65,25 +69,31 @@ pub fn delete_item(conn: &Connection, id: &str) -> Result<()> {
 }
 
 pub fn wipe_generated(conn: &Connection) -> Result<()> {
-    conn.execute("DELETE FROM shopping_list_item WHERE source = 'generated'", [])?;
+    conn.execute(
+        "DELETE FROM shopping_list_item WHERE source = 'generated'",
+        [],
+    )?;
     Ok(())
 }
 
 #[allow(dead_code)]
 pub(crate) fn counts(conn: &Connection) -> Result<(usize, usize)> {
-    let total: i64 = conn.query_row(
-        "SELECT COUNT(*) FROM shopping_list_item", [], |r| r.get(0),
-    )?;
+    let total: i64 = conn.query_row("SELECT COUNT(*) FROM shopping_list_item", [], |r| r.get(0))?;
     let ticked: i64 = conn.query_row(
-        "SELECT COUNT(*) FROM shopping_list_item WHERE ticked = 1", [], |r| r.get(0),
+        "SELECT COUNT(*) FROM shopping_list_item WHERE ticked = 1",
+        [],
+        |r| r.get(0),
     )?;
     Ok((total as usize, ticked as usize))
 }
 
 pub(crate) fn next_position(conn: &Connection) -> Result<i64> {
-    let max: Option<i64> = conn.query_row(
-        "SELECT MAX(position) FROM shopping_list_item", [], |r| r.get(0),
-    ).optional()?.flatten();
+    let max: Option<i64> = conn
+        .query_row("SELECT MAX(position) FROM shopping_list_item", [], |r| {
+            r.get(0)
+        })
+        .optional()?
+        .flatten();
     Ok(max.map(|m| m + 1).unwrap_or(0))
 }
 
@@ -104,7 +114,16 @@ pub(crate) fn insert_generated(
            (id, ingredient_name, quantity_text, note, recipe_id, recipe_title,
             source, position, ticked, created_at, updated_at)
          VALUES (?1, ?2, ?3, ?4, ?5, ?6, 'generated', ?7, 0, ?8, ?8)",
-        params![id, ingredient_name, quantity_text, note, recipe_id, recipe_title, position, now],
+        params![
+            id,
+            ingredient_name,
+            quantity_text,
+            note,
+            recipe_id,
+            recipe_title,
+            position,
+            now
+        ],
     )?;
     Ok(id)
 }

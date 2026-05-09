@@ -241,8 +241,18 @@ mod tests {
     #[test]
     fn sum_month_pence_aggregates_only_current_month() {
         let (_d, conn) = fresh_conn();
+        let now = Utc.with_ymd_and_hms(2026, 4, 17, 12, 0, 0).unwrap();
+        let current_month = Utc
+            .with_ymd_and_hms(2026, 4, 15, 12, 0, 0)
+            .unwrap()
+            .timestamp();
         let id = insert_started(&conn, sample()).unwrap();
         mark_completed(&conn, id, "ok", 100, 50, 15).unwrap();
+        conn.execute(
+            "UPDATE remote_call_log SET started_at = ?1, completed_at = ?1 WHERE id = ?2",
+            params![current_month, id],
+        )
+        .unwrap();
 
         // Plant a row stamped last month.
         let last_month = Utc
@@ -258,7 +268,6 @@ mod tests {
         )
         .unwrap();
 
-        let now = Utc.with_ymd_and_hms(2026, 4, 17, 12, 0, 0).unwrap();
         let total = sum_month_pence(&conn, "claude", now).unwrap();
         assert_eq!(total, 15, "last month's 999 must not count");
     }

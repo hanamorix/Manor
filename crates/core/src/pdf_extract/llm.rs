@@ -63,9 +63,7 @@ pub async fn extract_schedules_via_llm(
 
     Ok(items
         .into_iter()
-        .filter(|s| {
-            s.interval_months >= 1 && s.interval_months <= 240 && !s.task.trim().is_empty()
-        })
+        .filter(|s| s.interval_months >= 1 && s.interval_months <= 240 && !s.task.trim().is_empty())
         .map(|s| ExtractedSchedule {
             task: s.task,
             interval_months: s.interval_months,
@@ -101,10 +99,7 @@ mod tests {
             if q.is_empty() {
                 return Err(anyhow::anyhow!("stub exhausted"));
             }
-            match q.remove(0) {
-                Ok(s) => Ok(s),
-                Err(e) => Err(e),
-            }
+            q.remove(0)
         }
     }
 

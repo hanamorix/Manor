@@ -1,6 +1,6 @@
 //! Pure JSON-LD + LLM parsers for recipe import. No network, no file I/O.
 
-use super::{IngredientLine, ImportMethod};
+use super::{ImportMethod, IngredientLine};
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 
@@ -27,7 +27,9 @@ pub fn parse_jsonld(html: &str) -> Option<ImportedRecipe> {
 
     for el in doc.select(&selector) {
         let raw = el.text().collect::<String>();
-        let Ok(json) = serde_json::from_str::<Value>(&raw) else { continue };
+        let Ok(json) = serde_json::from_str::<Value>(&raw) else {
+            continue;
+        };
         if let Some(recipe) = find_recipe_node(&json) {
             if let Some(r) = map_recipe_node(recipe) {
                 return Some(r);
@@ -40,10 +42,14 @@ pub fn parse_jsonld(html: &str) -> Option<ImportedRecipe> {
 fn find_recipe_node(v: &Value) -> Option<&Value> {
     match v {
         Value::Object(_) => {
-            if node_type_matches(v, "Recipe") { return Some(v); }
+            if node_type_matches(v, "Recipe") {
+                return Some(v);
+            }
             if let Some(graph) = v.get("@graph").and_then(|g| g.as_array()) {
                 for item in graph {
-                    if node_type_matches(item, "Recipe") { return Some(item); }
+                    if node_type_matches(item, "Recipe") {
+                        return Some(item);
+                    }
                 }
             }
             None
@@ -63,26 +69,35 @@ fn node_type_matches(node: &Value, wanted: &str) -> bool {
 
 fn map_recipe_node(node: &Value) -> Option<ImportedRecipe> {
     let title = node.get("name").and_then(Value::as_str)?.trim().to_string();
-    if title.is_empty() { return None; }
+    if title.is_empty() {
+        return None;
+    }
 
     let servings = parse_yield(node.get("recipeYield"));
     let prep_time_mins = parse_iso_duration_mins(node.get("prepTime"));
     let cook_time_mins = parse_iso_duration_mins(node.get("cookTime"));
 
-    let ingredients = node.get("recipeIngredient")
+    let ingredients = node
+        .get("recipeIngredient")
         .and_then(Value::as_array)
-        .map(|arr| arr.iter()
-            .filter_map(|v| v.as_str())
-            .map(split_ingredient_line)
-            .collect::<Vec<_>>())
+        .map(|arr| {
+            arr.iter()
+                .filter_map(|v| v.as_str())
+                .map(split_ingredient_line)
+                .collect::<Vec<_>>()
+        })
         .unwrap_or_default();
 
     let instructions = instructions_to_markdown(node.get("recipeInstructions"));
     let hero_image_url = extract_image(node.get("image"));
 
     Some(ImportedRecipe {
-        title, servings, prep_time_mins, cook_time_mins,
-        instructions, ingredients,
+        title,
+        servings,
+        prep_time_mins,
+        cook_time_mins,
+        instructions,
+        ingredients,
         source_url: String::new(),
         source_host: String::new(),
         import_method: ImportMethod::JsonLd,
@@ -94,11 +109,10 @@ fn map_recipe_node(node: &Value) -> Option<ImportedRecipe> {
 fn parse_yield(v: Option<&Value>) -> Option<i32> {
     match v? {
         Value::Number(n) => n.as_i64().map(|x| x as i32),
-        Value::String(s) => {
-            s.split(|c: char| !c.is_ascii_digit())
-                .find(|s| !s.is_empty())
-                .and_then(|t| t.parse().ok())
-        }
+        Value::String(s) => s
+            .split(|c: char| !c.is_ascii_digit())
+            .find(|s| !s.is_empty())
+            .and_then(|t| t.parse().ok()),
         Value::Array(arr) => arr.iter().find_map(|v| parse_yield(Some(v))),
         _ => None,
     }
@@ -112,7 +126,10 @@ fn parse_iso_duration_mins(v: Option<&Value>) -> Option<i32> {
     let mut mins: i32 = 0;
     let mut buf = String::new();
     for ch in s.chars() {
-        if ch.is_ascii_digit() { buf.push(ch); continue; }
+        if ch.is_ascii_digit() {
+            buf.push(ch);
+            continue;
+        }
         let n: i32 = buf.parse().unwrap_or(0);
         buf.clear();
         match ch {
@@ -126,38 +143,88 @@ fn parse_iso_duration_mins(v: Option<&Value>) -> Option<i32> {
 
 fn split_ingredient_line(line: &str) -> IngredientLine {
     let line = line.trim();
-    let qty_end = line.chars().take_while(|c| c.is_ascii_digit() || *c == '.' || *c == '/' || *c == ' ' || *c == '½' || *c == '¼' || *c == '¾').count();
+    let qty_end = line
+        .chars()
+        .take_while(|c| {
+            c.is_ascii_digit()
+                || *c == '.'
+                || *c == '/'
+                || *c == ' '
+                || *c == '½'
+                || *c == '¼'
+                || *c == '¾'
+        })
+        .count();
     let (qty_raw, rest) = line.split_at(qty_end);
     let qty = qty_raw.trim();
 
-    const UNITS: &[&str] = &["tbsp","tsp","cup","cups","g","kg","ml","l","oz","lb","pcs","piece","pieces","clove","cloves","pinch","dash","handful","sprig","sprigs","can","cans","bunch","bunches"];
+    const UNITS: &[&str] = &[
+        "tbsp", "tsp", "cup", "cups", "g", "kg", "ml", "l", "oz", "lb", "pcs", "piece", "pieces",
+        "clove", "cloves", "pinch", "dash", "handful", "sprig", "sprigs", "can", "cans", "bunch",
+        "bunches",
+    ];
     let rest = rest.trim_start();
     let (unit, after_unit) = rest.split_once(' ').unwrap_or((rest, ""));
     let (quantity_text, name_plus) = if UNITS.iter().any(|u| unit.eq_ignore_ascii_case(u)) {
-        let combined = if qty.is_empty() { unit.to_string() } else { format!("{} {}", qty, unit) };
-        (if combined.is_empty() { None } else { Some(combined) }, after_unit.trim())
+        let combined = if qty.is_empty() {
+            unit.to_string()
+        } else {
+            format!("{} {}", qty, unit)
+        };
+        (
+            if combined.is_empty() {
+                None
+            } else {
+                Some(combined)
+            },
+            after_unit.trim(),
+        )
     } else {
-        (if qty.is_empty() { None } else { Some(qty.to_string()) }, rest)
+        (
+            if qty.is_empty() {
+                None
+            } else {
+                Some(qty.to_string())
+            },
+            rest,
+        )
     };
 
     let (name, note) = match name_plus.split_once(',') {
         Some((n, note)) => (n.trim().to_string(), Some(note.trim().to_string())),
         None => (name_plus.trim().to_string(), None),
     };
-    IngredientLine { quantity_text, ingredient_name: name, note }
+    IngredientLine {
+        quantity_text,
+        ingredient_name: name,
+        note,
+    }
 }
 
 fn instructions_to_markdown(v: Option<&Value>) -> String {
     match v {
         Some(Value::String(s)) => s.clone(),
-        Some(Value::Array(arr)) => arr.iter().enumerate().filter_map(|(i, step)| {
-            let text = match step {
-                Value::String(s) => s.clone(),
-                Value::Object(_) => step.get("text").and_then(Value::as_str).unwrap_or("").to_string(),
-                _ => return None,
-            };
-            if text.trim().is_empty() { None } else { Some(format!("{}. {}", i + 1, text.trim())) }
-        }).collect::<Vec<_>>().join("\n"),
+        Some(Value::Array(arr)) => arr
+            .iter()
+            .enumerate()
+            .filter_map(|(i, step)| {
+                let text = match step {
+                    Value::String(s) => s.clone(),
+                    Value::Object(_) => step
+                        .get("text")
+                        .and_then(Value::as_str)
+                        .unwrap_or("")
+                        .to_string(),
+                    _ => return None,
+                };
+                if text.trim().is_empty() {
+                    None
+                } else {
+                    Some(format!("{}. {}", i + 1, text.trim()))
+                }
+            })
+            .collect::<Vec<_>>()
+            .join("\n"),
         _ => String::new(),
     }
 }
@@ -206,7 +273,10 @@ pub async fn extract_via_llm(
     let llm_recipe = match parsed {
         Ok(r) => r,
         Err(_) => {
-            let retry_prompt = format!("{}\n\n(Previous response was not valid JSON. Output ONLY JSON.)", prompt);
+            let retry_prompt = format!(
+                "{}\n\n(Previous response was not valid JSON. Output ONLY JSON.)",
+                prompt
+            );
             let second = client.complete(&retry_prompt).await?;
             extract_json_block(&second)
                 .map_err(|e| anyhow::anyhow!("failed to parse LLM JSON after retry: {}", e))?
@@ -222,7 +292,11 @@ pub async fn extract_via_llm(
         ingredients: llm_recipe.ingredients,
         source_url: String::new(),
         source_host: String::new(),
-        import_method: if via_remote { ImportMethod::LlmRemote } else { ImportMethod::Llm },
+        import_method: if via_remote {
+            ImportMethod::LlmRemote
+        } else {
+            ImportMethod::Llm
+        },
         parse_notes: vec!["AI-extracted — please review quantities and steps.".into()],
         hero_image_url: None,
     })
@@ -248,13 +322,17 @@ fn extract_json_array_block<T: for<'de> Deserialize<'de>>(s: &str) -> Result<T, 
 
 /// Public wrapper over the object-root parser. Used by manor-app's LLM flows
 /// that expect a JSON object response.
-pub fn extract_json_block_public<T: for<'de> serde::Deserialize<'de>>(s: &str) -> Result<T, serde_json::Error> {
+pub fn extract_json_block_public<T: for<'de> serde::Deserialize<'de>>(
+    s: &str,
+) -> Result<T, serde_json::Error> {
     extract_json_block(s)
 }
 
 /// Public wrapper over the array-root parser. Used by manor-app's LLM flows
 /// that expect a JSON array response (e.g., meal-idea titles).
-pub fn extract_json_array_block_public<T: for<'de> serde::Deserialize<'de>>(s: &str) -> Result<T, serde_json::Error> {
+pub fn extract_json_array_block_public<T: for<'de> serde::Deserialize<'de>>(
+    s: &str,
+) -> Result<T, serde_json::Error> {
     extract_json_array_block(s)
 }
 
@@ -271,9 +349,15 @@ mod tests {
         assert_eq!(parsed.prep_time_mins, Some(15));
         assert_eq!(parsed.cook_time_mins, Some(20));
         assert_eq!(parsed.ingredients.len(), 3);
-        assert_eq!(parsed.ingredients[0].quantity_text.as_deref(), Some("1 tbsp"));
+        assert_eq!(
+            parsed.ingredients[0].quantity_text.as_deref(),
+            Some("1 tbsp")
+        );
         assert_eq!(parsed.ingredients[0].ingredient_name, "vegetable oil");
-        assert_eq!(parsed.hero_image_url.as_deref(), Some("https://bbcgoodfood.com/thai-curry.jpg"));
+        assert_eq!(
+            parsed.hero_image_url.as_deref(),
+            Some("https://bbcgoodfood.com/thai-curry.jpg")
+        );
         assert!(parsed.instructions.contains("Heat the oil"));
     }
 
@@ -331,7 +415,8 @@ mod tests {
         // caused the parser to slice from the [ instead of the {.
         let noisy = r#"Note: [optional] fields may be null.
 {"title":"Miso","servings":2,"prep_time_mins":null,"cook_time_mins":null,"instructions":"1. Cook.","ingredients":[]}"#;
-        let parsed: LlmRecipe = super::extract_json_block(noisy).expect("parses object despite leading [prose]");
+        let parsed: LlmRecipe =
+            super::extract_json_block(noisy).expect("parses object despite leading [prose]");
         assert_eq!(parsed.title, "Miso");
     }
 }
@@ -340,7 +425,9 @@ mod tests {
 mod llm_tests {
     use super::*;
 
-    struct StubLlm { response: String }
+    struct StubLlm {
+        response: String,
+    }
     #[async_trait::async_trait]
     impl LlmClient for StubLlm {
         async fn complete(&self, _prompt: &str) -> anyhow::Result<String> {
@@ -350,11 +437,14 @@ mod llm_tests {
 
     #[tokio::test]
     async fn extracts_valid_json_via_llm() {
-        let stub = StubLlm { response: r#"{
+        let stub = StubLlm {
+            response: r#"{
             "title":"Lentil dal","servings":2,"prep_time_mins":5,"cook_time_mins":25,
             "instructions":"1. Rinse lentils.\n2. Simmer.",
             "ingredients":[{"quantity_text":"200g","ingredient_name":"red lentils","note":null}]
-        }"#.into() };
+        }"#
+            .into(),
+        };
         let r = extract_via_llm("page text", &stub, false).await.unwrap();
         assert_eq!(r.title, "Lentil dal");
         assert_eq!(r.servings, Some(2));

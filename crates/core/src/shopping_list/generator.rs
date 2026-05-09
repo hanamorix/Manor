@@ -20,8 +20,11 @@ pub fn regenerate_from_week(conn: &Connection, week_start: &str) -> Result<Gener
     let mut report = GeneratedReport::default();
 
     for entry in entries {
-        let Some(recipe_id) = entry.recipe_id else { continue };
-        let Some(recipe) = crate::recipe::dal::get_recipe_including_trashed(&tx, &recipe_id)? else {
+        let Some(recipe_id) = entry.recipe_id else {
+            continue;
+        };
+        let Some(recipe) = crate::recipe::dal::get_recipe_including_trashed(&tx, &recipe_id)?
+        else {
             continue;
         };
         if recipe.deleted_at.is_some() {
@@ -55,8 +58,8 @@ pub fn regenerate_from_week(conn: &Connection, week_start: &str) -> Result<Gener
 mod tests {
     use super::*;
     use crate::assistant::db;
-    use crate::recipe::{IngredientLine, ImportMethod, RecipeDraft};
-    use crate::meal_plan::{StapleDraft};
+    use crate::meal_plan::StapleDraft;
+    use crate::recipe::{ImportMethod, IngredientLine, RecipeDraft};
     use tempfile::tempdir;
 
     fn fresh() -> (tempfile::TempDir, Connection) {
@@ -65,12 +68,19 @@ mod tests {
         (dir, conn)
     }
 
-    fn insert_recipe_with(conn: &Connection, title: &str, ingredients: Vec<IngredientLine>) -> String {
+    fn insert_recipe_with(
+        conn: &Connection,
+        title: &str,
+        ingredients: Vec<IngredientLine>,
+    ) -> String {
         let draft = RecipeDraft {
             title: title.into(),
-            servings: None, prep_time_mins: None, cook_time_mins: None,
+            servings: None,
+            prep_time_mins: None,
+            cook_time_mins: None,
             instructions: "".into(),
-            source_url: None, source_host: None,
+            source_url: None,
+            source_host: None,
             import_method: ImportMethod::Manual,
             hero_attachment_uuid: None,
             ingredients,
@@ -79,16 +89,29 @@ mod tests {
     }
 
     fn line(name: &str) -> IngredientLine {
-        IngredientLine { quantity_text: None, ingredient_name: name.into(), note: None }
+        IngredientLine {
+            quantity_text: None,
+            ingredient_name: name.into(),
+            note: None,
+        }
     }
 
     #[test]
     fn happy_path_generates_minus_staples() {
         let (_d, conn) = fresh();
-        let rid = insert_recipe_with(&conn, "Miso", vec![line("aubergine"), line("miso paste"), line("salt")]);
-        crate::meal_plan::staples::insert_staple(&conn, &StapleDraft {
-            name: "salt".into(), aliases: vec![],
-        }).unwrap();
+        let rid = insert_recipe_with(
+            &conn,
+            "Miso",
+            vec![line("aubergine"), line("miso paste"), line("salt")],
+        );
+        crate::meal_plan::staples::insert_staple(
+            &conn,
+            &StapleDraft {
+                name: "salt".into(),
+                aliases: vec![],
+            },
+        )
+        .unwrap();
         crate::meal_plan::dal::set_entry(&conn, "2026-04-22", &rid).unwrap();
 
         let report = regenerate_from_week(&conn, "2026-04-20").unwrap();

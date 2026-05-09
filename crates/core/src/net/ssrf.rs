@@ -91,27 +91,51 @@ mod tests {
 
     #[test]
     fn rejects_non_http_schemes() {
-        assert_eq!(vet_url("file:///etc/passwd").unwrap_err(), SsrfError::BadScheme);
+        assert_eq!(
+            vet_url("file:///etc/passwd").unwrap_err(),
+            SsrfError::BadScheme
+        );
         assert_eq!(vet_url("ssh://host").unwrap_err(), SsrfError::BadScheme);
-        assert_eq!(vet_url("javascript:alert(1)").unwrap_err(), SsrfError::BadScheme);
+        assert_eq!(
+            vet_url("javascript:alert(1)").unwrap_err(),
+            SsrfError::BadScheme
+        );
     }
 
     #[test]
     fn rejects_loopback_literal() {
-        assert_eq!(vet_url("http://127.0.0.1:11434/").unwrap_err(), SsrfError::PrivateAddress);
-        assert_eq!(vet_url("http://[::1]/").unwrap_err(), SsrfError::PrivateAddress);
+        assert_eq!(
+            vet_url("http://127.0.0.1:11434/").unwrap_err(),
+            SsrfError::PrivateAddress
+        );
+        assert_eq!(
+            vet_url("http://[::1]/").unwrap_err(),
+            SsrfError::PrivateAddress
+        );
     }
 
     #[test]
     fn rejects_private_ranges() {
-        assert_eq!(vet_url("http://10.0.0.1/").unwrap_err(), SsrfError::PrivateAddress);
-        assert_eq!(vet_url("http://192.168.1.1/").unwrap_err(), SsrfError::PrivateAddress);
-        assert_eq!(vet_url("http://172.16.0.1/").unwrap_err(), SsrfError::PrivateAddress);
+        assert_eq!(
+            vet_url("http://10.0.0.1/").unwrap_err(),
+            SsrfError::PrivateAddress
+        );
+        assert_eq!(
+            vet_url("http://192.168.1.1/").unwrap_err(),
+            SsrfError::PrivateAddress
+        );
+        assert_eq!(
+            vet_url("http://172.16.0.1/").unwrap_err(),
+            SsrfError::PrivateAddress
+        );
     }
 
     #[test]
     fn rejects_link_local() {
-        assert_eq!(vet_url("http://169.254.169.254/").unwrap_err(), SsrfError::PrivateAddress);
+        assert_eq!(
+            vet_url("http://169.254.169.254/").unwrap_err(),
+            SsrfError::PrivateAddress
+        );
     }
 
     #[test]

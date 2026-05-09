@@ -9,7 +9,10 @@ pub fn shopping_list_list(state: State<'_, Db>) -> Result<Vec<ShoppingListItem>,
 }
 
 #[tauri::command]
-pub fn shopping_list_add_manual(ingredient_name: String, state: State<'_, Db>) -> Result<String, String> {
+pub fn shopping_list_add_manual(
+    ingredient_name: String,
+    state: State<'_, Db>,
+) -> Result<String, String> {
     let name = ingredient_name.trim();
     if name.is_empty() {
         return Err("Ingredient name cannot be empty".into());
@@ -31,7 +34,10 @@ pub fn shopping_list_delete(id: String, state: State<'_, Db>) -> Result<(), Stri
 }
 
 #[tauri::command]
-pub fn shopping_list_regenerate(week_start: String, state: State<'_, Db>) -> Result<GeneratedReport, String> {
+pub fn shopping_list_regenerate(
+    week_start: String,
+    state: State<'_, Db>,
+) -> Result<GeneratedReport, String> {
     let conn = state.0.lock().map_err(|e| e.to_string())?;
     generator::regenerate_from_week(&conn, &week_start).map_err(|e| e.to_string())
 }

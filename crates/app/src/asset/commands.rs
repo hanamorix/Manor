@@ -62,8 +62,7 @@ pub fn asset_list_documents(
     state: State<'_, Db>,
 ) -> Result<Vec<manor_core::attachment::Attachment>, String> {
     let conn = state.0.lock().map_err(|e| e.to_string())?;
-    manor_core::attachment::list_for_text_entity(&conn, "asset", &id)
-        .map_err(|e| e.to_string())
+    manor_core::attachment::list_for_text_entity(&conn, "asset", &id).map_err(|e| e.to_string())
 }
 
 fn resolve_attachments_dir(app: &AppHandle) -> Result<PathBuf, String> {
@@ -77,7 +76,9 @@ fn resolve_attachments_dir(app: &AppHandle) -> Result<PathBuf, String> {
 /// home directory. Prevents an XSS/devtools-reachable IPC caller from using
 /// `asset_attach_*` to exfiltrate `/etc/*`, other users' homes, or system files.
 fn validate_source_path(p: &std::path::Path) -> Result<std::path::PathBuf, String> {
-    let canonical = p.canonicalize().map_err(|e| format!("cannot resolve path: {e}"))?;
+    let canonical = p
+        .canonicalize()
+        .map_err(|e| format!("cannot resolve path: {e}"))?;
     let home = dirs::home_dir().ok_or("no home directory available")?;
     let home_canonical = home.canonicalize().unwrap_or(home);
     if !canonical.starts_with(&home_canonical) {
@@ -102,8 +103,8 @@ pub async fn asset_attach_hero_from_path(
     let conn = state.0.lock().map_err(|e| e.to_string())?;
 
     let tx = conn.unchecked_transaction().map_err(|e| e.to_string())?;
-    let uuid = crate::asset::importer::attach_file(&tx, &dir, &src, &id)
-        .map_err(|e| e.to_string())?;
+    let uuid =
+        crate::asset::importer::attach_file(&tx, &dir, &src, &id).map_err(|e| e.to_string())?;
     manor_core::asset::dal::set_hero_attachment(&tx, &id, Some(&uuid))
         .map_err(|e| e.to_string())?;
     tx.commit().map_err(|e| e.to_string())?;
@@ -156,10 +157,8 @@ mod tests {
         // Canonicalize fails for nonexistent paths — that's the right behavior
         // because read() would fail anyway, but we want a clear error message
         // before we even try to open.
-        let err = validate_source_path(std::path::Path::new(
-            "/nonexistent-directory-xyz/file.txt",
-        ))
-        .unwrap_err();
+        let err = validate_source_path(std::path::Path::new("/nonexistent-directory-xyz/file.txt"))
+            .unwrap_err();
         assert!(!err.is_empty());
     }
 }

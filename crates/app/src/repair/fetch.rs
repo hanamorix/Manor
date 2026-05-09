@@ -18,8 +18,8 @@ pub enum FetchError {
 }
 
 pub async fn fetch_and_trim(client: &reqwest::Client, url: &str) -> Result<String> {
-    let vetted = manor_core::net::ssrf::vet_url(url)
-        .map_err(|e| anyhow::anyhow!("URL rejected: {e}"))?;
+    let vetted =
+        manor_core::net::ssrf::vet_url(url).map_err(|e| anyhow::anyhow!("URL rejected: {e}"))?;
     fetch_and_trim_inner(client, vetted).await
 }
 
@@ -141,10 +141,15 @@ mod tests {
     #[tokio::test]
     async fn fetch_rejects_loopback() {
         let client = reqwest::Client::new();
-        let err = fetch_and_trim(&client, "http://127.0.0.1/").await.unwrap_err();
+        let err = fetch_and_trim(&client, "http://127.0.0.1/")
+            .await
+            .unwrap_err();
         let msg = format!("{err}");
         assert!(
-            msg.contains("URL") || msg.contains("private") || msg.contains("scheme") || msg.contains("rejected"),
+            msg.contains("URL")
+                || msg.contains("private")
+                || msg.contains("scheme")
+                || msg.contains("rejected"),
             "got: {msg}",
         );
     }
@@ -152,7 +157,9 @@ mod tests {
     #[tokio::test]
     async fn fetch_rejects_file_scheme() {
         let client = reqwest::Client::new();
-        let err = fetch_and_trim(&client, "file:///etc/passwd").await.unwrap_err();
+        let err = fetch_and_trim(&client, "file:///etc/passwd")
+            .await
+            .unwrap_err();
         let msg = format!("{err}");
         assert!(
             msg.contains("URL") || msg.contains("scheme") || msg.contains("rejected"),

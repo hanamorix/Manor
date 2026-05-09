@@ -89,14 +89,8 @@ fn display_name_for_url(url: &str) -> String {
 
 /// Returns true if the stream produced an Error event AND zero token fragments were persisted.
 /// Call sites use this to decide whether the empty assistant row should be deleted.
-fn stream_ended_with_unusable_error(
-    chunks_to_persist: &[String],
-    events: &[StreamChunk],
-) -> bool {
-    chunks_to_persist.is_empty()
-        && events
-            .iter()
-            .any(|e| matches!(e, StreamChunk::Error(_)))
+fn stream_ended_with_unusable_error(chunks_to_persist: &[String], events: &[StreamChunk]) -> bool {
+    chunks_to_persist.is_empty() && events.iter().any(|e| matches!(e, StreamChunk::Error(_)))
 }
 
 #[tauri::command]

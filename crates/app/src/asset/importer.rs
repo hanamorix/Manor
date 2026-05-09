@@ -17,8 +17,8 @@ pub fn attach_file(
     source_path: &Path,
     asset_id: &str,
 ) -> Result<String> {
-    let bytes = std::fs::read(source_path)
-        .with_context(|| format!("reading {}", source_path.display()))?;
+    let bytes =
+        std::fs::read(source_path).with_context(|| format!("reading {}", source_path.display()))?;
     let original_name = source_path
         .file_name()
         .and_then(|n| n.to_str())

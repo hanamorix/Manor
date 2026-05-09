@@ -195,7 +195,11 @@ pub fn update_recipe(conn: &Connection, id: &str, draft: &RecipeDraft) -> Result
 /// Set `hero_attachment_uuid` on a recipe after the attachment has been staged.
 /// Called from the importer instead of `attachment::link_to_entity`, which would
 /// store a TEXT UUID into the INTEGER `entity_id` column (type mismatch).
-pub fn set_hero_attachment(conn: &Connection, recipe_id: &str, attachment_uuid: &str) -> Result<()> {
+pub fn set_hero_attachment(
+    conn: &Connection,
+    recipe_id: &str,
+    attachment_uuid: &str,
+) -> Result<()> {
     let now = now_secs();
     conn.execute(
         "UPDATE recipe SET hero_attachment_uuid = ?1, updated_at = ?2 WHERE id = ?3",
@@ -265,10 +269,7 @@ pub fn soft_delete_recipe(conn: &Connection, id: &str) -> Result<()> {
 }
 
 pub fn restore_recipe(conn: &Connection, id: &str) -> Result<()> {
-    conn.execute(
-        "UPDATE recipe SET deleted_at=NULL WHERE id=?1",
-        params![id],
-    )?;
+    conn.execute("UPDATE recipe SET deleted_at=NULL WHERE id=?1", params![id])?;
     Ok(())
 }
 
@@ -335,17 +336,20 @@ mod tests {
     fn update_bumps_updated_at_and_replaces_ingredients() {
         let (_d, conn) = fresh_db();
         let id = insert_recipe(&conn, &simple_draft("Original")).unwrap();
-        let original_updated_at: i64 = conn.query_row(
-            "SELECT updated_at FROM recipe WHERE id = ?1",
-            rusqlite::params![id],
-            |r| r.get(0),
-        ).unwrap();
+        let original_updated_at: i64 = conn
+            .query_row(
+                "SELECT updated_at FROM recipe WHERE id = ?1",
+                rusqlite::params![id],
+                |r| r.get(0),
+            )
+            .unwrap();
 
         // Force updated_at backwards by 10s so the update bump is observable without sleeping.
         conn.execute(
             "UPDATE recipe SET updated_at = ?1, created_at = ?1 WHERE id = ?2",
             rusqlite::params![original_updated_at - 10, id],
-        ).unwrap();
+        )
+        .unwrap();
 
         let mut draft = simple_draft("Updated");
         draft.ingredients = vec![IngredientLine {
@@ -367,14 +371,20 @@ mod tests {
         let id = insert_recipe(&conn, &simple_draft("X")).unwrap();
         soft_delete_recipe(&conn, &id).unwrap();
         // get_recipe now hides trashed recipes; confirm via direct SQL.
-        let trashed: Option<i64> = conn.query_row(
-            "SELECT deleted_at FROM recipe WHERE id = ?1",
-            rusqlite::params![id],
-            |r| r.get(0),
-        ).unwrap();
+        let trashed: Option<i64> = conn
+            .query_row(
+                "SELECT deleted_at FROM recipe WHERE id = ?1",
+                rusqlite::params![id],
+                |r| r.get(0),
+            )
+            .unwrap();
         assert!(trashed.is_some());
         restore_recipe(&conn, &id).unwrap();
-        assert!(get_recipe(&conn, &id).unwrap().unwrap().deleted_at.is_none());
+        assert!(get_recipe(&conn, &id)
+            .unwrap()
+            .unwrap()
+            .deleted_at
+            .is_none());
     }
 
     #[test]
@@ -400,11 +410,13 @@ mod tests {
         soft_delete_recipe(&conn, &id).unwrap();
         permanent_delete_recipe(&conn, &id).unwrap();
         assert!(get_recipe(&conn, &id).unwrap().is_none());
-        let ing_count: i64 = conn.query_row(
-            "SELECT COUNT(*) FROM recipe_ingredient WHERE recipe_id = ?1",
-            rusqlite::params![id],
-            |r| r.get(0),
-        ).unwrap();
+        let ing_count: i64 = conn
+            .query_row(
+                "SELECT COUNT(*) FROM recipe_ingredient WHERE recipe_id = ?1",
+                rusqlite::params![id],
+                |r| r.get(0),
+            )
+            .unwrap();
         assert_eq!(ing_count, 0);
     }
 
@@ -414,8 +426,10 @@ mod tests {
         let id = insert_recipe(&conn, &simple_draft("Ghost")).unwrap();
         soft_delete_recipe(&conn, &id).unwrap();
 
-        assert!(get_recipe(&conn, &id).unwrap().is_none(),
-                "get_recipe hides soft-deleted (existing L3a behaviour)");
+        assert!(
+            get_recipe(&conn, &id).unwrap().is_none(),
+            "get_recipe hides soft-deleted (existing L3a behaviour)"
+        );
 
         let ghost = get_recipe_including_trashed(&conn, &id).unwrap().unwrap();
         assert_eq!(ghost.title, "Ghost");

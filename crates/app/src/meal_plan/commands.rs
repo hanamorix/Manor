@@ -14,10 +14,11 @@ fn load_entry_with_recipe(
     conn: &rusqlite::Connection,
     entry: MealPlanEntry,
 ) -> MealPlanEntryWithRecipe {
-    let recipe = entry
-        .recipe_id
-        .as_ref()
-        .and_then(|id| recipe::dal::get_recipe_including_trashed(conn, id).ok().flatten());
+    let recipe = entry.recipe_id.as_ref().and_then(|id| {
+        recipe::dal::get_recipe_including_trashed(conn, id)
+            .ok()
+            .flatten()
+    });
     MealPlanEntryWithRecipe {
         entry_date: entry.entry_date,
         recipe,

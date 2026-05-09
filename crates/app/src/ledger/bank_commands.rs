@@ -142,8 +142,7 @@ pub async fn ledger_bank_autocat_pending(state: State<'_, Db>) -> CmdResult<usiz
             Err(_) => return Ok(0),
         };
 
-    let valid_ids: std::collections::HashSet<i64> =
-        categories.iter().map(|c| c.id).collect();
+    let valid_ids: std::collections::HashSet<i64> = categories.iter().map(|c| c.id).collect();
     let conn = state.0.lock().map_err(|e| err("lock_poisoned", e))?;
     let mut updated = 0usize;
     for (tx_id_str, cat_val) in mapping {

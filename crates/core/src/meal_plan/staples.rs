@@ -194,7 +194,14 @@ mod tests {
     #[test]
     fn permanent_delete_only_removes_trashed() {
         let (_d, conn) = fresh();
-        let id = insert_staple(&conn, &StapleDraft { name: "salt".into(), aliases: vec![] }).unwrap();
+        let id = insert_staple(
+            &conn,
+            &StapleDraft {
+                name: "salt".into(),
+                aliases: vec![],
+            },
+        )
+        .unwrap();
         // active rows are not removable via permanent_delete
         permanent_delete_staple(&conn, &id).unwrap();
         assert!(get_staple(&conn, &id).unwrap().is_some());

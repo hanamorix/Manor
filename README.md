@@ -40,8 +40,8 @@ Manor **v0.1 — Heartbeat** ships five rooms:
 
 ### Ledger
 - Transactions, categories, budgets, recurring payments, contracts.
-- Optional **bank sync via GoCardless** (bring your own credentials) — reads your transactions, never initiates a payment.
-- **Auto-categorisation** — the Assistant batch-categorises pending transactions in the background using your local Ollama model.
+- **CSV import first** — bring in bank exports from Monzo, Starling, Barclays, HSBC, NatWest, or a generic CSV; Manor keeps the file local and dedupes repeat imports.
+- **Auto-categorisation** — the Assistant batch-categorises pending CSV transactions in the background using your local Ollama model.
 - Monthly AI review — Manor drafts a short summary of the month's spending; you decide whether to keep it.
 
 ### Hearth

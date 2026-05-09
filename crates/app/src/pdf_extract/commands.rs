@@ -97,10 +97,7 @@ pub fn pdf_extract_pending_exists_for_attachment(
 }
 
 #[tauri::command]
-pub fn pdf_extract_approve_as_is(
-    proposal_id: i64,
-    state: State<'_, Db>,
-) -> Result<String, String> {
+pub fn pdf_extract_approve_as_is(proposal_id: i64, state: State<'_, Db>) -> Result<String, String> {
     let mut conn = state.0.lock().map_err(|e| e.to_string())?;
     proposal::approve_add_maintenance_schedule(&mut conn, proposal_id).map_err(|e| e.to_string())
 }

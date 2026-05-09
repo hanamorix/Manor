@@ -26,7 +26,7 @@ describe("Avatar", () => {
   it("wraps in a button when onClick is provided and fires on click", () => {
     const onClick = vi.fn();
     render(<Avatar onClick={onClick} />);
-    fireEvent.click(screen.getByRole("button", { name: /Open conversation with Manor/ }));
+    fireEvent.click(screen.getByRole("button", { name: /Toggle conversation with Manor/ }));
     expect(onClick).toHaveBeenCalledTimes(1);
   });
 

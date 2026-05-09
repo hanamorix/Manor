@@ -213,11 +213,9 @@ mod tests {
         let id = insert(&conn, cid, Role::User, "hi").unwrap();
         let now_secs = chrono::Utc::now().timestamp();
         let stored: i64 = conn
-            .query_row(
-                "SELECT created_at FROM message WHERE id = ?1",
-                [id],
-                |r| r.get(0),
-            )
+            .query_row("SELECT created_at FROM message WHERE id = ?1", [id], |r| {
+                r.get(0)
+            })
             .unwrap();
         // Must be within 5 seconds of now, in seconds (not ms).
         assert!(

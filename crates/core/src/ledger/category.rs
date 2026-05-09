@@ -89,8 +89,8 @@ pub fn delete(conn: &Connection, id: i64) -> Result<()> {
 /// Returns the first default-category id whose keyword substring matches the text
 /// (case-insensitive). Returns None if no rule matches.
 ///
-/// This is the shared keyword categorizer promoted from CSV-only to a shared helper
-/// (spec §1.5). The bank sync engine and CSV importer both use this.
+/// This is the shared keyword categorizer used by the CSV importer and
+/// assistant-driven auto-categorisation.
 pub fn keyword_classify(_conn: &Connection, text: &str) -> Result<Option<i64>> {
     let t = text.to_uppercase();
     const RULES: &[(&str, i64)] = &[

@@ -38,13 +38,17 @@ pub fn get_entry(conn: &Connection, date: &str) -> Result<Option<MealPlanEntry>>
         "SELECT id, entry_date, recipe_id, created_at, updated_at
          FROM meal_plan_entry WHERE entry_date = ?1",
     )?;
-    let row = stmt.query_row(params![date], |r| Ok(MealPlanEntry {
-        id: r.get(0)?,
-        entry_date: r.get(1)?,
-        recipe_id: r.get(2)?,
-        created_at: r.get(3)?,
-        updated_at: r.get(4)?,
-    })).optional()?;
+    let row = stmt
+        .query_row(params![date], |r| {
+            Ok(MealPlanEntry {
+                id: r.get(0)?,
+                entry_date: r.get(1)?,
+                recipe_id: r.get(2)?,
+                created_at: r.get(3)?,
+                updated_at: r.get(4)?,
+            })
+        })
+        .optional()?;
     Ok(row)
 }
 
@@ -61,7 +65,10 @@ pub fn set_entry(conn: &Connection, date: &str, recipe_id: &str) -> Result<()> {
 }
 
 pub fn clear_entry(conn: &Connection, date: &str) -> Result<()> {
-    conn.execute("DELETE FROM meal_plan_entry WHERE entry_date = ?1", params![date])?;
+    conn.execute(
+        "DELETE FROM meal_plan_entry WHERE entry_date = ?1",
+        params![date],
+    )?;
     Ok(())
 }
 
@@ -80,9 +87,12 @@ mod tests {
     fn insert_recipe(conn: &Connection, title: &str) -> String {
         let draft = crate::recipe::RecipeDraft {
             title: title.into(),
-            servings: None, prep_time_mins: None, cook_time_mins: None,
+            servings: None,
+            prep_time_mins: None,
+            cook_time_mins: None,
             instructions: "".into(),
-            source_url: None, source_host: None,
+            source_url: None,
+            source_host: None,
             import_method: crate::recipe::ImportMethod::Manual,
             hero_attachment_uuid: None,
             ingredients: vec![],
@@ -98,9 +108,12 @@ mod tests {
 
         let week = get_week(&conn, "2026-04-20").unwrap();
         assert_eq!(week.len(), 7);
-        assert_eq!(week[0].entry_date, "2026-04-20"); assert!(week[0].recipe_id.is_none());
-        assert_eq!(week[2].entry_date, "2026-04-22"); assert_eq!(week[2].recipe_id.as_deref(), Some(rid.as_str()));
-        assert_eq!(week[6].entry_date, "2026-04-26"); assert!(week[6].recipe_id.is_none());
+        assert_eq!(week[0].entry_date, "2026-04-20");
+        assert!(week[0].recipe_id.is_none());
+        assert_eq!(week[2].entry_date, "2026-04-22");
+        assert_eq!(week[2].recipe_id.as_deref(), Some(rid.as_str()));
+        assert_eq!(week[6].entry_date, "2026-04-26");
+        assert!(week[6].recipe_id.is_none());
     }
 
     #[test]

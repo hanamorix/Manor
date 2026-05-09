@@ -17,8 +17,8 @@ pub async fn duckduckgo_top_n(
         "https://html.duckduckgo.com/html/?q={}",
         urlencoding::encode(query)
     );
-    let vetted = manor_core::net::ssrf::vet_url(&url)
-        .map_err(|e| anyhow::anyhow!("url rejected: {e}"))?;
+    let vetted =
+        manor_core::net::ssrf::vet_url(&url).map_err(|e| anyhow::anyhow!("url rejected: {e}"))?;
     let resp = client
         .get(vetted)
         .send()
