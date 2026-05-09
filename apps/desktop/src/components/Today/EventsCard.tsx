@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Calendar } from "lucide-react";
+import { Calendar, Plus } from "lucide-react";
 import { useTodayStore } from "../../lib/today/state";
 import { useSettingsStore } from "../../lib/settings/state";
 import { listEventsToday } from "../../lib/today/ipc";
@@ -17,6 +17,7 @@ export default function EventsCard() {
   const events = useTodayStore((s) => s.events);
   const setEvents = useTodayStore((s) => s.setEvents);
   const accounts = useSettingsStore((s) => s.accounts);
+  const setSettingsOpen = useSettingsStore((s) => s.setModalOpen);
 
   const [showAdd, setShowAdd] = useState(false);
   const [editingEvent, setEditingEvent] = useState<Event | null>(null);
@@ -56,9 +57,28 @@ export default function EventsCard() {
       </SectionLabel>
 
       {events.length === 0 ? (
-        <p style={{ fontStyle: "italic", color: "var(--ink-soft)", margin: 0, fontSize: 13 }}>
-          No events today.
-        </p>
+        <button
+          type="button"
+          onClick={() => (canAdd ? setShowAdd(true) : setSettingsOpen(true))}
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: 8,
+            width: "100%",
+            padding: "8px 4px",
+            background: "transparent",
+            border: "none",
+            borderBottom: "1px solid var(--hairline)",
+            cursor: "pointer",
+            fontSize: 13,
+            color: "var(--ink-soft)",
+            fontFamily: "inherit",
+            textAlign: "left",
+          }}
+        >
+          <Plus size={14} strokeWidth={1.8} />
+          <span>{canAdd ? "Add an event" : "Connect a calendar in Settings →"}</span>
+        </button>
       ) : (
         <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
           {events.map((e) => (
