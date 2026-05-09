@@ -13,6 +13,8 @@ use crate::assistant::proposal_error::ApplyError;
 use crate::assistant::task;
 use crate::assistant::tolerant;
 
+pub mod approvers;
+
 #[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq, Eq)]
 #[serde(rename_all = "snake_case")]
 pub enum Status {
@@ -138,6 +140,12 @@ pub fn list(conn: &Connection, status: Option<&str>) -> Result<Vec<Proposal>> {
 
 /// Apply a pending `add_task` proposal: insert the task, mark proposal as `applied`.
 /// Returns the refreshed list of all open tasks (caller usually wants this for UI sync).
+///
+/// **Phase 1.D shim.** The body delegates to `approvers::add_task::approve`,
+/// which has the uniform signature the proposal_registry (Task 1.C) will use.
+/// This wrapper retains kind/status validation, transaction lifecycle, and the
+/// `Vec<Task>` return shape for existing call sites + tests. Phase 1.E
+/// generalises this further; for now it stays.
 pub fn approve_add_task(
     conn: &mut Connection,
     id: i64,
@@ -163,14 +171,8 @@ pub fn approve_add_task(
         bail!("proposal {id} has unsupported kind: {kind}");
     }
 
-    let args: AddTaskArgs = serde_json::from_str(&diff)?;
-    let due_date = args.due_date.unwrap_or_else(|| today_iso.to_string());
-    task::insert(&tx, &args.title, Some(&due_date), Some(id))?;
-
-    tx.execute(
-        "UPDATE proposal SET status = 'applied', applied_at = ?1 WHERE id = ?2",
-        params![Utc::now().timestamp(), id],
-    )?;
+    approvers::add_task::approve(&tx, id, &diff, Some(today_iso))
+        .map_err(|e| anyhow::anyhow!("{e}"))?;
 
     tx.commit()?;
     task::list_open(conn)
@@ -189,6 +191,13 @@ pub fn reject(conn: &Connection, id: i64) -> Result<()> {
 /// Apply a pending `add_maintenance_schedule` proposal verbatim.
 /// Inserts the schedule + marks the proposal `applied`.
 /// Returns the inserted schedule's id.
+///
+/// **Phase 1.D shim.** Delegates to `approvers::add_maintenance_schedule::approve`,
+/// then re-reads the inserted schedule's id for the legacy return contract.
+/// Phase 1.E will generalise this; the override variant
+/// (`approve_add_maintenance_schedule_with_override`) remains bespoke until
+/// then because override semantics aren't yet part of the uniform approver
+/// signature.
 pub fn approve_add_maintenance_schedule(conn: &mut Connection, id: i64) -> Result<String> {
     let tx = conn.transaction()?;
 
@@ -210,20 +219,8 @@ pub fn approve_add_maintenance_schedule(conn: &mut Connection, id: i64) -> Resul
         bail!("proposal {id} has unsupported kind: {kind}");
     }
 
-    let args: AddMaintenanceScheduleArgs = serde_json::from_str(&diff)?;
-    let draft = crate::maintenance::MaintenanceScheduleDraft {
-        asset_id: args.asset_id,
-        task: args.task,
-        interval_months: args.interval_months,
-        last_done_date: None,
-        notes: args.notes,
-    };
-    let schedule_id = crate::maintenance::dal::insert_schedule(&tx, &draft)?;
-
-    tx.execute(
-        "UPDATE proposal SET status = 'applied', applied_at = ?1 WHERE id = ?2",
-        params![Utc::now().timestamp(), id],
-    )?;
+    let schedule_id = approvers::add_maintenance_schedule::approve_returning_id(&tx, id, &diff)
+        .map_err(|e| anyhow::anyhow!("{e}"))?;
 
     tx.commit()?;
     Ok(schedule_id)
