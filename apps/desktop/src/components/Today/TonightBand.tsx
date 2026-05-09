@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Utensils, Ban } from "lucide-react";
 import { useMealPlanStore } from "../../lib/meal_plan/meal-plan-state";
 import { useHearthViewStore } from "../../lib/hearth/view-state";
+import { useNavStore } from "../../lib/nav";
 import { settingGet } from "../../lib/foundation/ipc";
 import * as recipeIpc from "../../lib/recipe/recipe-ipc";
 
@@ -26,7 +27,10 @@ export function TonightBand() {
   const recipe = tonight?.recipe;
   const isGhost = recipe?.deleted_at != null;
 
-  const planHearthAndWeek = () => { setSubview("this_week"); };
+  const planHearthAndWeek = () => {
+    useNavStore.getState().setView("hearth");
+    setSubview("this_week");
+  };
 
   const bandStyle: React.CSSProperties = {
     display: "flex", alignItems: "center", gap: 12,
