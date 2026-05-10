@@ -16,7 +16,9 @@ use manor_core::assistant::{
     message,
     message::Role,
     proposal::{self, AddTaskArgs, NewProposal, Proposal},
+    proposal_registry,
     task::{self, Task},
+    Applied, ApplyError,
 };
 use rusqlite::Connection;
 use std::path::PathBuf;
@@ -336,9 +338,25 @@ pub fn list_proposals(
 }
 
 #[tauri::command]
-pub fn approve_proposal(state: State<'_, Db>, id: i64) -> Result<Vec<Task>, String> {
-    let mut conn = state.0.lock().map_err(|e| e.to_string())?;
-    proposal::approve_add_task(&mut conn, id, &today_local_iso()).map_err(|e| e.to_string())
+pub fn approve_proposal(state: State<'_, Db>, id: i64) -> Result<Applied, ApplyError> {
+    let mut conn = state
+        .0
+        .lock()
+        .map_err(|e| ApplyError::Internal(format!("db lock: {e}")))?;
+    proposal_registry::approve(&mut conn, id)
+}
+
+#[tauri::command]
+pub fn approve_proposal_with_override(
+    state: State<'_, Db>,
+    id: i64,
+    edited_diff_json: String,
+) -> Result<Applied, ApplyError> {
+    let mut conn = state
+        .0
+        .lock()
+        .map_err(|e| ApplyError::Internal(format!("db lock: {e}")))?;
+    proposal_registry::approve_with_override(&mut conn, id, &edited_diff_json)
 }
 
 #[tauri::command]
@@ -803,5 +821,106 @@ mod tests_send_message {
     fn cleanup_skipped_when_no_error() {
         let events = vec![StreamChunk::Done];
         assert!(!stream_ended_with_unusable_error(&[], &events));
+    }
+}
+
+/// Tests for the Tauri command surface exposed in 1.F. We exercise the same
+/// `proposal_registry::approve(_with_override)` entry points the commands
+/// call, plus assert the wire shape of `ApplyError` (the contract the
+/// frontend pattern-matches against).
+#[cfg(test)]
+mod tests_approve_proposal_command {
+    use super::*;
+    use manor_core::assistant::proposal::{insert, NewProposal, Status};
+    use tempfile::tempdir;
+
+    fn fresh_db() -> (tempfile::TempDir, Connection) {
+        let dir = tempdir().unwrap();
+        let conn = db::init(&dir.path().join("t.db")).unwrap();
+        (dir, conn)
+    }
+
+    #[test]
+    fn approve_returns_applied_for_add_task() {
+        let (_d, mut conn) = fresh_db();
+        let diff = serde_json::json!({ "title": "Buy milk" }).to_string();
+        let pid = insert(
+            &conn,
+            NewProposal {
+                kind: "add_task",
+                rationale: "command-test",
+                diff_json: &diff,
+                skill: "tasks",
+            },
+        )
+        .unwrap();
+
+        let applied = proposal_registry::approve(&mut conn, pid).unwrap();
+        assert_eq!(applied.proposal_id, pid);
+        assert_eq!(applied.status, Status::Applied);
+        assert_eq!(applied.items_applied, 1);
+        assert_eq!(applied.items_failed, 0);
+        assert!(applied.errors.is_empty());
+
+        // Wire-shape: serialise as the frontend will receive it.
+        let json: serde_json::Value =
+            serde_json::from_str(&serde_json::to_string(&applied).unwrap()).unwrap();
+        assert_eq!(json["proposal_id"], pid);
+        assert_eq!(json["status"], "applied");
+        assert_eq!(json["items_applied"], 1);
+        assert_eq!(json["items_failed"], 0);
+        assert!(json["errors"].as_array().unwrap().is_empty());
+    }
+
+    #[test]
+    fn approve_unknown_kind_serialises_to_typed_apply_error() {
+        let (_d, mut conn) = fresh_db();
+        let pid = insert(
+            &conn,
+            NewProposal {
+                kind: "weird_kind",
+                rationale: "command-test",
+                diff_json: "{}",
+                skill: "test",
+            },
+        )
+        .unwrap();
+
+        let err = proposal_registry::approve(&mut conn, pid).unwrap_err();
+
+        // Frontend-facing JSON shape: `{ "type": "UnknownKind", "value": "weird_kind" }`.
+        let json: serde_json::Value =
+            serde_json::from_str(&serde_json::to_string(&err).unwrap()).unwrap();
+        assert_eq!(json["type"], "UnknownKind");
+        assert_eq!(json["value"], "weird_kind");
+    }
+
+    #[test]
+    fn approve_with_override_persists_edited_diff() {
+        let (_d, mut conn) = fresh_db();
+        let original = serde_json::json!({ "title": "original" }).to_string();
+        let pid = insert(
+            &conn,
+            NewProposal {
+                kind: "add_task",
+                rationale: "command-test",
+                diff_json: &original,
+                skill: "tasks",
+            },
+        )
+        .unwrap();
+
+        let edited = serde_json::json!({ "title": "edited via drawer" }).to_string();
+        let applied = proposal_registry::approve_with_override(&mut conn, pid, &edited).unwrap();
+        assert_eq!(applied.status, Status::Applied);
+
+        let title: String = conn
+            .query_row(
+                "SELECT title FROM task WHERE proposal_id = ?1",
+                [pid],
+                |r| r.get(0),
+            )
+            .unwrap();
+        assert_eq!(title, "edited via drawer");
     }
 }

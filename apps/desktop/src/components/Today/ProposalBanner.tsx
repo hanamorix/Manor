@@ -5,6 +5,7 @@ import {
   approveProposal,
   rejectProposal,
   listProposals,
+  listTasks,
   type Proposal,
 } from "../../lib/today/ipc";
 
@@ -48,7 +49,8 @@ export default function ProposalBanner() {
   const handleApprove = async (id: number) => {
     removeProposal(id);
     try {
-      const refreshedTasks = await approveProposal(id);
+      await approveProposal(id);
+      const refreshedTasks = await listTasks();
       setTasks(refreshedTasks);
     } catch {
       void listProposals("pending").then(setPendingProposals);
