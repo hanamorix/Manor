@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
-import { render, screen, fireEvent, cleanup } from "@testing-library/react";
+import { render, screen, fireEvent, cleanup, waitFor } from "@testing-library/react";
 import { PendingProposalsBlock } from "../PendingProposalsBlock";
 import { usePdfExtractStore } from "../../../lib/pdf_extract/state";
 import { useMaintenanceStore } from "../../../lib/maintenance/state";
@@ -12,21 +12,37 @@ vi.mock("../../../lib/maintenance/state", () => ({
   useMaintenanceStore: vi.fn(),
 }));
 
-// Stub ScheduleDrawer; its deps pull in Tauri APIs that don't work in jsdom.
-vi.mock("../DueSoon/ScheduleDrawer", () => ({
-  ScheduleDrawer: ({
-    proposalId,
-    onSaved,
+vi.mock("../../../lib/today/ipc", async () => {
+  const actual = await vi.importActual<typeof import("../../../lib/today/ipc")>(
+    "../../../lib/today/ipc",
+  );
+  return {
+    ...actual,
+    approveProposal: vi.fn(),
+    rejectProposal: vi.fn(),
+  };
+});
+
+// Stub the proposal-edit drawer — its deps pull in Tauri APIs that don't
+// work under jsdom.
+vi.mock("../../Proposal/ProposalScheduleEditDrawer", () => ({
+  ProposalScheduleEditDrawer: ({
+    proposal,
+    onApplied,
   }: {
-    proposalId?: number;
-    onSaved: () => void;
+    proposal: { id: number };
+    onApplied: () => void;
   }) => (
     <div data-testid="schedule-drawer">
-      <span>proposalId={proposalId}</span>
-      <button onClick={onSaved}>Drawer Save</button>
+      <span>proposalId={proposal.id}</span>
+      <button onClick={onApplied}>Drawer Save</button>
     </div>
   ),
 }));
+
+import { approveProposal, rejectProposal } from "../../../lib/today/ipc";
+const mockApprove = vi.mocked(approveProposal);
+const mockReject = vi.mocked(rejectProposal);
 
 const makeProposal = (id: number, task: string, interval: number) => ({
   id,
@@ -48,8 +64,6 @@ const makeProposal = (id: number, task: string, interval: number) => ({
 
 describe("PendingProposalsBlock", () => {
   const loadForAsset = vi.fn();
-  const approveAsIs = vi.fn().mockResolvedValue(undefined);
-  const reject = vi.fn().mockResolvedValue(undefined);
   const loadSchedules = vi.fn();
 
   function mockStores(proposals: unknown[]) {
@@ -57,8 +71,6 @@ describe("PendingProposalsBlock", () => {
       () => ({
         proposalsByAsset: { a1: proposals },
         loadForAsset,
-        approveAsIs,
-        reject,
       }),
     );
     (useMaintenanceStore as unknown as ReturnType<typeof vi.fn>).mockImplementation(
@@ -69,8 +81,8 @@ describe("PendingProposalsBlock", () => {
   }
 
   beforeEach(() => {
-    approveAsIs.mockClear();
-    reject.mockClear();
+    mockApprove.mockReset();
+    mockReject.mockReset();
     loadForAsset.mockClear();
     loadSchedules.mockClear();
   });
@@ -95,32 +107,45 @@ describe("PendingProposalsBlock", () => {
     expect(screen.getByText(/rationale-2/)).toBeInTheDocument();
   });
 
-  it("approve click calls approveAsIs(id, assetId) + loadSchedules", async () => {
+  it("approve click routes through central pipeline + refreshes both stores", async () => {
+    mockApprove.mockResolvedValueOnce({
+      proposal_id: 42,
+      status: "applied",
+      items_applied: 1,
+      items_failed: 0,
+      errors: [],
+    });
     mockStores([makeProposal(42, "Task", 12)]);
     render(<PendingProposalsBlock assetId="a1" />);
-    fireEvent.click(screen.getByLabelText("Approve proposal"));
-    await new Promise((r) => setTimeout(r, 0));
-    expect(approveAsIs).toHaveBeenCalledWith(42, "a1");
-    expect(loadSchedules).toHaveBeenCalledWith("a1");
+    fireEvent.click(screen.getByLabelText("approve"));
+    await waitFor(() => {
+      expect(mockApprove).toHaveBeenCalledWith(42);
+      expect(loadForAsset).toHaveBeenCalledWith("a1");
+      expect(loadSchedules).toHaveBeenCalledWith("a1");
+    });
   });
 
-  it("reject click calls reject(id, assetId)", async () => {
+  it("reject click routes through central pipeline + refreshes both stores", async () => {
+    mockReject.mockResolvedValueOnce(undefined);
     mockStores([makeProposal(7, "Task", 12)]);
     render(<PendingProposalsBlock assetId="a1" />);
-    fireEvent.click(screen.getByLabelText("Reject proposal"));
-    await new Promise((r) => setTimeout(r, 0));
-    expect(reject).toHaveBeenCalledWith(7, "a1");
+    fireEvent.click(screen.getByLabelText("reject"));
+    await waitFor(() => {
+      expect(mockReject).toHaveBeenCalledWith(7);
+      expect(loadForAsset).toHaveBeenCalledWith("a1");
+      expect(loadSchedules).toHaveBeenCalledWith("a1");
+    });
   });
 
   it("edit click opens drawer with proposalId set", () => {
     mockStores([makeProposal(99, "Task", 12)]);
     render(<PendingProposalsBlock assetId="a1" />);
-    fireEvent.click(screen.getByLabelText("Edit proposal"));
+    fireEvent.click(screen.getByLabelText("edit"));
     expect(screen.getByTestId("schedule-drawer")).toBeInTheDocument();
     expect(screen.getByText(/proposalId=99/)).toBeInTheDocument();
   });
 
-  it("handles invalid diff JSON gracefully (skips row)", () => {
+  it("invalid diff JSON falls back to a parse-error card", () => {
     const badProposal = {
       id: 1,
       kind: "add_maintenance_schedule",
@@ -132,7 +157,9 @@ describe("PendingProposalsBlock", () => {
       skill: "pdf_extract",
     };
     mockStores([badProposal]);
-    const { container } = render(<PendingProposalsBlock assetId="a1" />);
-    expect(container.querySelector("[aria-label='Approve proposal']")).toBeNull();
+    render(<PendingProposalsBlock assetId="a1" />);
+    expect(
+      screen.getByText(/could not parse details/),
+    ).toBeInTheDocument();
   });
 });
