@@ -3,7 +3,7 @@
 use crate::assistant::ollama::{
     resolve_model, ChatMessage, ChatRole, OllamaClient, StreamChunk, DEFAULT_ENDPOINT,
 };
-use crate::assistant::prompts::SYSTEM_PROMPT;
+use crate::assistant::prompts::build_system_prompt;
 use crate::assistant::tools;
 use crate::sync::engine::{SyncResult, SyncState};
 use crate::sync::keychain;
@@ -129,7 +129,7 @@ pub async fn send_message(
     };
     let mut chat_msgs: Vec<ChatMessage> = vec![ChatMessage {
         role: ChatRole::System,
-        content: format!("{SYSTEM_PROMPT}\n\n{context_block}"),
+        content: build_system_prompt(&context_block),
     }];
     for m in history {
         if m.content.is_empty() {
