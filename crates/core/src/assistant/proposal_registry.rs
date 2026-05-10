@@ -69,6 +69,67 @@ pub fn approve(conn: &mut Connection, proposal_id: i64) -> Result<Applied, Apply
     })
 }
 
+/// Overwrite the `diff` column of a *pending* proposal.
+///
+/// Used by [`approve_with_override`] to inject the user-edited diff before
+/// dispatching to the same per-kind approver as the verbatim path. Does NOT
+/// validate the JSON against any kind-specific schema — that's the
+/// approver's job.
+///
+/// Errors:
+/// - [`ApplyError::Conflict`] — proposal exists but is not `pending`.
+/// - [`ApplyError::Internal`] — proposal id not found, or any DB error.
+pub fn update_diff(
+    conn: &Connection,
+    id: i64,
+    edited_diff_json: &str,
+) -> Result<(), ApplyError> {
+    let rows = conn
+        .execute(
+            "UPDATE proposal SET diff = ?1 WHERE id = ?2 AND status = 'pending'",
+            rusqlite::params![edited_diff_json, id],
+        )
+        .map_err(|e| ApplyError::Internal(format!("db update_diff: {e}")))?;
+    if rows == 0 {
+        // Either id doesn't exist, or status != pending. Distinguish:
+        let exists: bool = conn
+            .query_row(
+                "SELECT 1 FROM proposal WHERE id = ?1",
+                rusqlite::params![id],
+                |_| Ok(true),
+            )
+            .optional()
+            .map_err(|e| ApplyError::Internal(format!("db: {e}")))?
+            .unwrap_or(false);
+        return Err(if exists {
+            ApplyError::Conflict("proposal not pending".into())
+        } else {
+            ApplyError::Internal(format!("proposal {id} not found"))
+        });
+    }
+    Ok(())
+}
+
+/// Approve a pending proposal whose diff has been edited by the user.
+///
+/// Equivalent to [`update_diff`] followed by [`approve`] — the per-kind
+/// approver runs on the edited diff, so the same validation, transactional
+/// guarantees, and error shapes apply.
+///
+/// `update_diff` is **not** transactional with the subsequent `approve` —
+/// if the approver returns an error, the diff change is already committed
+/// (the proposal stays `pending` with the edited diff persisted, ready for
+/// the user to retry or reject). This matches the expected drawer-edit UX:
+/// edits are visible even when approval fails.
+pub fn approve_with_override(
+    conn: &mut Connection,
+    proposal_id: i64,
+    edited_diff_json: &str,
+) -> Result<Applied, ApplyError> {
+    update_diff(conn, proposal_id, edited_diff_json)?;
+    approve(conn, proposal_id)
+}
+
 /// Read the `kind` column for a proposal. Exposed for the Tauri layer to
 /// switch on if needed (e.g. routing the override-mode call before invoking
 /// the registry).
@@ -142,6 +203,7 @@ mod tests {
             notes: String::new(),
             source_attachment_uuid: "att-1".into(),
             tier: "ollama".into(),
+            last_done_date: None,
         };
         let diff = serde_json::to_string(&args).unwrap();
         insert(
@@ -308,6 +370,155 @@ mod tests {
             })
             .unwrap();
         assert_eq!(task_count, 0);
+    }
+
+    // ── Task 1.E — generic approve_with_override ─────────────────────────
+
+    #[test]
+    fn approve_with_override_persists_edited_diff_for_add_task() {
+        let (_d, mut conn) = fresh_conn();
+        let pid = make_add_task_proposal(&conn, "Original title");
+
+        let edited = serde_json::json!({ "title": "Edited title" }).to_string();
+        let applied = approve_with_override(&mut conn, pid, &edited).unwrap();
+        assert_eq!(applied.proposal_id, pid);
+        assert_eq!(applied.status, Status::Applied);
+        assert_eq!(applied.items_applied, 1);
+
+        // The persisted task carries the *edited* title, not the original.
+        let title: String = conn
+            .query_row(
+                "SELECT title FROM task WHERE proposal_id = ?1",
+                [pid],
+                |r| r.get(0),
+            )
+            .unwrap();
+        assert_eq!(title, "Edited title");
+
+        // The proposal row's diff column now holds the edited JSON.
+        let diff_on_row: String = conn
+            .query_row("SELECT diff FROM proposal WHERE id = ?1", [pid], |r| r.get(0))
+            .unwrap();
+        assert_eq!(diff_on_row, edited);
+    }
+
+    #[test]
+    fn approve_with_override_for_add_maintenance_schedule_uses_edited_diff() {
+        let (_d, mut conn) = fresh_conn();
+        let asset_id = insert_test_asset(&conn);
+        let pid = make_add_maint_proposal(&conn, &asset_id);
+
+        let edited = serde_json::to_string(&AddMaintenanceScheduleArgs {
+            asset_id: asset_id.clone(),
+            task: "Edited service".into(),
+            interval_months: 24,
+            notes: "Edited notes".into(),
+            source_attachment_uuid: "att-1".into(),
+            tier: "ollama".into(),
+            last_done_date: None,
+        })
+        .unwrap();
+
+        let applied = approve_with_override(&mut conn, pid, &edited).unwrap();
+        assert_eq!(applied.status, Status::Applied);
+        assert_eq!(applied.items_applied, 1);
+
+        let (task, interval): (String, i32) = conn
+            .query_row(
+                "SELECT task, interval_months FROM maintenance_schedule WHERE asset_id = ?1",
+                [&asset_id],
+                |r| Ok((r.get(0)?, r.get(1)?)),
+            )
+            .unwrap();
+        assert_eq!(task, "Edited service");
+        assert_eq!(interval, 24);
+    }
+
+    #[test]
+    fn approve_with_override_returns_conflict_for_non_pending() {
+        let (_d, mut conn) = fresh_conn();
+        let pid = make_add_task_proposal(&conn, "X");
+        // First approval flips it to applied.
+        approve(&mut conn, pid).unwrap();
+
+        let edited = serde_json::json!({ "title": "Y" }).to_string();
+        let err = approve_with_override(&mut conn, pid, &edited).unwrap_err();
+        match err {
+            ApplyError::Conflict(msg) => assert_eq!(msg, "proposal not pending"),
+            other => panic!("expected Conflict, got {other:?}"),
+        }
+    }
+
+    #[test]
+    fn update_diff_returns_internal_for_unknown_id() {
+        let (_d, conn) = fresh_conn();
+        let err = update_diff(&conn, 99_999, r#"{"title":"x"}"#).unwrap_err();
+        match err {
+            ApplyError::Internal(msg) => {
+                assert!(msg.contains("99999") && msg.contains("not found"), "got: {msg}")
+            }
+            other => panic!("expected Internal, got {other:?}"),
+        }
+    }
+
+    #[test]
+    fn update_diff_returns_conflict_for_non_pending() {
+        let (_d, mut conn) = fresh_conn();
+        let pid = make_add_task_proposal(&conn, "X");
+        approve(&mut conn, pid).unwrap();
+
+        let err = update_diff(&conn, pid, r#"{"title":"Y"}"#).unwrap_err();
+        match err {
+            ApplyError::Conflict(msg) => assert_eq!(msg, "proposal not pending"),
+            other => panic!("expected Conflict, got {other:?}"),
+        }
+    }
+
+    #[test]
+    fn update_diff_persists_for_pending_proposal() {
+        let (_d, conn) = fresh_conn();
+        let pid = make_add_task_proposal(&conn, "Original");
+        update_diff(&conn, pid, r#"{"title":"Edited"}"#).unwrap();
+        let diff: String = conn
+            .query_row("SELECT diff FROM proposal WHERE id = ?1", [pid], |r| r.get(0))
+            .unwrap();
+        assert_eq!(diff, r#"{"title":"Edited"}"#);
+    }
+
+    #[test]
+    fn approve_with_override_propagates_approver_invalid_arg() {
+        let (_d, mut conn) = fresh_conn();
+        let pid = make_add_task_proposal(&conn, "Real");
+
+        // The approver will reject "not json" with InvalidArg{field:"diff"}.
+        let err = approve_with_override(&mut conn, pid, "not json").unwrap_err();
+        match err {
+            ApplyError::InvalidArg { field, .. } => assert_eq!(field, "diff"),
+            other => panic!("expected InvalidArg, got {other:?}"),
+        }
+
+        // Approver transaction rolled back — proposal still pending, no task.
+        // The diff *was* updated though (update_diff is not in the approve tx).
+        let status: String = conn
+            .query_row("SELECT status FROM proposal WHERE id = ?1", [pid], |r| {
+                r.get(0)
+            })
+            .unwrap();
+        assert_eq!(status, "pending");
+
+        let task_count: i64 = conn
+            .query_row(
+                "SELECT COUNT(*) FROM task WHERE proposal_id = ?1",
+                [pid],
+                |r| r.get(0),
+            )
+            .unwrap();
+        assert_eq!(task_count, 0);
+
+        let diff: String = conn
+            .query_row("SELECT diff FROM proposal WHERE id = ?1", [pid], |r| r.get(0))
+            .unwrap();
+        assert_eq!(diff, "not json");
     }
 
     #[test]

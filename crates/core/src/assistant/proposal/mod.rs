@@ -69,6 +69,13 @@ pub struct AddMaintenanceScheduleArgs {
     pub notes: String,
     pub source_attachment_uuid: String,
     pub tier: String,
+    /// Optional ISO-date the schedule was last performed. Populated when
+    /// the user edits the proposal-edit drawer with a known last-done
+    /// date; `None` for AI-generated proposals where it isn't known.
+    /// Serde-default so legacy diffs (which omit the field entirely)
+    /// continue to deserialise.
+    #[serde(default)]
+    pub last_done_date: Option<String>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -192,12 +199,11 @@ pub fn reject(conn: &Connection, id: i64) -> Result<()> {
 /// Inserts the schedule + marks the proposal `applied`.
 /// Returns the inserted schedule's id.
 ///
-/// **Phase 1.D shim.** Delegates to `approvers::add_maintenance_schedule::approve`,
-/// then re-reads the inserted schedule's id for the legacy return contract.
-/// Phase 1.E will generalise this; the override variant
-/// (`approve_add_maintenance_schedule_with_override`) remains bespoke until
-/// then because override semantics aren't yet part of the uniform approver
-/// signature.
+/// **Phase 1.D shim.** Delegates to `approvers::add_maintenance_schedule::approve_returning_id`,
+/// then surfaces the inserted schedule's id for the legacy return contract.
+/// Used by both the verbatim PDF flow and the override flow (after the
+/// override flow has stamped the user's edits into the proposal's `diff`
+/// via `proposal_registry::update_diff`).
 pub fn approve_add_maintenance_schedule(conn: &mut Connection, id: i64) -> Result<String> {
     let tx = conn.transaction()?;
 
@@ -221,45 +227,6 @@ pub fn approve_add_maintenance_schedule(conn: &mut Connection, id: i64) -> Resul
 
     let schedule_id = approvers::add_maintenance_schedule::approve_returning_id(&tx, id, &diff)
         .map_err(|e| anyhow::anyhow!("{e}"))?;
-
-    tx.commit()?;
-    Ok(schedule_id)
-}
-
-/// Apply a pending `add_maintenance_schedule` proposal using caller-supplied
-/// edited fields (overrides the diff's values). Used by ScheduleDrawer in
-/// proposal-edit mode. Returns the inserted schedule's id.
-pub fn approve_add_maintenance_schedule_with_override(
-    conn: &mut Connection,
-    id: i64,
-    edited: &crate::maintenance::MaintenanceScheduleDraft,
-) -> Result<String> {
-    let tx = conn.transaction()?;
-
-    let row: Option<(String, String)> = tx
-        .query_row(
-            "SELECT kind, status FROM proposal WHERE id = ?1",
-            [id],
-            |r| Ok((r.get(0)?, r.get(1)?)),
-        )
-        .optional()?;
-    let (kind, status) = match row {
-        Some(r) => r,
-        None => bail!("proposal {id} not found"),
-    };
-    if kind != "add_maintenance_schedule" {
-        bail!("proposal {id} is not an add_maintenance_schedule");
-    }
-    if status != "pending" {
-        bail!("proposal {id} is not pending (status={status})");
-    }
-
-    let schedule_id = crate::maintenance::dal::insert_schedule(&tx, edited)?;
-
-    tx.execute(
-        "UPDATE proposal SET status = 'applied', applied_at = ?1 WHERE id = ?2",
-        params![Utc::now().timestamp(), id],
-    )?;
 
     tx.commit()?;
     Ok(schedule_id)
@@ -471,6 +438,7 @@ mod tests {
             notes: String::new(),
             source_attachment_uuid: source_attachment_uuid.into(),
             tier: "ollama".into(),
+            last_done_date: None,
         };
         let diff = serde_json::to_string(&args).unwrap();
         insert(
@@ -543,85 +511,10 @@ mod tests {
         assert!(err.contains("unsupported kind"), "got: {}", err);
     }
 
-    #[test]
-    fn approve_with_override_uses_edited_fields() {
-        let (_d, mut conn) = fresh_conn();
-        let asset_id = insert_test_asset(&conn);
-        let pid = insert_pending_schedule_proposal(&conn, &asset_id, "Original", 12, "att");
-
-        let edited = crate::maintenance::MaintenanceScheduleDraft {
-            asset_id: asset_id.clone(),
-            task: "Edited task".into(),
-            interval_months: 24,
-            last_done_date: None,
-            notes: "edited notes".into(),
-        };
-        let sched_id =
-            approve_add_maintenance_schedule_with_override(&mut conn, pid, &edited).unwrap();
-
-        let s = crate::maintenance::dal::get_schedule(&conn, &sched_id)
-            .unwrap()
-            .unwrap();
-        assert_eq!(s.task, "Edited task");
-        assert_eq!(s.interval_months, 24);
-        assert_eq!(s.notes, "edited notes");
-
-        let status: String = conn
-            .query_row("SELECT status FROM proposal WHERE id = ?1", [pid], |r| {
-                r.get(0)
-            })
-            .unwrap();
-        assert_eq!(status, "applied");
-    }
-
-    #[test]
-    fn approve_with_override_rejects_wrong_kind() {
-        let (_d, mut conn) = fresh_conn();
-        let pid = insert(
-            &conn,
-            NewProposal {
-                kind: "add_task",
-                rationale: "r",
-                diff_json: r#"{"title":"t","due_date":null}"#,
-                skill: "test",
-            },
-        )
-        .unwrap();
-        let edited = crate::maintenance::MaintenanceScheduleDraft {
-            asset_id: "x".into(),
-            task: "x".into(),
-            interval_months: 12,
-            last_done_date: None,
-            notes: String::new(),
-        };
-        let err = approve_add_maintenance_schedule_with_override(&mut conn, pid, &edited)
-            .unwrap_err()
-            .to_string();
-        assert!(
-            err.contains("not an add_maintenance_schedule"),
-            "got: {}",
-            err
-        );
-    }
-
-    #[test]
-    fn approve_with_override_rejects_non_pending() {
-        let (_d, mut conn) = fresh_conn();
-        let asset_id = insert_test_asset(&conn);
-        let pid = insert_pending_schedule_proposal(&conn, &asset_id, "Service", 12, "att");
-        reject(&conn, pid).unwrap();
-        let edited = crate::maintenance::MaintenanceScheduleDraft {
-            asset_id: asset_id.clone(),
-            task: "x".into(),
-            interval_months: 12,
-            last_done_date: None,
-            notes: String::new(),
-        };
-        let err = approve_add_maintenance_schedule_with_override(&mut conn, pid, &edited)
-            .unwrap_err()
-            .to_string();
-        assert!(err.contains("not pending"), "got: {}", err);
-    }
+    // (The bespoke approve_add_maintenance_schedule_with_override and its
+    // tests were removed in Phase 1.E. Override semantics now flow through
+    // proposal_registry::update_diff + approve_with_override; the override
+    // test coverage lives in proposal_registry::tests.)
 
     // ── Task 1.G — apply_errors_json column + helpers ────────────────────
 

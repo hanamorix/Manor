@@ -2,7 +2,8 @@
 
 use super::pipeline::{extract_and_propose, ExtractOutcome, TierRequest};
 use crate::assistant::commands::Db;
-use manor_core::assistant::proposal::{self, Proposal};
+use manor_core::assistant::proposal::{self, AddMaintenanceScheduleArgs, Proposal};
+use manor_core::assistant::proposal_registry;
 use manor_core::maintenance::MaintenanceScheduleDraft;
 use tauri::{AppHandle, Manager, State};
 
@@ -116,8 +117,38 @@ pub fn pdf_extract_approve_with_override(
     state: State<'_, Db>,
 ) -> Result<String, String> {
     let mut conn = state.0.lock().map_err(|e| e.to_string())?;
-    proposal::approve_add_maintenance_schedule_with_override(&mut conn, proposal_id, &draft)
-        .map_err(|e| e.to_string())
+
+    // Read the existing diff to preserve the AI-generated provenance fields
+    // (`source_attachment_uuid`, `tier`) that the user's drawer doesn't surface.
+    let existing_diff: String = conn
+        .query_row(
+            "SELECT diff FROM proposal WHERE id = ?1",
+            [proposal_id],
+            |r| r.get(0),
+        )
+        .map_err(|e| format!("read existing diff: {e}"))?;
+    let existing: AddMaintenanceScheduleArgs =
+        serde_json::from_str(&existing_diff).map_err(|e| format!("parse existing diff: {e}"))?;
+
+    // Overlay the user's edits onto the existing args. last_done_date is a
+    // user-only field; source_attachment_uuid + tier carry through unchanged.
+    let edited_args = AddMaintenanceScheduleArgs {
+        asset_id: draft.asset_id,
+        task: draft.task,
+        interval_months: draft.interval_months,
+        notes: draft.notes,
+        source_attachment_uuid: existing.source_attachment_uuid,
+        tier: existing.tier,
+        last_done_date: draft.last_done_date,
+    };
+    let edited_diff =
+        serde_json::to_string(&edited_args).map_err(|e| format!("serialise edited diff: {e}"))?;
+
+    // Stamp the edited diff onto the proposal, then approve via the same
+    // approver as the verbatim path. Returns the inserted schedule's id.
+    proposal_registry::update_diff(&conn, proposal_id, &edited_diff)
+        .map_err(|e| e.to_string())?;
+    proposal::approve_add_maintenance_schedule(&mut conn, proposal_id).map_err(|e| e.to_string())
 }
 
 #[cfg(test)]
@@ -155,6 +186,7 @@ mod tests {
             notes: String::new(),
             source_attachment_uuid: source.into(),
             tier: "ollama".into(),
+            last_done_date: None,
         };
         let diff = serde_json::to_string(&args).unwrap();
         proposal::insert(

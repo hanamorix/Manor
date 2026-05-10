@@ -38,7 +38,7 @@ pub fn approve_returning_id(
         asset_id: args.asset_id,
         task: args.task,
         interval_months: args.interval_months,
-        last_done_date: None,
+        last_done_date: args.last_done_date,
         notes: args.notes,
     };
 
@@ -99,6 +99,7 @@ mod tests {
             notes: "from manual".into(),
             source_attachment_uuid: "att-1".into(),
             tier: "ollama".into(),
+            last_done_date: None,
         };
         let diff = serde_json::to_string(&args).unwrap();
         let pid = insert(
