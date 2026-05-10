@@ -117,15 +117,19 @@ pub async fn send_message(
         .send(StreamChunk::Started(assistant_row_id))
         .map_err(|e| e.to_string())?;
 
-    // 3. Build chat-message history (system prompt + today context + recent turns).
-    let today_block = {
+    // 3. Build chat-message history (system prompt + dynamic per-room context + recent turns).
+    //
+    // The classifier reads the *user's latest message* (not full history) — multi-room
+    // conversations re-classify each turn so context tracks the user's focus.
+    let context_block = {
+        let slices = crate::assistant::context::classify(&content);
         let conn = state.0.lock().map_err(|e| e.to_string())?;
-        crate::assistant::today::compose_today_context(Local::now(), &conn)
+        crate::assistant::context::render(Local::now(), &conn, slices)
             .map_err(|e| e.to_string())?
     };
     let mut chat_msgs: Vec<ChatMessage> = vec![ChatMessage {
         role: ChatRole::System,
-        content: format!("{SYSTEM_PROMPT}\n\n{today_block}"),
+        content: format!("{SYSTEM_PROMPT}\n\n{context_block}"),
     }];
     for m in history {
         if m.content.is_empty() {
