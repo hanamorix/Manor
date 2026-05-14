@@ -17,7 +17,7 @@ use manor_core::assistant::{
     message::Role,
     proposal::{
         self, AddChoreArgs, AddRecurringBlockArgs, AddTaskArgs, AddTimeBlockArgs,
-        CompleteChoreArgs, NewProposal, Proposal,
+        CompleteChoreArgs, CompleteTaskArgs, NewProposal, Proposal,
     },
     proposal_registry,
     task::{self, Task},
@@ -268,6 +268,27 @@ pub async fn send_message(
                             rationale: &rationale,
                             diff_json: &diff_json,
                             skill: "rhythm",
+                        },
+                    )
+                    .map_err(|e| e.to_string())?
+                };
+                on_event
+                    .send(StreamChunk::Proposal(proposal_id))
+                    .map_err(|e| e.to_string())?;
+            }
+            "complete_task" => {
+                let args: CompleteTaskArgs = serde_json::from_value(tool_call.function.arguments)
+                    .map_err(|e| format!("bad complete_task args: {e}"))?;
+                let diff_json = serde_json::to_string(&args).map_err(|e| e.to_string())?;
+                let proposal_id = {
+                    let conn = state.0.lock().map_err(|e| e.to_string())?;
+                    proposal::insert(
+                        &conn,
+                        NewProposal {
+                            kind: "complete_task",
+                            rationale: &rationale,
+                            diff_json: &diff_json,
+                            skill: "tasks",
                         },
                     )
                     .map_err(|e| e.to_string())?

@@ -54,6 +54,19 @@ const addTaskHandler: ProposalCardHandler<AddTaskParsed> = {
   },
 };
 
+// ── complete_task ──────────────────────────────────────────────────────
+
+export interface CompleteTaskParsed {
+  task_id?: number;
+  title?: string;
+}
+
+const completeTaskHandler: ProposalCardHandler<CompleteTaskParsed> = {
+  parse: (diffJson) => JSON.parse(diffJson) as CompleteTaskParsed,
+  summarise: (parsed) =>
+    `Complete task: ${parsed.title ?? `#${parsed.task_id ?? "unknown"}`}`,
+};
+
 // ── add_chore ───────────────────────────────────────────────────────────
 
 export interface AddChoreParsed {
@@ -170,6 +183,7 @@ const addMaintenanceScheduleHandler: ProposalCardHandler<AddMaintenanceScheduleP
 export const PROPOSAL_KIND_HANDLERS: Record<string, ProposalCardHandler<any>> =
   {
     add_task: addTaskHandler,
+    complete_task: completeTaskHandler,
     add_chore: addChoreHandler,
     complete_chore: completeChoreHandler,
     add_time_block: addTimeBlockHandler,

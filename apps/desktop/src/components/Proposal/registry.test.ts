@@ -3,6 +3,7 @@ import {
   PROPOSAL_KIND_HANDLERS,
   getProposalHandler,
   type AddTaskParsed,
+  type CompleteTaskParsed,
   type AddChoreParsed,
   type AddTimeBlockParsed,
   type CompleteChoreParsed,
@@ -18,6 +19,7 @@ describe("PROPOSAL_KIND_HANDLERS", () => {
       "add_task",
       "add_time_block",
       "complete_chore",
+      "complete_task",
     ]);
   });
 });
@@ -65,6 +67,24 @@ describe("add_task handler", () => {
 
   it("does not declare supportsEdit in Phase 1", () => {
     expect(handler.supportsEdit).toBeFalsy();
+  });
+});
+
+describe("complete_task handler", () => {
+  const handler = PROPOSAL_KIND_HANDLERS.complete_task;
+
+  it("parses task title completion diffs", () => {
+    const parsed = handler.parse(
+      JSON.stringify({ title: "Buy milk" }),
+    ) as CompleteTaskParsed;
+    expect(parsed.title).toBe("Buy milk");
+  });
+
+  it("summarises title and id targets", () => {
+    expect(handler.summarise({ title: "Buy milk" })).toBe(
+      "Complete task: Buy milk",
+    );
+    expect(handler.summarise({ task_id: 12 })).toBe("Complete task: #12");
   });
 });
 

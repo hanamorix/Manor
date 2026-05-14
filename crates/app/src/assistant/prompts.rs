@@ -50,11 +50,11 @@ pub const PROMPT_PREAMBLE: &str = concat!(
 pub const PROMPT_TOOLS: &str = concat!(
     "Tools:\n",
     "- add_task — add a single one-off to-do for today or a chosen date.\n",
+    "- complete_task — mark an existing one-off to-do complete.\n",
     "- add_chore — add one or more recurring household chores, with optional rotation.\n",
     "- complete_chore — mark an existing recurring household chore complete.\n",
     "- add_time_block — add a one-off focus, admin, errand, or DND block.\n",
     "- add_recurring_block — add a repeating focus, admin, errand, or DND block.\n",
-    // TODO Phase 3: complete_task — mark a known task done.
     // TODO Phase 3: add_event — create a CalDAV event (batched if many).
     // TODO Phase 4: add_transaction — record a money movement (in pence).
     // TODO Phase 4: set_budget — set a monthly budget for a category.
@@ -153,6 +153,7 @@ mod tests {
     fn build_system_prompt_lists_currently_wired_tools() {
         let p = build_system_prompt("");
         assert!(p.contains("add_task"));
+        assert!(p.contains("\n- complete_task"), "got: {p}");
         assert!(p.contains("\n- add_chore"), "got: {p}");
         assert!(p.contains("\n- complete_chore"), "got: {p}");
         assert!(p.contains("\n- add_time_block"), "got: {p}");

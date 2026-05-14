@@ -89,6 +89,14 @@ pub struct AddTaskArgs {
     pub due_date: Option<String>,
 }
 
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+pub struct CompleteTaskArgs {
+    #[serde(default, alias = "taskId")]
+    pub task_id: Option<i64>,
+    #[serde(default)]
+    pub title: Option<String>,
+}
+
 fn default_chore_emoji() -> String {
     ".".to_string()
 }

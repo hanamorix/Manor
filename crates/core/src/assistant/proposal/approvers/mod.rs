@@ -17,3 +17,4 @@ pub mod add_recurring_block;
 pub mod add_task;
 pub mod add_time_block;
 pub mod complete_chore;
+pub mod complete_task;

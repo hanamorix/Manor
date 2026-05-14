@@ -30,6 +30,31 @@ pub fn add_task_tool() -> serde_json::Value {
     })
 }
 
+pub fn complete_task_tool() -> serde_json::Value {
+    json!({
+        "type": "function",
+        "function": {
+            "name": "complete_task",
+            "description": "Propose marking an existing one-off task complete. \
+                            Use task_id when known; otherwise use an exact open-task title. \
+                            Do not use this for recurring chores.",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "task_id": {
+                        "type": "integer",
+                        "description": "Preferred. Existing open task id."
+                    },
+                    "title": {
+                        "type": "string",
+                        "description": "Exact open task title when task_id is unavailable."
+                    }
+                }
+            }
+        }
+    })
+}
+
 pub fn add_chore_tool() -> serde_json::Value {
     json!({
         "type": "function",
@@ -196,6 +221,7 @@ pub fn add_recurring_block_tool() -> serde_json::Value {
 pub fn all_tools() -> Vec<serde_json::Value> {
     vec![
         add_task_tool(),
+        complete_task_tool(),
         add_chore_tool(),
         complete_chore_tool(),
         add_time_block_tool(),
