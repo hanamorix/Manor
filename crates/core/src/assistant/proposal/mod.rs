@@ -122,6 +122,50 @@ impl AddChoreArgs {
     }
 }
 
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+pub struct CompleteChoreArgs {
+    #[serde(default, alias = "choreId")]
+    pub chore_id: Option<i64>,
+    #[serde(default)]
+    pub title: Option<String>,
+    #[serde(default, alias = "completedBy")]
+    pub completed_by: Option<i64>,
+    #[serde(default, alias = "completedByName")]
+    pub completed_by_name: Option<String>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+pub struct AddTimeBlockArgs {
+    pub title: String,
+    #[serde(default = "default_time_block_kind")]
+    pub kind: String,
+    #[serde(alias = "dateMs")]
+    pub date_ms: i64,
+    #[serde(alias = "startTime")]
+    pub start_time: String,
+    #[serde(alias = "endTime")]
+    pub end_time: String,
+}
+
+fn default_time_block_kind() -> String {
+    "focus".to_string()
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+pub struct AddRecurringBlockArgs {
+    pub title: String,
+    #[serde(default = "default_time_block_kind")]
+    pub kind: String,
+    #[serde(alias = "dateMs")]
+    pub date_ms: i64,
+    #[serde(alias = "startTime")]
+    pub start_time: String,
+    #[serde(alias = "endTime")]
+    pub end_time: String,
+    #[serde(deserialize_with = "tolerant::rrule_string")]
+    pub rrule: String,
+}
+
 /// Insert a new proposal. Returns the new row id.
 pub fn insert(conn: &Connection, new: NewProposal<'_>) -> Result<i64> {
     let now = Utc::now().timestamp();

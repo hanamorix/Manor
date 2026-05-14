@@ -82,7 +82,123 @@ pub fn add_chore_tool() -> serde_json::Value {
     })
 }
 
-/// All tools available in Phase 3a.
+pub fn complete_chore_tool() -> serde_json::Value {
+    json!({
+        "type": "function",
+        "function": {
+            "name": "complete_chore",
+            "description": "Propose marking a household chore complete. \
+                            Use chore_id when known; otherwise use an exact chore title. \
+                            Do not claim completion until the user approves the proposal.",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "chore_id": {
+                        "type": "integer",
+                        "description": "Preferred. Existing chore id."
+                    },
+                    "title": {
+                        "type": "string",
+                        "description": "Exact existing chore title when chore_id is unavailable."
+                    },
+                    "completed_by": {
+                        "type": "integer",
+                        "description": "Optional existing person id."
+                    },
+                    "completed_by_name": {
+                        "type": "string",
+                        "description": "Optional existing person name."
+                    }
+                }
+            }
+        }
+    })
+}
+
+pub fn add_time_block_tool() -> serde_json::Value {
+    json!({
+        "type": "function",
+        "function": {
+            "name": "add_time_block",
+            "description": "Propose adding a one-off Rhythm time block such as focus, admin, errands, or do-not-disturb time.",
+            "parameters": {
+                "type": "object",
+                "required": ["title", "date_ms", "start_time", "end_time"],
+                "properties": {
+                    "title": {
+                        "type": "string",
+                        "description": "Short block title."
+                    },
+                    "kind": {
+                        "type": "string",
+                        "description": "Block kind. Prefer one of focus, admin, errands, dnd. Defaults to focus."
+                    },
+                    "date_ms": {
+                        "type": "integer",
+                        "description": "The calendar date at local midnight as Unix milliseconds."
+                    },
+                    "start_time": {
+                        "type": "string",
+                        "description": "Start time in 24-hour HH:MM."
+                    },
+                    "end_time": {
+                        "type": "string",
+                        "description": "End time in 24-hour HH:MM."
+                    }
+                }
+            }
+        }
+    })
+}
+
+pub fn add_recurring_block_tool() -> serde_json::Value {
+    json!({
+        "type": "function",
+        "function": {
+            "name": "add_recurring_block",
+            "description": "Propose adding a recurring Rhythm time block. \
+                            Use for repeated focus/admin/errand/DND blocks rather than one-off events.",
+            "parameters": {
+                "type": "object",
+                "required": ["title", "date_ms", "start_time", "end_time", "rrule"],
+                "properties": {
+                    "title": {
+                        "type": "string",
+                        "description": "Short block title."
+                    },
+                    "kind": {
+                        "type": "string",
+                        "description": "Block kind. Prefer one of focus, admin, errands, dnd. Defaults to focus."
+                    },
+                    "date_ms": {
+                        "type": "integer",
+                        "description": "First block date at local midnight as Unix milliseconds."
+                    },
+                    "start_time": {
+                        "type": "string",
+                        "description": "Start time in 24-hour HH:MM."
+                    },
+                    "end_time": {
+                        "type": "string",
+                        "description": "End time in 24-hour HH:MM."
+                    },
+                    "rrule": {
+                        "type": "string",
+                        "description": "RFC 5545 RRULE like FREQ=WEEKLY;BYDAY=MO, or a casual phrase like weekly/every weekday."
+                    }
+                }
+            }
+        }
+    })
+}
+
+/// All tools available to the assistant.
 pub fn all_tools() -> Vec<serde_json::Value> {
-    vec![add_task_tool(), add_chore_tool()]
+    vec![
+        add_task_tool(),
+        add_chore_tool(),
+        complete_chore_tool(),
+        add_time_block_tool(),
+        add_recurring_block_tool(),
+    ]
 }

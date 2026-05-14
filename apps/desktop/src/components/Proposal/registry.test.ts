@@ -4,6 +4,8 @@ import {
   getProposalHandler,
   type AddTaskParsed,
   type AddChoreParsed,
+  type AddTimeBlockParsed,
+  type CompleteChoreParsed,
   type AddMaintenanceScheduleParsed,
 } from "./registry";
 
@@ -12,7 +14,10 @@ describe("PROPOSAL_KIND_HANDLERS", () => {
     expect(Object.keys(PROPOSAL_KIND_HANDLERS).sort()).toEqual([
       "add_chore",
       "add_maintenance_schedule",
+      "add_recurring_block",
       "add_task",
+      "add_time_block",
+      "complete_chore",
     ]);
   });
 });
@@ -97,6 +102,52 @@ describe("add_chore handler", () => {
         { title: "Laundry", rrule: "weekly" },
       ]),
     ).toBe("Add 2 chores");
+  });
+});
+
+describe("complete_chore handler", () => {
+  const handler = PROPOSAL_KIND_HANDLERS.complete_chore;
+
+  it("parses chore title completion diffs", () => {
+    const parsed = handler.parse(
+      JSON.stringify({ title: "Do dishes" }),
+    ) as CompleteChoreParsed;
+    expect(parsed.title).toBe("Do dishes");
+  });
+
+  it("summarises title and id targets", () => {
+    expect(handler.summarise({ title: "Bins" })).toBe("Complete chore: Bins");
+    expect(handler.summarise({ chore_id: 12 })).toBe("Complete chore: #12");
+  });
+});
+
+describe("time block handlers", () => {
+  it("summarises one-off blocks", () => {
+    const handler = PROPOSAL_KIND_HANDLERS.add_time_block;
+    const parsed = handler.parse(
+      JSON.stringify({
+        title: "Deep work",
+        kind: "focus",
+        date_ms: 1777132800000,
+        start_time: "09:00",
+        end_time: "11:00",
+      }),
+    ) as AddTimeBlockParsed;
+    expect(handler.summarise(parsed)).toBe("Add block: Deep work (09:00-11:00)");
+  });
+
+  it("summarises recurring blocks", () => {
+    const handler = PROPOSAL_KIND_HANDLERS.add_recurring_block;
+    expect(
+      handler.summarise({
+        title: "Weekly planning",
+        kind: "admin",
+        date_ms: 1777132800000,
+        start_time: "09:00",
+        end_time: "09:30",
+        rrule: "FREQ=WEEKLY;BYDAY=MO",
+      }),
+    ).toBe("Add recurring block: Weekly planning (09:00-09:30)");
   });
 });
 

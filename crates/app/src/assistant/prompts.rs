@@ -50,9 +50,10 @@ pub const PROMPT_PREAMBLE: &str = concat!(
 pub const PROMPT_TOOLS: &str = concat!(
     "Tools:\n",
     "- add_task — add a single one-off to-do for today or a chosen date.\n",
-    // TODO Phase 2: add_chore — recurring household chore with rotation.
-    // TODO Phase 2: add_time_block — focus / time block on a calendar day.
-    // TODO Phase 2: add_recurring_block — repeating time block.
+    "- add_chore — add one or more recurring household chores, with optional rotation.\n",
+    "- complete_chore — mark an existing recurring household chore complete.\n",
+    "- add_time_block — add a one-off focus, admin, errand, or DND block.\n",
+    "- add_recurring_block — add a repeating focus, admin, errand, or DND block.\n",
     // TODO Phase 3: complete_task — mark a known task done.
     // TODO Phase 3: add_event — create a CalDAV event (batched if many).
     // TODO Phase 4: add_transaction — record a money movement (in pence).
@@ -152,10 +153,10 @@ mod tests {
     fn build_system_prompt_lists_currently_wired_tools() {
         let p = build_system_prompt("");
         assert!(p.contains("add_task"));
-        // Phase 1 has not yet shipped these — they must NOT appear as
-        // active entries (only as TODO comments inside the const, which
-        // do not survive into the runtime string).
-        assert!(!p.contains("\n- add_chore"), "got: {p}");
+        assert!(p.contains("\n- add_chore"), "got: {p}");
+        assert!(p.contains("\n- complete_chore"), "got: {p}");
+        assert!(p.contains("\n- add_time_block"), "got: {p}");
+        assert!(p.contains("\n- add_recurring_block"), "got: {p}");
         assert!(!p.contains("\n- clarify"), "got: {p}");
     }
 

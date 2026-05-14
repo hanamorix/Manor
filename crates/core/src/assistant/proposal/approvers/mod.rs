@@ -13,4 +13,7 @@
 
 pub mod add_chore;
 pub mod add_maintenance_schedule;
+pub mod add_recurring_block;
 pub mod add_task;
+pub mod add_time_block;
+pub mod complete_chore;

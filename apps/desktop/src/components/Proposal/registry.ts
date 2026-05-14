@@ -91,6 +91,51 @@ const addChoreHandler: ProposalCardHandler<AddChoreParsed[]> = {
   ),
 };
 
+// ── complete_chore ──────────────────────────────────────────────────────
+
+export interface CompleteChoreParsed {
+  chore_id?: number;
+  title?: string;
+  completed_by?: number;
+  completed_by_name?: string;
+}
+
+const completeChoreHandler: ProposalCardHandler<CompleteChoreParsed> = {
+  parse: (diffJson) => JSON.parse(diffJson) as CompleteChoreParsed,
+  summarise: (parsed) =>
+    `Complete chore: ${parsed.title ?? `#${parsed.chore_id ?? "unknown"}`}`,
+};
+
+// ── time blocks ────────────────────────────────────────────────────────
+
+export interface AddTimeBlockParsed {
+  title: string;
+  kind?: string;
+  date_ms: number;
+  start_time: string;
+  end_time: string;
+}
+
+export interface AddRecurringBlockParsed extends AddTimeBlockParsed {
+  rrule: string;
+}
+
+function formatBlockTime(parsed: AddTimeBlockParsed): string {
+  return `${parsed.start_time}-${parsed.end_time}`;
+}
+
+const addTimeBlockHandler: ProposalCardHandler<AddTimeBlockParsed> = {
+  parse: (diffJson) => JSON.parse(diffJson) as AddTimeBlockParsed,
+  summarise: (parsed) =>
+    `Add block: ${parsed.title} (${formatBlockTime(parsed)})`,
+};
+
+const addRecurringBlockHandler: ProposalCardHandler<AddRecurringBlockParsed> = {
+  parse: (diffJson) => JSON.parse(diffJson) as AddRecurringBlockParsed,
+  summarise: (parsed) =>
+    `Add recurring block: ${parsed.title} (${formatBlockTime(parsed)})`,
+};
+
 // ── add_maintenance_schedule ────────────────────────────────────────────
 
 export interface AddMaintenanceScheduleParsed {
@@ -126,6 +171,9 @@ export const PROPOSAL_KIND_HANDLERS: Record<string, ProposalCardHandler<any>> =
   {
     add_task: addTaskHandler,
     add_chore: addChoreHandler,
+    complete_chore: completeChoreHandler,
+    add_time_block: addTimeBlockHandler,
+    add_recurring_block: addRecurringBlockHandler,
     add_maintenance_schedule: addMaintenanceScheduleHandler,
   };
 

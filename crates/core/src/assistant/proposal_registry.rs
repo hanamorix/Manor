@@ -61,6 +61,9 @@ pub fn approve(conn: &mut Connection, proposal_id: i64) -> Result<Applied, Apply
             }
         }
         "add_chore" => approvers::add_chore::approve(&tx, proposal_id, &diff)?,
+        "complete_chore" => approvers::complete_chore::approve(&tx, proposal_id, &diff)?,
+        "add_time_block" => approvers::add_time_block::approve(&tx, proposal_id, &diff)?,
+        "add_recurring_block" => approvers::add_recurring_block::approve(&tx, proposal_id, &diff)?,
         "add_maintenance_schedule" => {
             let items_applied =
                 approvers::add_maintenance_schedule::approve(&tx, proposal_id, &diff)?;

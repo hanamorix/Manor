@@ -15,7 +15,10 @@ use manor_core::assistant::{
     event::{self, Event},
     message,
     message::Role,
-    proposal::{self, AddChoreArgs, AddTaskArgs, NewProposal, Proposal},
+    proposal::{
+        self, AddChoreArgs, AddRecurringBlockArgs, AddTaskArgs, AddTimeBlockArgs,
+        CompleteChoreArgs, NewProposal, Proposal,
+    },
     proposal_registry,
     task::{self, Task},
     Applied, ApplyError,
@@ -241,6 +244,71 @@ pub async fn send_message(
                         &conn,
                         NewProposal {
                             kind: "add_chore",
+                            rationale: &rationale,
+                            diff_json: &diff_json,
+                            skill: "rhythm",
+                        },
+                    )
+                    .map_err(|e| e.to_string())?
+                };
+                on_event
+                    .send(StreamChunk::Proposal(proposal_id))
+                    .map_err(|e| e.to_string())?;
+            }
+            "complete_chore" => {
+                let args: CompleteChoreArgs = serde_json::from_value(tool_call.function.arguments)
+                    .map_err(|e| format!("bad complete_chore args: {e}"))?;
+                let diff_json = serde_json::to_string(&args).map_err(|e| e.to_string())?;
+                let proposal_id = {
+                    let conn = state.0.lock().map_err(|e| e.to_string())?;
+                    proposal::insert(
+                        &conn,
+                        NewProposal {
+                            kind: "complete_chore",
+                            rationale: &rationale,
+                            diff_json: &diff_json,
+                            skill: "rhythm",
+                        },
+                    )
+                    .map_err(|e| e.to_string())?
+                };
+                on_event
+                    .send(StreamChunk::Proposal(proposal_id))
+                    .map_err(|e| e.to_string())?;
+            }
+            "add_time_block" => {
+                let args: AddTimeBlockArgs =
+                    serde_json::from_value(tool_call.function.arguments)
+                        .map_err(|e| format!("bad add_time_block args: {e}"))?;
+                let diff_json = serde_json::to_string(&args).map_err(|e| e.to_string())?;
+                let proposal_id = {
+                    let conn = state.0.lock().map_err(|e| e.to_string())?;
+                    proposal::insert(
+                        &conn,
+                        NewProposal {
+                            kind: "add_time_block",
+                            rationale: &rationale,
+                            diff_json: &diff_json,
+                            skill: "rhythm",
+                        },
+                    )
+                    .map_err(|e| e.to_string())?
+                };
+                on_event
+                    .send(StreamChunk::Proposal(proposal_id))
+                    .map_err(|e| e.to_string())?;
+            }
+            "add_recurring_block" => {
+                let args: AddRecurringBlockArgs =
+                    serde_json::from_value(tool_call.function.arguments)
+                        .map_err(|e| format!("bad add_recurring_block args: {e}"))?;
+                let diff_json = serde_json::to_string(&args).map_err(|e| e.to_string())?;
+                let proposal_id = {
+                    let conn = state.0.lock().map_err(|e| e.to_string())?;
+                    proposal::insert(
+                        &conn,
+                        NewProposal {
+                            kind: "add_recurring_block",
                             rationale: &rationale,
                             diff_json: &diff_json,
                             skill: "rhythm",
