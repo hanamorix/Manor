@@ -89,6 +89,39 @@ pub struct AddTaskArgs {
     pub due_date: Option<String>,
 }
 
+fn default_chore_emoji() -> String {
+    ".".to_string()
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+pub struct AddChoreItem {
+    pub title: String,
+    #[serde(default = "default_chore_emoji")]
+    pub emoji: String,
+    #[serde(deserialize_with = "tolerant::rrule_string")]
+    pub rrule: String,
+    #[serde(default)]
+    pub first_due_ms: Option<i64>,
+    #[serde(default)]
+    pub rotation_names: Vec<String>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+#[serde(untagged)]
+pub enum AddChoreArgs {
+    Single(AddChoreItem),
+    Bundle(Vec<AddChoreItem>),
+}
+
+impl AddChoreArgs {
+    pub fn into_items(self) -> Vec<AddChoreItem> {
+        match self {
+            AddChoreArgs::Single(item) => vec![item],
+            AddChoreArgs::Bundle(items) => items,
+        }
+    }
+}
+
 /// Insert a new proposal. Returns the new row id.
 pub fn insert(conn: &Connection, new: NewProposal<'_>) -> Result<i64> {
     let now = Utc::now().timestamp();

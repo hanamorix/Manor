@@ -15,11 +15,7 @@ use rusqlite::Connection;
 /// just the today slice (and for the existing test fixtures, which exercise
 /// the slice contents byte-for-byte).
 pub fn compose_today_context(now: DateTime<Local>, conn: &Connection) -> Result<String> {
-    super::context::render(
-        now,
-        conn,
-        super::context::ContextSlices::today_only(),
-    )
+    super::context::render(now, conn, super::context::ContextSlices::today_only())
 }
 
 /// The raw today-block body. Called from [`super::context::render`] when the

@@ -47,3 +47,5 @@ material/
 
 # Misc
 *.log
+.target-test/
+.tmp/

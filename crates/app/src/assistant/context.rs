@@ -184,11 +184,7 @@ fn matches_any(haystack: &str, needles: &[&str]) -> bool {
 /// Slice order is fixed: today → rhythm → ledger → hearth → bones. Each
 /// slice is separated from the previous by a single blank line so the
 /// result reads as discrete H2 sections.
-pub fn render(
-    now: DateTime<Local>,
-    conn: &Connection,
-    slices: ContextSlices,
-) -> Result<String> {
+pub fn render(now: DateTime<Local>, conn: &Connection, slices: ContextSlices) -> Result<String> {
     let mut out = String::new();
 
     if slices.today {

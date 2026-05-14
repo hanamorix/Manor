@@ -38,8 +38,8 @@ pub fn approve(conn: &mut Connection, proposal_id: i64) -> Result<Applied, Apply
         .optional()
         .map_err(|e| ApplyError::Internal(format!("db: {e}")))?;
 
-    let (kind, status, diff) = row
-        .ok_or_else(|| ApplyError::Internal(format!("proposal {proposal_id} not found")))?;
+    let (kind, status, diff) =
+        row.ok_or_else(|| ApplyError::Internal(format!("proposal {proposal_id} not found")))?;
 
     if status != Status::Pending.as_str() {
         return Err(ApplyError::Conflict("proposal not pending".into()));
@@ -49,10 +49,28 @@ pub fn approve(conn: &mut Connection, proposal_id: i64) -> Result<Applied, Apply
         .transaction()
         .map_err(|e| ApplyError::Internal(format!("tx: {e}")))?;
 
-    let items_applied = match kind.as_str() {
-        "add_task" => approvers::add_task::approve(&tx, proposal_id, &diff, None)?,
+    let applied = match kind.as_str() {
+        "add_task" => {
+            let items_applied = approvers::add_task::approve(&tx, proposal_id, &diff, None)?;
+            Applied {
+                proposal_id,
+                status: Status::Applied,
+                items_applied,
+                items_failed: 0,
+                errors: vec![],
+            }
+        }
+        "add_chore" => approvers::add_chore::approve(&tx, proposal_id, &diff)?,
         "add_maintenance_schedule" => {
-            approvers::add_maintenance_schedule::approve(&tx, proposal_id, &diff)?
+            let items_applied =
+                approvers::add_maintenance_schedule::approve(&tx, proposal_id, &diff)?;
+            Applied {
+                proposal_id,
+                status: Status::Applied,
+                items_applied,
+                items_failed: 0,
+                errors: vec![],
+            }
         }
         unknown => return Err(ApplyError::UnknownKind(unknown.into())),
     };
@@ -60,13 +78,7 @@ pub fn approve(conn: &mut Connection, proposal_id: i64) -> Result<Applied, Apply
     tx.commit()
         .map_err(|e| ApplyError::Internal(format!("tx commit: {e}")))?;
 
-    Ok(Applied {
-        proposal_id,
-        status: Status::Applied,
-        items_applied,
-        items_failed: 0,
-        errors: vec![],
-    })
+    Ok(applied)
 }
 
 /// Overwrite the `diff` column of a *pending* proposal.
@@ -79,11 +91,7 @@ pub fn approve(conn: &mut Connection, proposal_id: i64) -> Result<Applied, Apply
 /// Errors:
 /// - [`ApplyError::Conflict`] — proposal exists but is not `pending`.
 /// - [`ApplyError::Internal`] — proposal id not found, or any DB error.
-pub fn update_diff(
-    conn: &Connection,
-    id: i64,
-    edited_diff_json: &str,
-) -> Result<(), ApplyError> {
+pub fn update_diff(conn: &Connection, id: i64, edited_diff_json: &str) -> Result<(), ApplyError> {
     let rows = conn
         .execute(
             "UPDATE proposal SET diff = ?1 WHERE id = ?2 AND status = 'pending'",
@@ -151,9 +159,7 @@ pub fn read_kind(conn: &Connection, proposal_id: i64) -> Result<String, ApplyErr
 mod tests {
     use super::*;
     use crate::assistant::db;
-    use crate::assistant::proposal::{
-        insert, AddMaintenanceScheduleArgs, NewProposal,
-    };
+    use crate::assistant::proposal::{insert, AddMaintenanceScheduleArgs, NewProposal};
     use rusqlite::Connection;
     use tempfile::tempdir;
 
@@ -329,7 +335,10 @@ mod tests {
         let err = approve(&mut conn, 99_999).unwrap_err();
         match err {
             ApplyError::Internal(msg) => {
-                assert!(msg.contains("99999") && msg.contains("not found"), "got: {msg}")
+                assert!(
+                    msg.contains("99999") && msg.contains("not found"),
+                    "got: {msg}"
+                )
             }
             other => panic!("expected Internal, got {other:?}"),
         }
@@ -365,9 +374,11 @@ mod tests {
         assert_eq!(status, "pending");
 
         let task_count: i64 = conn
-            .query_row("SELECT COUNT(*) FROM task WHERE proposal_id = ?1", [pid], |r| {
-                r.get(0)
-            })
+            .query_row(
+                "SELECT COUNT(*) FROM task WHERE proposal_id = ?1",
+                [pid],
+                |r| r.get(0),
+            )
             .unwrap();
         assert_eq!(task_count, 0);
     }
@@ -397,7 +408,9 @@ mod tests {
 
         // The proposal row's diff column now holds the edited JSON.
         let diff_on_row: String = conn
-            .query_row("SELECT diff FROM proposal WHERE id = ?1", [pid], |r| r.get(0))
+            .query_row("SELECT diff FROM proposal WHERE id = ?1", [pid], |r| {
+                r.get(0)
+            })
             .unwrap();
         assert_eq!(diff_on_row, edited);
     }
@@ -455,7 +468,10 @@ mod tests {
         let err = update_diff(&conn, 99_999, r#"{"title":"x"}"#).unwrap_err();
         match err {
             ApplyError::Internal(msg) => {
-                assert!(msg.contains("99999") && msg.contains("not found"), "got: {msg}")
+                assert!(
+                    msg.contains("99999") && msg.contains("not found"),
+                    "got: {msg}"
+                )
             }
             other => panic!("expected Internal, got {other:?}"),
         }
@@ -480,7 +496,9 @@ mod tests {
         let pid = make_add_task_proposal(&conn, "Original");
         update_diff(&conn, pid, r#"{"title":"Edited"}"#).unwrap();
         let diff: String = conn
-            .query_row("SELECT diff FROM proposal WHERE id = ?1", [pid], |r| r.get(0))
+            .query_row("SELECT diff FROM proposal WHERE id = ?1", [pid], |r| {
+                r.get(0)
+            })
             .unwrap();
         assert_eq!(diff, r#"{"title":"Edited"}"#);
     }
@@ -516,7 +534,9 @@ mod tests {
         assert_eq!(task_count, 0);
 
         let diff: String = conn
-            .query_row("SELECT diff FROM proposal WHERE id = ?1", [pid], |r| r.get(0))
+            .query_row("SELECT diff FROM proposal WHERE id = ?1", [pid], |r| {
+                r.get(0)
+            })
             .unwrap();
         assert_eq!(diff, "not json");
     }

@@ -15,7 +15,7 @@ use manor_core::assistant::{
     event::{self, Event},
     message,
     message::Role,
-    proposal::{self, AddTaskArgs, NewProposal, Proposal},
+    proposal::{self, AddChoreArgs, AddTaskArgs, NewProposal, Proposal},
     proposal_registry,
     task::{self, Task},
     Applied, ApplyError,
@@ -124,8 +124,7 @@ pub async fn send_message(
     let context_block = {
         let slices = crate::assistant::context::classify(&content);
         let conn = state.0.lock().map_err(|e| e.to_string())?;
-        crate::assistant::context::render(Local::now(), &conn, slices)
-            .map_err(|e| e.to_string())?
+        crate::assistant::context::render(Local::now(), &conn, slices).map_err(|e| e.to_string())?
     };
     let mut chat_msgs: Vec<ChatMessage> = vec![ChatMessage {
         role: ChatRole::System,
@@ -224,6 +223,27 @@ pub async fn send_message(
                             rationale: &rationale,
                             diff_json: &diff_json,
                             skill: "tasks",
+                        },
+                    )
+                    .map_err(|e| e.to_string())?
+                };
+                on_event
+                    .send(StreamChunk::Proposal(proposal_id))
+                    .map_err(|e| e.to_string())?;
+            }
+            "add_chore" => {
+                let args: AddChoreArgs = serde_json::from_value(tool_call.function.arguments)
+                    .map_err(|e| format!("bad add_chore args: {e}"))?;
+                let diff_json = serde_json::to_string(&args).map_err(|e| e.to_string())?;
+                let proposal_id = {
+                    let conn = state.0.lock().map_err(|e| e.to_string())?;
+                    proposal::insert(
+                        &conn,
+                        NewProposal {
+                            kind: "add_chore",
+                            rationale: &rationale,
+                            diff_json: &diff_json,
+                            skill: "rhythm",
                         },
                     )
                     .map_err(|e| e.to_string())?

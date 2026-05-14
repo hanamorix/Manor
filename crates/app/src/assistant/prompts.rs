@@ -117,9 +117,7 @@ pub fn build_system_prompt(context_block: &str) -> String {
     } else {
         format!("{context_block}\n")
     };
-    format!(
-        "{PROMPT_PREAMBLE}\n\n{PROMPT_TOOLS}\n{PROMPT_RULES}\n\n{CONTEXT_PLACEHOLDER}\n{body}"
-    )
+    format!("{PROMPT_PREAMBLE}\n\n{PROMPT_TOOLS}\n{PROMPT_RULES}\n\n{CONTEXT_PLACEHOLDER}\n{body}")
 }
 
 /// Backwards-compat alias — the bare static body without any context.

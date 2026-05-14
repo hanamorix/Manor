@@ -8,9 +8,11 @@ For current behaviour, prefer:
 - The current Rust/TypeScript implementation and migrations.
 - GitHub CI for the active validation gates.
 
-Current status notes, last checked 2026-05-09:
+Current status notes, last checked 2026-05-14:
 
 - Ledger is CSV-import first. GoCardless/Plaid bank sync was removed in v0.1.2 and any old bank-sync specs are archival only.
 - Remote LLM support is Claude-only today. OpenAI, Gemini, Groq, OpenRouter, and similar providers are future adapters, not shipped features.
 - Semantic search uses local Ollama embeddings stored in SQLite. `sqlite-vec` remains a future backend option, not the active implementation.
 - Bones L4a through L4e are implemented despite older roadmap files describing them as future work.
+- v0.1.5 is the current shipped baseline on `main`.
+- v0.2 Hands is active on `feature/v0.2-hands`. Phase 1 foundation is implemented; Phase 2 starts with Rhythm assistant tools.

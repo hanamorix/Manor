@@ -11,5 +11,6 @@
 //! for the proposal-edit Drawer) is not split out yet — Task 1.E generalises
 //! that into `approve_with_override`.
 
+pub mod add_chore;
 pub mod add_maintenance_schedule;
 pub mod add_task;

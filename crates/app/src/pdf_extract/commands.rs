@@ -146,8 +146,7 @@ pub fn pdf_extract_approve_with_override(
 
     // Stamp the edited diff onto the proposal, then approve via the same
     // approver as the verbatim path. Returns the inserted schedule's id.
-    proposal_registry::update_diff(&conn, proposal_id, &edited_diff)
-        .map_err(|e| e.to_string())?;
+    proposal_registry::update_diff(&conn, proposal_id, &edited_diff).map_err(|e| e.to_string())?;
     proposal::approve_add_maintenance_schedule(&mut conn, proposal_id).map_err(|e| e.to_string())
 }
 

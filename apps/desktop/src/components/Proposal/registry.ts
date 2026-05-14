@@ -9,7 +9,7 @@
 // New kinds (Phase 2+) add one entry to PROPOSAL_KIND_HANDLERS. No
 // component code touches required.
 
-import type { ComponentType } from "react";
+import { createElement, type ComponentType } from "react";
 import type { Proposal } from "../../lib/today/ipc";
 
 /// Per-kind handler. Generic `P` is the parsed-diff shape.
@@ -54,6 +54,43 @@ const addTaskHandler: ProposalCardHandler<AddTaskParsed> = {
   },
 };
 
+// ── add_chore ───────────────────────────────────────────────────────────
+
+export interface AddChoreParsed {
+  title: string;
+  emoji?: string;
+  rrule: string;
+  first_due_ms?: number;
+  rotation_names?: string[];
+}
+
+function normaliseChoreDiff(
+  parsed: AddChoreParsed | AddChoreParsed[],
+): AddChoreParsed[] {
+  return Array.isArray(parsed) ? parsed : [parsed];
+}
+
+const addChoreHandler: ProposalCardHandler<AddChoreParsed[]> = {
+  parse: (diffJson) =>
+    normaliseChoreDiff(JSON.parse(diffJson) as AddChoreParsed | AddChoreParsed[]),
+  summarise: (parsed) => {
+    if (parsed.length === 1) {
+      return `Add chore: ${parsed[0]?.title ?? "Untitled chore"}`;
+    }
+    return `Add ${parsed.length} chores`;
+  },
+  CardBody: ({ parsed }) => (
+    createElement(
+      "div",
+      { style: { marginTop: 4, fontSize: 11, color: "var(--ink-soft)" } },
+      `${parsed
+        .slice(0, 3)
+        .map((item) => item.title)
+        .join(" · ")}${parsed.length > 3 ? ` · +${parsed.length - 3} more` : ""}`,
+    )
+  ),
+};
+
 // ── add_maintenance_schedule ────────────────────────────────────────────
 
 export interface AddMaintenanceScheduleParsed {
@@ -88,6 +125,7 @@ const addMaintenanceScheduleHandler: ProposalCardHandler<AddMaintenanceScheduleP
 export const PROPOSAL_KIND_HANDLERS: Record<string, ProposalCardHandler<any>> =
   {
     add_task: addTaskHandler,
+    add_chore: addChoreHandler,
     add_maintenance_schedule: addMaintenanceScheduleHandler,
   };
 

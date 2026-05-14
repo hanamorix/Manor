@@ -3,12 +3,14 @@ import {
   PROPOSAL_KIND_HANDLERS,
   getProposalHandler,
   type AddTaskParsed,
+  type AddChoreParsed,
   type AddMaintenanceScheduleParsed,
 } from "./registry";
 
 describe("PROPOSAL_KIND_HANDLERS", () => {
-  it("contains the two Phase 1 entries", () => {
+  it("contains the Phase 1 entries plus the Phase 2 add_chore entry", () => {
     expect(Object.keys(PROPOSAL_KIND_HANDLERS).sort()).toEqual([
+      "add_chore",
       "add_maintenance_schedule",
       "add_task",
     ]);
@@ -58,6 +60,43 @@ describe("add_task handler", () => {
 
   it("does not declare supportsEdit in Phase 1", () => {
     expect(handler.supportsEdit).toBeFalsy();
+  });
+});
+
+describe("add_chore handler", () => {
+  const handler = PROPOSAL_KIND_HANDLERS.add_chore;
+
+  it("parses a single diff JSON object into a one-item array", () => {
+    const parsed = handler.parse(
+      JSON.stringify({ title: "Do dishes", rrule: "FREQ=DAILY" }),
+    ) as AddChoreParsed[];
+    expect(parsed).toHaveLength(1);
+    expect(parsed[0].title).toBe("Do dishes");
+  });
+
+  it("parses bundle diff JSON unchanged", () => {
+    const parsed = handler.parse(
+      JSON.stringify([
+        { title: "Bins", rrule: "weekly" },
+        { title: "Laundry", rrule: "weekly" },
+      ]),
+    ) as AddChoreParsed[];
+    expect(parsed.map((p) => p.title)).toEqual(["Bins", "Laundry"]);
+  });
+
+  it("summarises a single chore", () => {
+    expect(handler.summarise([{ title: "Bins", rrule: "weekly" }])).toBe(
+      "Add chore: Bins",
+    );
+  });
+
+  it("summarises a chore bundle", () => {
+    expect(
+      handler.summarise([
+        { title: "Bins", rrule: "weekly" },
+        { title: "Laundry", rrule: "weekly" },
+      ]),
+    ).toBe("Add 2 chores");
   });
 });
 
