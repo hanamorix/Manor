@@ -7,6 +7,7 @@ import {
   type AddTransactionParsed,
   type SetBudgetParsed,
   type AddRecurringPaymentParsed,
+  type AddContractParsed,
   type CompleteTaskParsed,
   type AddChoreParsed,
   type AddTimeBlockParsed,
@@ -18,6 +19,7 @@ describe("PROPOSAL_KIND_HANDLERS", () => {
   it("contains the Phase 1 entries plus the Phase 2 add_chore entry", () => {
     expect(Object.keys(PROPOSAL_KIND_HANDLERS).sort()).toEqual([
       "add_chore",
+      "add_contract",
       "add_event",
       "add_maintenance_schedule",
       "add_recurring_block",
@@ -196,6 +198,35 @@ describe("add_recurring_payment handler", () => {
         day_of_month: 15,
       }),
     ).toBe("Add recurring payment: Netflix · GBP 12.99 on day 15");
+  });
+});
+
+describe("add_contract handler", () => {
+  const handler = PROPOSAL_KIND_HANDLERS.add_contract;
+
+  it("parses contract diffs", () => {
+    const parsed = handler.parse(
+      JSON.stringify({
+        provider: "Zen Internet",
+        kind: "broadband",
+        monthly_cost_pence: 3000,
+        term_start: 1767225600,
+        term_end: 1798761600,
+      }),
+    ) as AddContractParsed;
+    expect(parsed.provider).toBe("Zen Internet");
+    expect(parsed.kind).toBe("broadband");
+  });
+
+  it("summarises provider, amount, and renewal date", () => {
+    expect(
+      handler.summarise({
+        provider: "Zen Internet",
+        monthly_cost_pence: 3000,
+        term_start: 1767225600,
+        term_end: 1798761600,
+      }),
+    ).toMatch(/^Add contract: Zen Internet · GBP 30\.00\/mo · renews /);
   });
 });
 

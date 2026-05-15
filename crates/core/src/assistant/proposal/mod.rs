@@ -217,6 +217,14 @@ fn default_currency() -> String {
     "GBP".to_string()
 }
 
+fn default_contract_kind() -> String {
+    "other".to_string()
+}
+
+fn default_renewal_alert_days() -> i64 {
+    30
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
 pub struct AddLedgerTransactionArgs {
     #[serde(deserialize_with = "tolerant::amount_pence")]
@@ -259,6 +267,36 @@ pub struct AddRecurringPaymentArgs {
     pub category_name: Option<String>,
     #[serde(alias = "dayOfMonth")]
     pub day_of_month: i64,
+    #[serde(default)]
+    pub note: Option<String>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+pub struct AddContractArgs {
+    pub provider: String,
+    #[serde(default = "default_contract_kind")]
+    pub kind: String,
+    #[serde(default)]
+    pub description: Option<String>,
+    #[serde(
+        alias = "monthlyCostPence",
+        deserialize_with = "tolerant::amount_pence"
+    )]
+    pub monthly_cost_pence: i64,
+    #[serde(alias = "termStart")]
+    pub term_start: i64,
+    #[serde(alias = "termEnd")]
+    pub term_end: i64,
+    #[serde(
+        default,
+        alias = "exitFeePence",
+        deserialize_with = "tolerant::optional_amount_pence"
+    )]
+    pub exit_fee_pence: Option<i64>,
+    #[serde(default = "default_renewal_alert_days", alias = "renewalAlertDays")]
+    pub renewal_alert_days: i64,
+    #[serde(default, alias = "recurringPaymentId")]
+    pub recurring_payment_id: Option<i64>,
     #[serde(default)]
     pub note: Option<String>,
 }

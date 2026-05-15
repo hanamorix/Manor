@@ -200,6 +200,47 @@ const addRecurringPaymentHandler: ProposalCardHandler<AddRecurringPaymentParsed>
       ),
   };
 
+// ── add_contract ───────────────────────────────────────────────────────
+
+export interface AddContractParsed {
+  provider: string;
+  kind?: string;
+  description?: string | null;
+  monthly_cost_pence: number;
+  term_start: number;
+  term_end: number;
+  exit_fee_pence?: number | null;
+  renewal_alert_days?: number;
+  recurring_payment_id?: number | null;
+  note?: string | null;
+}
+
+function formatDate(seconds: number): string {
+  return new Date(seconds * 1000).toLocaleDateString(undefined, {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+  });
+}
+
+const addContractHandler: ProposalCardHandler<AddContractParsed> = {
+  parse: (diffJson) => JSON.parse(diffJson) as AddContractParsed,
+  summarise: (parsed) =>
+    `Add contract: ${parsed.provider} · ${formatMoney(parsed.monthly_cost_pence)}/mo · renews ${formatDate(parsed.term_end)}`,
+  CardBody: ({ parsed }) =>
+    createElement(
+      "div",
+      { style: { marginTop: 4, fontSize: 11, color: "var(--ink-soft)" } },
+      [
+        parsed.kind,
+        parsed.exit_fee_pence ? `Exit fee ${formatMoney(parsed.exit_fee_pence)}` : null,
+        parsed.recurring_payment_id ? `Recurring #${parsed.recurring_payment_id}` : null,
+      ]
+        .filter(Boolean)
+        .join(" · "),
+    ),
+};
+
 // ── add_chore ───────────────────────────────────────────────────────────
 
 export interface AddChoreParsed {
@@ -321,6 +362,7 @@ export const PROPOSAL_KIND_HANDLERS: Record<string, ProposalCardHandler<any>> =
     add_transaction: addTransactionHandler,
     set_budget: setBudgetHandler,
     add_recurring_payment: addRecurringPaymentHandler,
+    add_contract: addContractHandler,
     add_chore: addChoreHandler,
     complete_chore: completeChoreHandler,
     add_time_block: addTimeBlockHandler,

@@ -56,6 +56,31 @@ where
     }
 }
 
+pub fn optional_amount_pence<'de, D>(d: D) -> Result<Option<i64>, D::Error>
+where
+    D: Deserializer<'de>,
+{
+    let v = serde_json::Value::deserialize(d)?;
+    match v {
+        serde_json::Value::Null => Ok(None),
+        serde_json::Value::Number(n) => {
+            if let Some(i) = n.as_i64() {
+                Ok(Some(i))
+            } else if let Some(f) = n.as_f64() {
+                Ok(Some((f * 100.0).round() as i64))
+            } else {
+                Err(D::Error::custom("amount: unrepresentable number"))
+            }
+        }
+        serde_json::Value::String(s) => parse_amount_str(&s)
+            .map(Some)
+            .ok_or_else(|| D::Error::custom(format!("amount: cannot parse {s:?}"))),
+        other => Err(D::Error::custom(format!(
+            "amount: expected number, string, or null, got {other}"
+        ))),
+    }
+}
+
 fn parse_amount_str(raw: &str) -> Option<i64> {
     let trimmed = raw.trim();
     let (sign, rest) = match trimmed.strip_prefix('-') {

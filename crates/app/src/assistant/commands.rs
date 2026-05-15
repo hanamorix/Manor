@@ -16,7 +16,7 @@ use manor_core::assistant::{
     message,
     message::Role,
     proposal::{
-        self, AddChoreArgs, AddEventArgs, AddEventItem, AddLedgerTransactionArgs,
+        self, AddChoreArgs, AddContractArgs, AddEventArgs, AddEventItem, AddLedgerTransactionArgs,
         AddRecurringBlockArgs, AddRecurringPaymentArgs, AddTaskArgs, AddTimeBlockArgs,
         CompleteChoreArgs, CompleteTaskArgs, NewProposal, Proposal, SetBudgetArgs,
     },
@@ -374,6 +374,27 @@ pub async fn send_message(
                         &conn,
                         NewProposal {
                             kind: "add_recurring_payment",
+                            rationale: &rationale,
+                            diff_json: &diff_json,
+                            skill: "ledger",
+                        },
+                    )
+                    .map_err(|e| e.to_string())?
+                };
+                on_event
+                    .send(StreamChunk::Proposal(proposal_id))
+                    .map_err(|e| e.to_string())?;
+            }
+            "add_contract" => {
+                let args: AddContractArgs = serde_json::from_value(tool_call.function.arguments)
+                    .map_err(|e| format!("bad add_contract args: {e}"))?;
+                let diff_json = serde_json::to_string(&args).map_err(|e| e.to_string())?;
+                let proposal_id = {
+                    let conn = state.0.lock().map_err(|e| e.to_string())?;
+                    proposal::insert(
+                        &conn,
+                        NewProposal {
+                            kind: "add_contract",
                             rationale: &rationale,
                             diff_json: &diff_json,
                             skill: "ledger",

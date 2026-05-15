@@ -242,6 +242,63 @@ pub fn add_recurring_payment_tool() -> serde_json::Value {
     })
 }
 
+pub fn add_contract_tool() -> serde_json::Value {
+    json!({
+        "type": "function",
+        "function": {
+            "name": "add_contract",
+            "description": "Propose adding a Ledger supplier contract with renewal tracking. \
+                            Use for broadband, phone, insurance, utilities, and similar fixed-term services.",
+            "parameters": {
+                "type": "object",
+                "required": ["provider", "monthly_cost_pence", "term_start", "term_end"],
+                "properties": {
+                    "provider": {
+                        "type": "string",
+                        "description": "Supplier name, e.g. Zen Internet."
+                    },
+                    "kind": {
+                        "type": "string",
+                        "description": "Contract kind such as broadband, phone, insurance, utility, or other. Defaults to other."
+                    },
+                    "description": {
+                        "type": "string",
+                        "description": "Optional description."
+                    },
+                    "monthly_cost_pence": {
+                        "description": "Positive monthly cost. Accepts pence integer or string like £30.",
+                        "oneOf": [{ "type": "integer" }, { "type": "number" }, { "type": "string" }]
+                    },
+                    "term_start": {
+                        "type": "integer",
+                        "description": "Contract start as Unix timestamp in seconds."
+                    },
+                    "term_end": {
+                        "type": "integer",
+                        "description": "Contract end or renewal date as Unix timestamp in seconds."
+                    },
+                    "exit_fee_pence": {
+                        "description": "Optional non-negative exit fee. Accepts pence integer or string like £50.",
+                        "oneOf": [{ "type": "integer" }, { "type": "number" }, { "type": "string" }]
+                    },
+                    "renewal_alert_days": {
+                        "type": "integer",
+                        "description": "Days before term_end to show renewal alert. Defaults to 30."
+                    },
+                    "recurring_payment_id": {
+                        "type": "integer",
+                        "description": "Optional existing recurring payment id linked to this contract."
+                    },
+                    "note": {
+                        "type": "string",
+                        "description": "Optional note."
+                    }
+                }
+            }
+        }
+    })
+}
+
 pub fn add_chore_tool() -> serde_json::Value {
     json!({
         "type": "function",
@@ -413,6 +470,7 @@ pub fn all_tools() -> Vec<serde_json::Value> {
         add_transaction_tool(),
         set_budget_tool(),
         add_recurring_payment_tool(),
+        add_contract_tool(),
         add_chore_tool(),
         complete_chore_tool(),
         add_time_block_tool(),
