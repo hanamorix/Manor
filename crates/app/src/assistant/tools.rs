@@ -337,6 +337,74 @@ pub fn add_to_shopping_list_tool() -> serde_json::Value {
     })
 }
 
+pub fn add_recipe_quick_tool() -> serde_json::Value {
+    json!({
+        "type": "function",
+        "function": {
+            "name": "add_recipe_quick",
+            "description": "Propose adding a manual Hearth recipe from a title, ingredients, and preparation steps.",
+            "parameters": {
+                "type": "object",
+                "required": ["title", "ingredients", "steps"],
+                "properties": {
+                    "title": {
+                        "type": "string",
+                        "description": "Recipe title."
+                    },
+                    "ingredients": {
+                        "type": "array",
+                        "minItems": 1,
+                        "items": {
+                            "oneOf": [
+                                {
+                                    "type": "string",
+                                    "description": "Ingredient line, e.g. 200g pasta."
+                                },
+                                {
+                                    "type": "object",
+                                    "required": ["ingredient_name"],
+                                    "properties": {
+                                        "quantity_text": {
+                                            "type": "string",
+                                            "description": "Optional quantity text, e.g. 200g."
+                                        },
+                                        "ingredient_name": {
+                                            "type": "string",
+                                            "description": "Ingredient name, e.g. pasta."
+                                        },
+                                        "note": {
+                                            "type": "string",
+                                            "description": "Optional ingredient note."
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "steps": {
+                        "type": "array",
+                        "minItems": 1,
+                        "items": { "type": "string" },
+                        "description": "Preparation steps in order."
+                    },
+                    "servings": {
+                        "type": "integer",
+                        "description": "Optional number of servings."
+                    },
+                    "prep_time_mins": {
+                        "type": "integer",
+                        "description": "Optional prep time in minutes."
+                    },
+                    "cook_time_mins": {
+                        "type": "integer",
+                        "description": "Optional cook time in minutes."
+                    }
+                }
+            }
+        }
+    })
+}
+
 pub fn add_chore_tool() -> serde_json::Value {
     json!({
         "type": "function",
@@ -510,6 +578,7 @@ pub fn all_tools() -> Vec<serde_json::Value> {
         add_recurring_payment_tool(),
         add_contract_tool(),
         add_to_shopping_list_tool(),
+        add_recipe_quick_tool(),
         add_chore_tool(),
         complete_chore_tool(),
         add_time_block_tool(),

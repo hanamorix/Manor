@@ -276,6 +276,47 @@ const addToShoppingListHandler: ProposalCardHandler<AddShoppingListItemParsed[]>
       ),
   };
 
+// ── add_recipe_quick ──────────────────────────────────────────────────
+
+export interface AddRecipeQuickIngredientParsed {
+  quantity_text?: string | null;
+  ingredient_name: string;
+  note?: string | null;
+}
+
+export interface AddRecipeQuickParsed {
+  title: string;
+  ingredients: Array<string | AddRecipeQuickIngredientParsed>;
+  steps: string[];
+  servings?: number | null;
+  prep_time_mins?: number | null;
+  cook_time_mins?: number | null;
+}
+
+function ingredientLabel(ingredient: string | AddRecipeQuickIngredientParsed): string {
+  if (typeof ingredient === "string") {
+    return ingredient;
+  }
+  return [ingredient.quantity_text, ingredient.ingredient_name]
+    .filter(Boolean)
+    .join(" ");
+}
+
+const addRecipeQuickHandler: ProposalCardHandler<AddRecipeQuickParsed> = {
+  parse: (diffJson) => JSON.parse(diffJson) as AddRecipeQuickParsed,
+  summarise: (parsed) =>
+    `Add recipe: ${parsed.title} · ${parsed.ingredients.length} ingredients · ${parsed.steps.length} steps`,
+  CardBody: ({ parsed }) =>
+    createElement(
+      "div",
+      { style: { marginTop: 4, fontSize: 11, color: "var(--ink-soft)" } },
+      `${parsed.ingredients
+        .slice(0, 4)
+        .map(ingredientLabel)
+        .join(" · ")}${parsed.ingredients.length > 4 ? ` · +${parsed.ingredients.length - 4} more` : ""}`,
+    ),
+};
+
 // ── add_chore ───────────────────────────────────────────────────────────
 
 export interface AddChoreParsed {
@@ -399,6 +440,7 @@ export const PROPOSAL_KIND_HANDLERS: Record<string, ProposalCardHandler<any>> =
     add_recurring_payment: addRecurringPaymentHandler,
     add_contract: addContractHandler,
     add_to_shopping_list: addToShoppingListHandler,
+    add_recipe_quick: addRecipeQuickHandler,
     add_chore: addChoreHandler,
     complete_chore: completeChoreHandler,
     add_time_block: addTimeBlockHandler,

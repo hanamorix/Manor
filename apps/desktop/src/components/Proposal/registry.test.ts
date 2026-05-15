@@ -9,6 +9,7 @@ import {
   type AddRecurringPaymentParsed,
   type AddContractParsed,
   type AddShoppingListItemParsed,
+  type AddRecipeQuickParsed,
   type CompleteTaskParsed,
   type AddChoreParsed,
   type AddTimeBlockParsed,
@@ -23,6 +24,7 @@ describe("PROPOSAL_KIND_HANDLERS", () => {
       "add_contract",
       "add_event",
       "add_maintenance_schedule",
+      "add_recipe_quick",
       "add_recurring_block",
       "add_recurring_payment",
       "add_task",
@@ -247,6 +249,32 @@ describe("add_to_shopping_list handler", () => {
     expect(handler.summarise([{ item: "milk" }, { item: "eggs" }])).toBe(
       "Add 2 shopping items",
     );
+  });
+});
+
+describe("add_recipe_quick handler", () => {
+  const handler = PROPOSAL_KIND_HANDLERS.add_recipe_quick;
+
+  it("parses recipe diffs", () => {
+    const parsed = handler.parse(
+      JSON.stringify({
+        title: "Miso pasta",
+        ingredients: ["pasta", { quantity_text: "2 tbsp", ingredient_name: "miso" }],
+        steps: ["Boil pasta", "Stir through miso"],
+      }),
+    ) as AddRecipeQuickParsed;
+    expect(parsed.title).toBe("Miso pasta");
+    expect(parsed.ingredients).toHaveLength(2);
+  });
+
+  it("summarises ingredient and step counts", () => {
+    expect(
+      handler.summarise({
+        title: "Miso pasta",
+        ingredients: ["pasta", "miso"],
+        steps: ["Boil pasta", "Stir through miso"],
+      }),
+    ).toBe("Add recipe: Miso pasta · 2 ingredients · 2 steps");
   });
 });
 

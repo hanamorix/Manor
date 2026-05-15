@@ -15,6 +15,7 @@ pub mod add_chore;
 pub mod add_contract;
 pub mod add_ledger_transaction;
 pub mod add_maintenance_schedule;
+pub mod add_recipe_quick;
 pub mod add_recurring_block;
 pub mod add_recurring_payment;
 pub mod add_task;

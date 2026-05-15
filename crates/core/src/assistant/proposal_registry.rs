@@ -70,6 +70,7 @@ pub fn approve(conn: &mut Connection, proposal_id: i64) -> Result<Applied, Apply
         "add_to_shopping_list" => {
             approvers::add_to_shopping_list::approve(&tx, proposal_id, &diff)?
         }
+        "add_recipe_quick" => approvers::add_recipe_quick::approve(&tx, proposal_id, &diff)?,
         "complete_chore" => approvers::complete_chore::approve(&tx, proposal_id, &diff)?,
         "complete_task" => approvers::complete_task::approve(&tx, proposal_id, &diff)?,
         "add_time_block" => approvers::add_time_block::approve(&tx, proposal_id, &diff)?,

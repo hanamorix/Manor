@@ -322,6 +322,38 @@ impl AddToShoppingListArgs {
     }
 }
 
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+pub struct AddRecipeQuickIngredient {
+    #[serde(default, alias = "quantityText")]
+    pub quantity_text: Option<String>,
+    #[serde(alias = "ingredientName")]
+    pub ingredient_name: String,
+    #[serde(default)]
+    pub note: Option<String>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+#[serde(untagged)]
+pub enum AddRecipeQuickIngredientInput {
+    Text(String),
+    Structured(AddRecipeQuickIngredient),
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+pub struct AddRecipeQuickArgs {
+    pub title: String,
+    #[serde(default)]
+    pub ingredients: Vec<AddRecipeQuickIngredientInput>,
+    #[serde(default)]
+    pub steps: Vec<String>,
+    #[serde(default)]
+    pub servings: Option<i32>,
+    #[serde(default, alias = "prepTimeMins")]
+    pub prep_time_mins: Option<i32>,
+    #[serde(default, alias = "cookTimeMins")]
+    pub cook_time_mins: Option<i32>,
+}
+
 /// Insert a new proposal. Returns the new row id.
 pub fn insert(conn: &Connection, new: NewProposal<'_>) -> Result<i64> {
     let now = Utc::now().timestamp();
