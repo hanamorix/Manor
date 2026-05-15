@@ -3,6 +3,7 @@ import {
   PROPOSAL_KIND_HANDLERS,
   getProposalHandler,
   type AddTaskParsed,
+  type AddEventParsed,
   type CompleteTaskParsed,
   type AddChoreParsed,
   type AddTimeBlockParsed,
@@ -14,6 +15,7 @@ describe("PROPOSAL_KIND_HANDLERS", () => {
   it("contains the Phase 1 entries plus the Phase 2 add_chore entry", () => {
     expect(Object.keys(PROPOSAL_KIND_HANDLERS).sort()).toEqual([
       "add_chore",
+      "add_event",
       "add_maintenance_schedule",
       "add_recurring_block",
       "add_task",
@@ -85,6 +87,31 @@ describe("complete_task handler", () => {
       "Complete task: Buy milk",
     );
     expect(handler.summarise({ task_id: 12 })).toBe("Complete task: #12");
+  });
+});
+
+describe("add_event handler", () => {
+  const handler = PROPOSAL_KIND_HANDLERS.add_event;
+
+  it("parses a single event diff into a one-item array", () => {
+    const parsed = handler.parse(
+      JSON.stringify({
+        title: "Dentist",
+        start_at: 1778842800,
+        end_at: 1778846400,
+      }),
+    ) as AddEventParsed[];
+    expect(parsed).toHaveLength(1);
+    expect(parsed[0].title).toBe("Dentist");
+  });
+
+  it("summarises event bundles", () => {
+    expect(
+      handler.summarise([
+        { title: "Dentist", start_at: 1778842800, end_at: 1778846400 },
+        { title: "Lunch", start_at: 1778850000, end_at: 1778853600 },
+      ]),
+    ).toBe("Add 2 events");
   });
 });
 

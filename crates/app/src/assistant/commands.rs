@@ -16,14 +16,15 @@ use manor_core::assistant::{
     message,
     message::Role,
     proposal::{
-        self, AddChoreArgs, AddRecurringBlockArgs, AddTaskArgs, AddTimeBlockArgs,
-        CompleteChoreArgs, CompleteTaskArgs, NewProposal, Proposal,
+        self, AddChoreArgs, AddEventArgs, AddEventItem, AddRecurringBlockArgs, AddTaskArgs,
+        AddTimeBlockArgs, CompleteChoreArgs, CompleteTaskArgs, NewProposal, Proposal,
     },
     proposal_registry,
     task::{self, Task},
     Applied, ApplyError,
 };
-use rusqlite::Connection;
+use rusqlite::{params, Connection, OptionalExtension};
+use std::collections::BTreeSet;
 use std::path::PathBuf;
 use std::sync::{Arc, Mutex};
 use tauri::ipc::Channel;
@@ -297,6 +298,27 @@ pub async fn send_message(
                     .send(StreamChunk::Proposal(proposal_id))
                     .map_err(|e| e.to_string())?;
             }
+            "add_event" => {
+                let args: AddEventArgs = serde_json::from_value(tool_call.function.arguments)
+                    .map_err(|e| format!("bad add_event args: {e}"))?;
+                let diff_json = serde_json::to_string(&args).map_err(|e| e.to_string())?;
+                let proposal_id = {
+                    let conn = state.0.lock().map_err(|e| e.to_string())?;
+                    proposal::insert(
+                        &conn,
+                        NewProposal {
+                            kind: "add_event",
+                            rationale: &rationale,
+                            diff_json: &diff_json,
+                            skill: "today",
+                        },
+                    )
+                    .map_err(|e| e.to_string())?
+                };
+                on_event
+                    .send(StreamChunk::Proposal(proposal_id))
+                    .map_err(|e| e.to_string())?;
+            }
             "add_time_block" => {
                 let args: AddTimeBlockArgs =
                     serde_json::from_value(tool_call.function.arguments)
@@ -451,7 +473,23 @@ pub fn list_proposals(
 }
 
 #[tauri::command]
-pub fn approve_proposal(state: State<'_, Db>, id: i64) -> Result<Applied, ApplyError> {
+pub async fn approve_proposal(
+    state: State<'_, Db>,
+    sync_state: State<'_, Arc<SyncState>>,
+    id: i64,
+) -> Result<Applied, ApplyError> {
+    let kind = {
+        let conn = state
+            .0
+            .lock()
+            .map_err(|e| ApplyError::Internal(format!("db lock: {e}")))?;
+        proposal_registry::read_kind(&conn, id)?
+    };
+
+    if kind == "add_event" {
+        return approve_add_event_proposal(state.clone_arc(), sync_state.inner().clone(), id).await;
+    }
+
     let mut conn = state
         .0
         .lock()
@@ -460,16 +498,315 @@ pub fn approve_proposal(state: State<'_, Db>, id: i64) -> Result<Applied, ApplyE
 }
 
 #[tauri::command]
-pub fn approve_proposal_with_override(
+pub async fn approve_proposal_with_override(
     state: State<'_, Db>,
+    sync_state: State<'_, Arc<SyncState>>,
     id: i64,
     edited_diff_json: String,
 ) -> Result<Applied, ApplyError> {
+    let kind = {
+        let conn = state
+            .0
+            .lock()
+            .map_err(|e| ApplyError::Internal(format!("db lock: {e}")))?;
+        proposal_registry::read_kind(&conn, id)?
+    };
+
+    if kind == "add_event" {
+        {
+            let conn = state
+                .0
+                .lock()
+                .map_err(|e| ApplyError::Internal(format!("db lock: {e}")))?;
+            proposal_registry::update_diff(&conn, id, &edited_diff_json)?;
+        }
+        return approve_add_event_proposal(state.clone_arc(), sync_state.inner().clone(), id).await;
+    }
+
     let mut conn = state
         .0
         .lock()
         .map_err(|e| ApplyError::Internal(format!("db lock: {e}")))?;
     proposal_registry::approve_with_override(&mut conn, id, &edited_diff_json)
+}
+
+async fn approve_add_event_proposal(
+    db: Arc<Mutex<Connection>>,
+    sync_state: Arc<SyncState>,
+    proposal_id: i64,
+) -> Result<Applied, ApplyError> {
+    let handle = tokio::runtime::Handle::current();
+    tauri::async_runtime::spawn_blocking(move || {
+        let items = load_add_event_items(&db, proposal_id)?;
+        if items.is_empty() {
+            return Err(ApplyError::InvalidArg {
+                field: "items".into(),
+                reason: "at least one event is required".into(),
+            });
+        }
+
+        let mut applied = 0usize;
+        let mut errors = Vec::<ApplyError>::new();
+        let mut touched_accounts = BTreeSet::<i64>::new();
+
+        for (idx, item) in items.into_iter().enumerate() {
+            match put_event_item(&db, &handle, item) {
+                Ok(account_id) => {
+                    applied += 1;
+                    touched_accounts.insert(account_id);
+                }
+                Err(err) => errors.push(indexed_event_error(idx, err)),
+            }
+        }
+
+        for account_id in touched_accounts {
+            let Ok(password) = keychain::get_password(account_id) else {
+                continue;
+            };
+            let mut conn = db
+                .lock()
+                .map_err(|e| ApplyError::Internal(format!("db lock: {e}")))?;
+            let _ = handle.block_on(crate::sync::engine::sync_account(
+                &mut conn,
+                &sync_state,
+                account_id,
+                &password,
+                chrono_tz::UTC,
+            ));
+        }
+
+        let failed = errors.len();
+        let status = match (applied, failed) {
+            (0, _) => proposal::Status::Rejected,
+            (_, 0) => proposal::Status::Applied,
+            _ => proposal::Status::PartiallyApplied,
+        };
+
+        {
+            let conn = db
+                .lock()
+                .map_err(|e| ApplyError::Internal(format!("db lock: {e}")))?;
+            persist_event_proposal_outcome(&conn, proposal_id, status, &errors)?;
+        }
+
+        Ok(Applied {
+            proposal_id,
+            status,
+            items_applied: applied,
+            items_failed: failed,
+            errors,
+        })
+    })
+    .await
+    .map_err(|e| ApplyError::Internal(format!("event approval task failed: {e}")))?
+}
+
+fn load_add_event_items(
+    db: &Arc<Mutex<Connection>>,
+    proposal_id: i64,
+) -> Result<Vec<AddEventItem>, ApplyError> {
+    let conn = db
+        .lock()
+        .map_err(|e| ApplyError::Internal(format!("db lock: {e}")))?;
+    let row: Option<(String, String, String)> = conn
+        .query_row(
+            "SELECT kind, status, diff FROM proposal WHERE id = ?1",
+            params![proposal_id],
+            |r| Ok((r.get(0)?, r.get(1)?, r.get(2)?)),
+        )
+        .optional()
+        .map_err(|e| ApplyError::Internal(format!("proposal lookup failed: {e}")))?;
+    let (kind, status, diff) =
+        row.ok_or_else(|| ApplyError::Internal(format!("proposal {proposal_id} not found")))?;
+    if status != proposal::Status::Pending.as_str() {
+        return Err(ApplyError::Conflict("proposal not pending".into()));
+    }
+    if kind != "add_event" {
+        return Err(ApplyError::UnknownKind(kind));
+    }
+    let args: AddEventArgs = serde_json::from_str(&diff).map_err(|e| ApplyError::InvalidArg {
+        field: "diff".into(),
+        reason: e.to_string(),
+    })?;
+    Ok(args.into_items())
+}
+
+fn put_event_item(
+    db: &Arc<Mutex<Connection>>,
+    handle: &tokio::runtime::Handle,
+    item: AddEventItem,
+) -> Result<i64, ApplyError> {
+    validate_event_item(&item)?;
+    let (account, calendar_url) = {
+        let conn = db
+            .lock()
+            .map_err(|e| ApplyError::Internal(format!("db lock: {e}")))?;
+        resolve_event_target(&conn, &item)?
+    };
+
+    let password = keychain::get_password(account.id)
+        .map_err(|e| ApplyError::Internal(format!("keychain: {e}")))?;
+    let uid = new_uid();
+    let ical = crate::sync::ical_write::generate_vcalendar(
+        &uid,
+        item.title.trim(),
+        item.start_at,
+        item.end_at,
+        item.description.as_deref(),
+        item.location.as_deref(),
+        item.all_day,
+    );
+    let url = format!("{}/{}.ics", calendar_url.trim_end_matches('/'), uid);
+    let client = crate::sync::caldav::CalDavClient::new(&account.username, &password);
+    handle
+        .block_on(client.put_event(&url, &ical, None))
+        .map_err(|e| ApplyError::Network(e.to_string()))?;
+    Ok(account.id)
+}
+
+fn validate_event_item(item: &AddEventItem) -> Result<(), ApplyError> {
+    if item.title.trim().is_empty() {
+        return Err(ApplyError::InvalidArg {
+            field: "title".into(),
+            reason: "title cannot be empty".into(),
+        });
+    }
+    if item.start_at >= item.end_at {
+        return Err(ApplyError::InvalidArg {
+            field: "end_at".into(),
+            reason: "end_at must be after start_at".into(),
+        });
+    }
+    Ok(())
+}
+
+fn resolve_event_target(
+    conn: &Connection,
+    item: &AddEventItem,
+) -> Result<(CalendarAccount, String), ApplyError> {
+    if let Some(account_id) = item.account_id {
+        let account = calendar_account::get(conn, account_id)
+            .map_err(|e| ApplyError::Internal(format!("calendar account lookup failed: {e}")))?
+            .ok_or_else(|| ApplyError::StaleReference {
+                entity: "calendar_account".into(),
+                id: account_id.to_string(),
+            })?;
+        let calendar_url = item
+            .calendar_url
+            .as_deref()
+            .map(str::trim)
+            .filter(|url| !url.is_empty())
+            .map(ToOwned::to_owned)
+            .or_else(|| account.default_calendar_url.clone())
+            .ok_or_else(|| ApplyError::InvalidArg {
+                field: "calendar_url".into(),
+                reason: "calendar_url is required when the account has no default calendar".into(),
+            })?;
+        return Ok((account, calendar_url));
+    }
+
+    if let Some(calendar_url) = item
+        .calendar_url
+        .as_deref()
+        .map(str::trim)
+        .filter(|url| !url.is_empty())
+    {
+        if let Some(account) = find_account_for_calendar_url(conn, calendar_url)? {
+            return Ok((account, calendar_url.to_string()));
+        }
+        return Err(ApplyError::StaleReference {
+            entity: "calendar".into(),
+            id: calendar_url.to_string(),
+        });
+    }
+
+    let accounts = calendar_account::list(conn)
+        .map_err(|e| ApplyError::Internal(format!("calendar account list failed: {e}")))?;
+    let with_default: Vec<CalendarAccount> = accounts
+        .into_iter()
+        .filter(|account| account.default_calendar_url.is_some())
+        .collect();
+
+    match with_default.as_slice() {
+        [account] => Ok((
+            account.clone(),
+            account.default_calendar_url.clone().unwrap_or_default(),
+        )),
+        [] => Err(ApplyError::InvalidArg {
+            field: "calendar_url".into(),
+            reason: "no default calendar is configured".into(),
+        }),
+        _ => Err(ApplyError::Conflict(
+            "multiple calendar accounts have defaults; specify account_id".into(),
+        )),
+    }
+}
+
+fn find_account_for_calendar_url(
+    conn: &Connection,
+    calendar_url: &str,
+) -> Result<Option<CalendarAccount>, ApplyError> {
+    let id: Option<i64> = conn
+        .query_row(
+            "SELECT ca.id
+             FROM calendar_account ca
+             LEFT JOIN calendar c ON c.calendar_account_id = ca.id
+             WHERE ca.default_calendar_url = ?1 OR c.url = ?1
+             ORDER BY ca.id
+             LIMIT 1",
+            [calendar_url],
+            |row| row.get(0),
+        )
+        .optional()
+        .map_err(|e| ApplyError::Internal(format!("calendar lookup failed: {e}")))?;
+    id.map(|account_id| {
+        calendar_account::get(conn, account_id)
+            .map_err(|e| ApplyError::Internal(format!("calendar account lookup failed: {e}")))?
+            .ok_or_else(|| ApplyError::StaleReference {
+                entity: "calendar_account".into(),
+                id: account_id.to_string(),
+            })
+    })
+    .transpose()
+}
+
+fn persist_event_proposal_outcome(
+    conn: &Connection,
+    proposal_id: i64,
+    status: proposal::Status,
+    errors: &[ApplyError],
+) -> Result<(), ApplyError> {
+    let now = chrono::Utc::now().timestamp();
+    let applied_at = if matches!(status, proposal::Status::Rejected) {
+        None
+    } else {
+        Some(now)
+    };
+    let errors_json = if errors.is_empty() {
+        None
+    } else {
+        Some(
+            serde_json::to_string(errors)
+                .map_err(|e| ApplyError::Internal(format!("apply errors json: {e}")))?,
+        )
+    };
+
+    conn.execute(
+        "UPDATE proposal SET status = ?1, applied_at = ?2, apply_errors_json = ?3 WHERE id = ?4",
+        params![status.as_str(), applied_at, errors_json, proposal_id],
+    )
+    .map_err(|e| ApplyError::Internal(format!("proposal update failed: {e}")))?;
+    Ok(())
+}
+
+fn indexed_event_error(index: usize, err: ApplyError) -> ApplyError {
+    match err {
+        ApplyError::InvalidArg { field, reason } => ApplyError::InvalidArg {
+            field: format!("items[{index}].{field}"),
+            reason,
+        },
+        other => other,
+    }
 }
 
 #[tauri::command]
@@ -934,6 +1271,108 @@ mod tests_send_message {
     fn cleanup_skipped_when_no_error() {
         let events = vec![StreamChunk::Done];
         assert!(!stream_ended_with_unusable_error(&[], &events));
+    }
+}
+
+#[cfg(test)]
+mod tests_add_event_proposal {
+    use super::*;
+    use tempfile::tempdir;
+
+    fn fresh_db() -> (tempfile::TempDir, Connection) {
+        let dir = tempdir().unwrap();
+        let conn = db::init(&dir.path().join("t.db")).unwrap();
+        (dir, conn)
+    }
+
+    #[test]
+    fn resolve_event_target_uses_single_default_calendar() {
+        let (_d, conn) = fresh_db();
+        let account_id =
+            calendar_account::insert(&conn, "iCloud", "https://cal.example", "hana").unwrap();
+        calendar_account::set_default_calendar(&conn, account_id, "https://cal.example/home/")
+            .unwrap();
+        let item = AddEventItem {
+            account_id: None,
+            calendar_url: None,
+            title: "Dentist".into(),
+            start_at: 1_778_842_800,
+            end_at: 1_778_846_400,
+            description: None,
+            location: None,
+            all_day: false,
+        };
+
+        let (account, url) = resolve_event_target(&conn, &item).unwrap();
+        assert_eq!(account.id, account_id);
+        assert_eq!(url, "https://cal.example/home/");
+    }
+
+    #[test]
+    fn resolve_event_target_rejects_ambiguous_defaults() {
+        let (_d, conn) = fresh_db();
+        let a = calendar_account::insert(&conn, "A", "https://a.example", "a").unwrap();
+        let b = calendar_account::insert(&conn, "B", "https://b.example", "b").unwrap();
+        calendar_account::set_default_calendar(&conn, a, "https://a.example/home/").unwrap();
+        calendar_account::set_default_calendar(&conn, b, "https://b.example/home/").unwrap();
+        let item = AddEventItem {
+            account_id: None,
+            calendar_url: None,
+            title: "Dentist".into(),
+            start_at: 1_778_842_800,
+            end_at: 1_778_846_400,
+            description: None,
+            location: None,
+            all_day: false,
+        };
+
+        let err = resolve_event_target(&conn, &item).unwrap_err();
+        assert!(matches!(err, ApplyError::Conflict(_)));
+    }
+
+    #[test]
+    fn add_event_args_accepts_bundle() {
+        let diff = serde_json::json!([
+            {
+                "title": "Dentist",
+                "start_at": 1_778_842_800i64,
+                "end_at": 1_778_846_400i64
+            },
+            {
+                "title": "Lunch",
+                "start_at": 1_778_850_000i64,
+                "end_at": 1_778_853_600i64
+            }
+        ])
+        .to_string();
+
+        let args: AddEventArgs = serde_json::from_str(&diff).unwrap();
+        assert_eq!(args.into_items().len(), 2);
+    }
+
+    #[test]
+    fn validate_event_item_rejects_empty_title_and_bad_range() {
+        let mut item = AddEventItem {
+            account_id: None,
+            calendar_url: None,
+            title: "".into(),
+            start_at: 10,
+            end_at: 20,
+            description: None,
+            location: None,
+            all_day: false,
+        };
+        assert!(matches!(
+            validate_event_item(&item),
+            Err(ApplyError::InvalidArg { field, .. }) if field == "title"
+        ));
+
+        item.title = "Dentist".into();
+        item.end_at = 10;
+        assert!(matches!(
+            validate_event_item(&item),
+            Err(ApplyError::InvalidArg { field, .. }) if field == "end_at"
+        ));
     }
 }
 

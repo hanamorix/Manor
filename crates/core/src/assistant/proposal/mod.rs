@@ -130,6 +130,10 @@ impl AddChoreArgs {
     }
 }
 
+fn default_false() -> bool {
+    false
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
 pub struct CompleteChoreArgs {
     #[serde(default, alias = "choreId")]
@@ -172,6 +176,41 @@ pub struct AddRecurringBlockArgs {
     pub end_time: String,
     #[serde(deserialize_with = "tolerant::rrule_string")]
     pub rrule: String,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+pub struct AddEventItem {
+    #[serde(default, alias = "accountId")]
+    pub account_id: Option<i64>,
+    #[serde(default, alias = "calendarUrl")]
+    pub calendar_url: Option<String>,
+    pub title: String,
+    #[serde(alias = "startAt")]
+    pub start_at: i64,
+    #[serde(alias = "endAt")]
+    pub end_at: i64,
+    #[serde(default)]
+    pub description: Option<String>,
+    #[serde(default)]
+    pub location: Option<String>,
+    #[serde(default = "default_false", alias = "allDay")]
+    pub all_day: bool,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+#[serde(untagged)]
+pub enum AddEventArgs {
+    Single(AddEventItem),
+    Bundle(Vec<AddEventItem>),
+}
+
+impl AddEventArgs {
+    pub fn into_items(self) -> Vec<AddEventItem> {
+        match self {
+            AddEventArgs::Single(item) => vec![item],
+            AddEventArgs::Bundle(items) => items,
+        }
+    }
 }
 
 /// Insert a new proposal. Returns the new row id.

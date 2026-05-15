@@ -67,6 +67,56 @@ const completeTaskHandler: ProposalCardHandler<CompleteTaskParsed> = {
     `Complete task: ${parsed.title ?? `#${parsed.task_id ?? "unknown"}`}`,
 };
 
+// ── add_event ──────────────────────────────────────────────────────────
+
+export interface AddEventParsed {
+  account_id?: number;
+  calendar_url?: string;
+  title: string;
+  start_at: number;
+  end_at: number;
+  description?: string | null;
+  location?: string | null;
+  all_day?: boolean;
+}
+
+function normaliseEventDiff(
+  parsed: AddEventParsed | AddEventParsed[],
+): AddEventParsed[] {
+  return Array.isArray(parsed) ? parsed : [parsed];
+}
+
+function formatEventTime(seconds: number): string {
+  return new Date(seconds * 1000).toLocaleString(undefined, {
+    month: "short",
+    day: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+}
+
+const addEventHandler: ProposalCardHandler<AddEventParsed[]> = {
+  parse: (diffJson) =>
+    normaliseEventDiff(JSON.parse(diffJson) as AddEventParsed | AddEventParsed[]),
+  summarise: (parsed) => {
+    if (parsed.length === 1) {
+      const event = parsed[0];
+      return `Add event: ${event?.title ?? "Untitled event"} (${event ? formatEventTime(event.start_at) : "time unknown"})`;
+    }
+    return `Add ${parsed.length} events`;
+  },
+  CardBody: ({ parsed }) => (
+    createElement(
+      "div",
+      { style: { marginTop: 4, fontSize: 11, color: "var(--ink-soft)" } },
+      `${parsed
+        .slice(0, 3)
+        .map((event) => `${event.title} · ${formatEventTime(event.start_at)}`)
+        .join(" · ")}${parsed.length > 3 ? ` · +${parsed.length - 3} more` : ""}`,
+    )
+  ),
+};
+
 // ── add_chore ───────────────────────────────────────────────────────────
 
 export interface AddChoreParsed {
@@ -184,6 +234,7 @@ export const PROPOSAL_KIND_HANDLERS: Record<string, ProposalCardHandler<any>> =
   {
     add_task: addTaskHandler,
     complete_task: completeTaskHandler,
+    add_event: addEventHandler,
     add_chore: addChoreHandler,
     complete_chore: completeChoreHandler,
     add_time_block: addTimeBlockHandler,

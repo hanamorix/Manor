@@ -55,6 +55,68 @@ pub fn complete_task_tool() -> serde_json::Value {
     })
 }
 
+pub fn add_event_tool() -> serde_json::Value {
+    json!({
+        "type": "function",
+        "function": {
+            "name": "add_event",
+            "description": "Propose creating one or more calendar events through the user's configured CalDAV calendar. \
+                            Use this for appointments, meetings, reminders that belong on the calendar, and scheduled events. \
+                            Do not use add_task for calendar events.",
+            "parameters": {
+                "oneOf": [
+                    { "$ref": "#/$defs/event" },
+                    {
+                        "type": "array",
+                        "items": { "$ref": "#/$defs/event" },
+                        "minItems": 1
+                    }
+                ],
+                "$defs": {
+                    "event": {
+                        "type": "object",
+                        "required": ["title", "start_at", "end_at"],
+                        "properties": {
+                            "account_id": {
+                                "type": "integer",
+                                "description": "Optional calendar account id. Omit to use the single configured default calendar."
+                            },
+                            "calendar_url": {
+                                "type": "string",
+                                "description": "Optional CalDAV calendar collection URL. Omit to use the account default."
+                            },
+                            "title": {
+                                "type": "string",
+                                "description": "Event title."
+                            },
+                            "start_at": {
+                                "type": "integer",
+                                "description": "UTC start time as Unix seconds."
+                            },
+                            "end_at": {
+                                "type": "integer",
+                                "description": "UTC end time as Unix seconds."
+                            },
+                            "description": {
+                                "type": "string",
+                                "description": "Optional notes."
+                            },
+                            "location": {
+                                "type": "string",
+                                "description": "Optional location."
+                            },
+                            "all_day": {
+                                "type": "boolean",
+                                "description": "True for all-day events."
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    })
+}
+
 pub fn add_chore_tool() -> serde_json::Value {
     json!({
         "type": "function",
@@ -222,6 +284,7 @@ pub fn all_tools() -> Vec<serde_json::Value> {
     vec![
         add_task_tool(),
         complete_task_tool(),
+        add_event_tool(),
         add_chore_tool(),
         complete_chore_tool(),
         add_time_block_tool(),
