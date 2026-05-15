@@ -301,6 +301,27 @@ pub struct AddContractArgs {
     pub note: Option<String>,
 }
 
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+pub struct AddShoppingListItem {
+    pub item: String,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+#[serde(untagged)]
+pub enum AddToShoppingListArgs {
+    Single(AddShoppingListItem),
+    Bundle(Vec<AddShoppingListItem>),
+}
+
+impl AddToShoppingListArgs {
+    pub fn into_items(self) -> Vec<AddShoppingListItem> {
+        match self {
+            AddToShoppingListArgs::Single(item) => vec![item],
+            AddToShoppingListArgs::Bundle(items) => items,
+        }
+    }
+}
+
 /// Insert a new proposal. Returns the new row id.
 pub fn insert(conn: &Connection, new: NewProposal<'_>) -> Result<i64> {
     let now = Utc::now().timestamp();

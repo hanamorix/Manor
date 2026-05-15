@@ -241,6 +241,41 @@ const addContractHandler: ProposalCardHandler<AddContractParsed> = {
     ),
 };
 
+// ── add_to_shopping_list ───────────────────────────────────────────────
+
+export interface AddShoppingListItemParsed {
+  item: string;
+}
+
+function normaliseShoppingListDiff(
+  parsed: AddShoppingListItemParsed | AddShoppingListItemParsed[],
+): AddShoppingListItemParsed[] {
+  return Array.isArray(parsed) ? parsed : [parsed];
+}
+
+const addToShoppingListHandler: ProposalCardHandler<AddShoppingListItemParsed[]> =
+  {
+    parse: (diffJson) =>
+      normaliseShoppingListDiff(
+        JSON.parse(diffJson) as AddShoppingListItemParsed | AddShoppingListItemParsed[],
+      ),
+    summarise: (parsed) => {
+      if (parsed.length === 1) {
+        return `Add shopping item: ${parsed[0]?.item ?? "Untitled item"}`;
+      }
+      return `Add ${parsed.length} shopping items`;
+    },
+    CardBody: ({ parsed }) =>
+      createElement(
+        "div",
+        { style: { marginTop: 4, fontSize: 11, color: "var(--ink-soft)" } },
+        `${parsed
+          .slice(0, 4)
+          .map((item) => item.item)
+          .join(" · ")}${parsed.length > 4 ? ` · +${parsed.length - 4} more` : ""}`,
+      ),
+  };
+
 // ── add_chore ───────────────────────────────────────────────────────────
 
 export interface AddChoreParsed {
@@ -363,6 +398,7 @@ export const PROPOSAL_KIND_HANDLERS: Record<string, ProposalCardHandler<any>> =
     set_budget: setBudgetHandler,
     add_recurring_payment: addRecurringPaymentHandler,
     add_contract: addContractHandler,
+    add_to_shopping_list: addToShoppingListHandler,
     add_chore: addChoreHandler,
     complete_chore: completeChoreHandler,
     add_time_block: addTimeBlockHandler,

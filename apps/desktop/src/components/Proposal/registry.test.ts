@@ -8,6 +8,7 @@ import {
   type SetBudgetParsed,
   type AddRecurringPaymentParsed,
   type AddContractParsed,
+  type AddShoppingListItemParsed,
   type CompleteTaskParsed,
   type AddChoreParsed,
   type AddTimeBlockParsed,
@@ -26,6 +27,7 @@ describe("PROPOSAL_KIND_HANDLERS", () => {
       "add_recurring_payment",
       "add_task",
       "add_time_block",
+      "add_to_shopping_list",
       "add_transaction",
       "complete_chore",
       "complete_task",
@@ -227,6 +229,24 @@ describe("add_contract handler", () => {
         term_end: 1798761600,
       }),
     ).toMatch(/^Add contract: Zen Internet · GBP 30\.00\/mo · renews /);
+  });
+});
+
+describe("add_to_shopping_list handler", () => {
+  const handler = PROPOSAL_KIND_HANDLERS.add_to_shopping_list;
+
+  it("parses a single shopping list item into a one-item array", () => {
+    const parsed = handler.parse(
+      JSON.stringify({ item: "milk" }),
+    ) as AddShoppingListItemParsed[];
+    expect(parsed).toHaveLength(1);
+    expect(parsed[0].item).toBe("milk");
+  });
+
+  it("summarises bundles", () => {
+    expect(handler.summarise([{ item: "milk" }, { item: "eggs" }])).toBe(
+      "Add 2 shopping items",
+    );
   });
 });
 

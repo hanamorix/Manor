@@ -19,6 +19,7 @@ pub mod add_recurring_block;
 pub mod add_recurring_payment;
 pub mod add_task;
 pub mod add_time_block;
+pub mod add_to_shopping_list;
 pub mod complete_chore;
 pub mod complete_task;
 pub mod set_budget;

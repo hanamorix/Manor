@@ -18,7 +18,8 @@ use manor_core::assistant::{
     proposal::{
         self, AddChoreArgs, AddContractArgs, AddEventArgs, AddEventItem, AddLedgerTransactionArgs,
         AddRecurringBlockArgs, AddRecurringPaymentArgs, AddTaskArgs, AddTimeBlockArgs,
-        CompleteChoreArgs, CompleteTaskArgs, NewProposal, Proposal, SetBudgetArgs,
+        AddToShoppingListArgs, CompleteChoreArgs, CompleteTaskArgs, NewProposal, Proposal,
+        SetBudgetArgs,
     },
     proposal_registry,
     task::{self, Task},
@@ -398,6 +399,28 @@ pub async fn send_message(
                             rationale: &rationale,
                             diff_json: &diff_json,
                             skill: "ledger",
+                        },
+                    )
+                    .map_err(|e| e.to_string())?
+                };
+                on_event
+                    .send(StreamChunk::Proposal(proposal_id))
+                    .map_err(|e| e.to_string())?;
+            }
+            "add_to_shopping_list" => {
+                let args: AddToShoppingListArgs =
+                    serde_json::from_value(tool_call.function.arguments)
+                        .map_err(|e| format!("bad add_to_shopping_list args: {e}"))?;
+                let diff_json = serde_json::to_string(&args).map_err(|e| e.to_string())?;
+                let proposal_id = {
+                    let conn = state.0.lock().map_err(|e| e.to_string())?;
+                    proposal::insert(
+                        &conn,
+                        NewProposal {
+                            kind: "add_to_shopping_list",
+                            rationale: &rationale,
+                            diff_json: &diff_json,
+                            skill: "hearth",
                         },
                     )
                     .map_err(|e| e.to_string())?

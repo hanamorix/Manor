@@ -299,6 +299,44 @@ pub fn add_contract_tool() -> serde_json::Value {
     })
 }
 
+pub fn add_to_shopping_list_tool() -> serde_json::Value {
+    json!({
+        "type": "function",
+        "function": {
+            "name": "add_to_shopping_list",
+            "description": "Propose adding one or more manual items to the Hearth shopping list.",
+            "parameters": {
+                "oneOf": [
+                    {
+                        "type": "object",
+                        "required": ["item"],
+                        "properties": {
+                            "item": {
+                                "type": "string",
+                                "description": "Shopping list item name, e.g. milk."
+                            }
+                        }
+                    },
+                    {
+                        "type": "array",
+                        "items": {
+                            "type": "object",
+                            "required": ["item"],
+                            "properties": {
+                                "item": {
+                                    "type": "string",
+                                    "description": "Shopping list item name, e.g. milk."
+                                }
+                            }
+                        },
+                        "minItems": 1
+                    }
+                ]
+            }
+        }
+    })
+}
+
 pub fn add_chore_tool() -> serde_json::Value {
     json!({
         "type": "function",
@@ -471,6 +509,7 @@ pub fn all_tools() -> Vec<serde_json::Value> {
         set_budget_tool(),
         add_recurring_payment_tool(),
         add_contract_tool(),
+        add_to_shopping_list_tool(),
         add_chore_tool(),
         complete_chore_tool(),
         add_time_block_tool(),
