@@ -156,6 +156,20 @@ const addTransactionHandler: ProposalCardHandler<AddTransactionParsed> = {
     ),
 };
 
+// ── set_budget ─────────────────────────────────────────────────────────
+
+export interface SetBudgetParsed {
+  category_id?: number | null;
+  category_name?: string | null;
+  amount_pence: number;
+}
+
+const setBudgetHandler: ProposalCardHandler<SetBudgetParsed> = {
+  parse: (diffJson) => JSON.parse(diffJson) as SetBudgetParsed,
+  summarise: (parsed) =>
+    `Set budget: ${parsed.category_name ?? `Category #${parsed.category_id ?? "unknown"}`} · ${formatMoney(parsed.amount_pence)}`,
+};
+
 // ── add_chore ───────────────────────────────────────────────────────────
 
 export interface AddChoreParsed {
@@ -275,6 +289,7 @@ export const PROPOSAL_KIND_HANDLERS: Record<string, ProposalCardHandler<any>> =
     complete_task: completeTaskHandler,
     add_event: addEventHandler,
     add_transaction: addTransactionHandler,
+    set_budget: setBudgetHandler,
     add_chore: addChoreHandler,
     complete_chore: completeChoreHandler,
     add_time_block: addTimeBlockHandler,

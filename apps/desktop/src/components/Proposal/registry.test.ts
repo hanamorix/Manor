@@ -5,6 +5,7 @@ import {
   type AddTaskParsed,
   type AddEventParsed,
   type AddTransactionParsed,
+  type SetBudgetParsed,
   type CompleteTaskParsed,
   type AddChoreParsed,
   type AddTimeBlockParsed,
@@ -24,6 +25,7 @@ describe("PROPOSAL_KIND_HANDLERS", () => {
       "add_transaction",
       "complete_chore",
       "complete_task",
+      "set_budget",
     ]);
   });
 });
@@ -146,6 +148,24 @@ describe("add_transaction handler", () => {
         description: "Tesco Express",
       }),
     ).toBe("Add transaction: -GBP 12.40 · Tesco Express");
+  });
+});
+
+describe("set_budget handler", () => {
+  const handler = PROPOSAL_KIND_HANDLERS.set_budget;
+
+  it("parses budget diffs", () => {
+    const parsed = handler.parse(
+      JSON.stringify({ category_name: "Groceries", amount_pence: 40000 }),
+    ) as SetBudgetParsed;
+    expect(parsed.category_name).toBe("Groceries");
+    expect(parsed.amount_pence).toBe(40000);
+  });
+
+  it("summarises category and amount", () => {
+    expect(
+      handler.summarise({ category_name: "Groceries", amount_pence: 40000 }),
+    ).toBe("Set budget: Groceries · GBP 400.00");
   });
 });
 

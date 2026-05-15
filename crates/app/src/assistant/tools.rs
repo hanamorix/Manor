@@ -167,6 +167,35 @@ pub fn add_transaction_tool() -> serde_json::Value {
     })
 }
 
+pub fn set_budget_tool() -> serde_json::Value {
+    json!({
+        "type": "function",
+        "function": {
+            "name": "set_budget",
+            "description": "Propose setting a monthly Ledger budget for an existing category. \
+                            Amounts are positive integer pence, or strings like £400.",
+            "parameters": {
+                "type": "object",
+                "required": ["amount_pence"],
+                "properties": {
+                    "category_id": {
+                        "type": "integer",
+                        "description": "Optional existing Ledger category id."
+                    },
+                    "category_name": {
+                        "type": "string",
+                        "description": "Exact existing Ledger category name, e.g. Groceries."
+                    },
+                    "amount_pence": {
+                        "description": "Positive monthly budget amount. Accepts pence integer or string like £400.",
+                        "oneOf": [{ "type": "integer" }, { "type": "number" }, { "type": "string" }]
+                    }
+                }
+            }
+        }
+    })
+}
+
 pub fn add_chore_tool() -> serde_json::Value {
     json!({
         "type": "function",
@@ -336,6 +365,7 @@ pub fn all_tools() -> Vec<serde_json::Value> {
         complete_task_tool(),
         add_event_tool(),
         add_transaction_tool(),
+        set_budget_tool(),
         add_chore_tool(),
         complete_chore_tool(),
         add_time_block_tool(),

@@ -236,6 +236,16 @@ pub struct AddLedgerTransactionArgs {
     pub note: Option<String>,
 }
 
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+pub struct SetBudgetArgs {
+    #[serde(default, alias = "categoryId")]
+    pub category_id: Option<i64>,
+    #[serde(default, alias = "categoryName")]
+    pub category_name: Option<String>,
+    #[serde(deserialize_with = "tolerant::amount_pence")]
+    pub amount_pence: i64,
+}
+
 /// Insert a new proposal. Returns the new row id.
 pub fn insert(conn: &Connection, new: NewProposal<'_>) -> Result<i64> {
     let now = Utc::now().timestamp();
