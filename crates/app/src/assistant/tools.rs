@@ -405,6 +405,39 @@ pub fn add_recipe_quick_tool() -> serde_json::Value {
     })
 }
 
+pub fn plan_meal_tool() -> serde_json::Value {
+    json!({
+        "type": "function",
+        "function": {
+            "name": "plan_meal",
+            "description": "Propose placing an existing Hearth recipe on the meal plan for a date. \
+                            Use recipe_id when context provides one; otherwise use an exact recipe_name.",
+            "parameters": {
+                "type": "object",
+                "required": ["date_iso"],
+                "properties": {
+                    "date_iso": {
+                        "type": "string",
+                        "description": "Meal date as YYYY-MM-DD."
+                    },
+                    "recipe_id": {
+                        "type": "string",
+                        "description": "Preferred existing recipe id."
+                    },
+                    "recipe_name": {
+                        "type": "string",
+                        "description": "Exact existing recipe title when recipe_id is unavailable."
+                    },
+                    "recipe_id_or_name": {
+                        "type": "string",
+                        "description": "Existing recipe id or exact title."
+                    }
+                }
+            }
+        }
+    })
+}
+
 pub fn add_chore_tool() -> serde_json::Value {
     json!({
         "type": "function",
@@ -579,6 +612,7 @@ pub fn all_tools() -> Vec<serde_json::Value> {
         add_contract_tool(),
         add_to_shopping_list_tool(),
         add_recipe_quick_tool(),
+        plan_meal_tool(),
         add_chore_tool(),
         complete_chore_tool(),
         add_time_block_tool(),

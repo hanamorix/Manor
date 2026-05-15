@@ -19,7 +19,7 @@ use manor_core::assistant::{
         self, AddChoreArgs, AddContractArgs, AddEventArgs, AddEventItem, AddLedgerTransactionArgs,
         AddRecipeQuickArgs, AddRecurringBlockArgs, AddRecurringPaymentArgs, AddTaskArgs,
         AddTimeBlockArgs, AddToShoppingListArgs, CompleteChoreArgs, CompleteTaskArgs, NewProposal,
-        Proposal, SetBudgetArgs,
+        PlanMealArgs, Proposal, SetBudgetArgs,
     },
     proposal_registry,
     task::{self, Task},
@@ -439,6 +439,27 @@ pub async fn send_message(
                         &conn,
                         NewProposal {
                             kind: "add_recipe_quick",
+                            rationale: &rationale,
+                            diff_json: &diff_json,
+                            skill: "hearth",
+                        },
+                    )
+                    .map_err(|e| e.to_string())?
+                };
+                on_event
+                    .send(StreamChunk::Proposal(proposal_id))
+                    .map_err(|e| e.to_string())?;
+            }
+            "plan_meal" => {
+                let args: PlanMealArgs = serde_json::from_value(tool_call.function.arguments)
+                    .map_err(|e| format!("bad plan_meal args: {e}"))?;
+                let diff_json = serde_json::to_string(&args).map_err(|e| e.to_string())?;
+                let proposal_id = {
+                    let conn = state.0.lock().map_err(|e| e.to_string())?;
+                    proposal::insert(
+                        &conn,
+                        NewProposal {
+                            kind: "plan_meal",
                             rationale: &rationale,
                             diff_json: &diff_json,
                             skill: "hearth",

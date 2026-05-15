@@ -28,7 +28,7 @@
 //! and so exercise the round-trip through `render` automatically.
 
 use anyhow::Result;
-use chrono::{DateTime, Local};
+use chrono::{DateTime, Datelike, Local};
 use rusqlite::Connection;
 
 /// Which per-room slices to include in the rendered context.
@@ -206,12 +206,37 @@ pub fn render(now: DateTime<Local>, conn: &Connection, slices: ContextSlices) ->
 
     if slices.hearth {
         push_section_separator(&mut out);
-        let n = manor_core::recipe::dal::list_recipes(
+        let recipes = manor_core::recipe::dal::list_recipes(
             conn,
             &manor_core::recipe::dal::ListFilter::default(),
-        )?
-        .len();
-        out.push_str(&format!("## Hearth\n(recipes: {n})\n"));
+        )?;
+        out.push_str(&format!("## Hearth\n(recipes: {})\n", recipes.len()));
+        if !recipes.is_empty() {
+            out.push_str("Recipes:\n");
+            for recipe in recipes.iter().take(20) {
+                out.push_str(&format!("- {} — {}\n", recipe.id, recipe.title));
+            }
+        }
+
+        let week_start = monday_of_week(now);
+        let week = manor_core::meal_plan::dal::get_week(conn, &week_start)?;
+        let planned = week
+            .into_iter()
+            .filter_map(|entry| {
+                entry
+                    .recipe_id
+                    .map(|recipe_id| (entry.entry_date, recipe_id))
+            })
+            .collect::<Vec<_>>();
+        if !planned.is_empty() {
+            out.push_str("This week:\n");
+            for (date, recipe_id) in planned {
+                let title = manor_core::recipe::dal::get_recipe(conn, &recipe_id)?
+                    .map(|recipe| recipe.title)
+                    .unwrap_or_else(|| "missing recipe".into());
+                out.push_str(&format!("- {date} — {title} ({recipe_id})\n"));
+            }
+        }
     }
 
     if slices.bones {
@@ -241,6 +266,12 @@ fn push_section_separator(out: &mut String) {
         }
         out.push('\n');
     }
+}
+
+fn monday_of_week(now: DateTime<Local>) -> String {
+    let date = now.date_naive();
+    let monday = date - chrono::Duration::days(date.weekday().num_days_from_monday() as i64);
+    monday.format("%Y-%m-%d").to_string()
 }
 
 // ---------------------------------------------------------------------------
@@ -384,6 +415,50 @@ mod tests {
         )
         .unwrap();
         assert_eq!(out, "## Hearth\n(recipes: 0)\n");
+    }
+
+    #[test]
+    fn render_hearth_lists_recipes_and_current_week_plan() {
+        use manor_core::recipe::{dal as recipe_dal, ImportMethod, RecipeDraft};
+
+        let (_d, conn) = fresh_conn();
+        let recipe_id = recipe_dal::insert_recipe(
+            &conn,
+            &RecipeDraft {
+                title: "Miso pasta".into(),
+                servings: None,
+                prep_time_mins: None,
+                cook_time_mins: None,
+                instructions: "1. Cook".into(),
+                source_url: None,
+                source_host: None,
+                import_method: ImportMethod::Manual,
+                ingredients: vec![],
+                hero_attachment_uuid: None,
+            },
+        )
+        .unwrap();
+        manor_core::meal_plan::dal::set_entry(&conn, "2026-05-13", &recipe_id).unwrap();
+
+        let now = local_dt("2026-05-15", 12, 0);
+        let out = render(
+            now,
+            &conn,
+            ContextSlices {
+                hearth: true,
+                ..ContextSlices::NONE
+            },
+        )
+        .unwrap();
+
+        assert!(
+            out.contains(&format!("- {recipe_id} — Miso pasta\n")),
+            "got: {out}"
+        );
+        assert!(
+            out.contains(&format!("- 2026-05-13 — Miso pasta ({recipe_id})\n")),
+            "got: {out}"
+        );
     }
 
     #[test]

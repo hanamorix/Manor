@@ -23,4 +23,5 @@ pub mod add_time_block;
 pub mod add_to_shopping_list;
 pub mod complete_chore;
 pub mod complete_task;
+pub mod plan_meal;
 pub mod set_budget;

@@ -10,6 +10,7 @@ import {
   type AddContractParsed,
   type AddShoppingListItemParsed,
   type AddRecipeQuickParsed,
+  type PlanMealParsed,
   type CompleteTaskParsed,
   type AddChoreParsed,
   type AddTimeBlockParsed,
@@ -33,6 +34,7 @@ describe("PROPOSAL_KIND_HANDLERS", () => {
       "add_transaction",
       "complete_chore",
       "complete_task",
+      "plan_meal",
       "set_budget",
     ]);
   });
@@ -275,6 +277,27 @@ describe("add_recipe_quick handler", () => {
         steps: ["Boil pasta", "Stir through miso"],
       }),
     ).toBe("Add recipe: Miso pasta · 2 ingredients · 2 steps");
+  });
+});
+
+describe("plan_meal handler", () => {
+  const handler = PROPOSAL_KIND_HANDLERS.plan_meal;
+
+  it("parses meal plan diffs", () => {
+    const parsed = handler.parse(
+      JSON.stringify({ date_iso: "2026-05-18", recipe_name: "Miso pasta" }),
+    ) as PlanMealParsed;
+    expect(parsed.date_iso).toBe("2026-05-18");
+    expect(parsed.recipe_name).toBe("Miso pasta");
+  });
+
+  it("summarises recipe and date", () => {
+    expect(
+      handler.summarise({
+        date_iso: "2026-05-18",
+        recipe_name: "Miso pasta",
+      }),
+    ).toBe("Plan meal: Miso pasta on 2026-05-18");
   });
 });
 

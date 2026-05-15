@@ -354,6 +354,18 @@ pub struct AddRecipeQuickArgs {
     pub cook_time_mins: Option<i32>,
 }
 
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+pub struct PlanMealArgs {
+    #[serde(alias = "dateIso", alias = "date")]
+    pub date_iso: String,
+    #[serde(default, alias = "recipeId")]
+    pub recipe_id: Option<String>,
+    #[serde(default, alias = "recipeName")]
+    pub recipe_name: Option<String>,
+    #[serde(default, alias = "recipeIdOrName")]
+    pub recipe_id_or_name: Option<String>,
+}
+
 /// Insert a new proposal. Returns the new row id.
 pub fn insert(conn: &Connection, new: NewProposal<'_>) -> Result<i64> {
     let now = Utc::now().timestamp();

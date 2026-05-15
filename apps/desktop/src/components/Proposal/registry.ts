@@ -317,6 +317,21 @@ const addRecipeQuickHandler: ProposalCardHandler<AddRecipeQuickParsed> = {
     ),
 };
 
+// ── plan_meal ─────────────────────────────────────────────────────────
+
+export interface PlanMealParsed {
+  date_iso: string;
+  recipe_id?: string | null;
+  recipe_name?: string | null;
+  recipe_id_or_name?: string | null;
+}
+
+const planMealHandler: ProposalCardHandler<PlanMealParsed> = {
+  parse: (diffJson) => JSON.parse(diffJson) as PlanMealParsed,
+  summarise: (parsed) =>
+    `Plan meal: ${parsed.recipe_name ?? parsed.recipe_id_or_name ?? parsed.recipe_id ?? "unknown recipe"} on ${parsed.date_iso}`,
+};
+
 // ── add_chore ───────────────────────────────────────────────────────────
 
 export interface AddChoreParsed {
@@ -441,6 +456,7 @@ export const PROPOSAL_KIND_HANDLERS: Record<string, ProposalCardHandler<any>> =
     add_contract: addContractHandler,
     add_to_shopping_list: addToShoppingListHandler,
     add_recipe_quick: addRecipeQuickHandler,
+    plan_meal: planMealHandler,
     add_chore: addChoreHandler,
     complete_chore: completeChoreHandler,
     add_time_block: addTimeBlockHandler,
