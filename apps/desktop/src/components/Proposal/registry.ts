@@ -11,6 +11,7 @@
 
 import { createElement, type ComponentType } from "react";
 import type { Proposal } from "../../lib/today/ipc";
+import { ProposalEventEditDrawer } from "./ProposalEventEditDrawer";
 
 /// Per-kind handler. Generic `P` is the parsed-diff shape.
 ///
@@ -115,6 +116,8 @@ const addEventHandler: ProposalCardHandler<AddEventParsed[]> = {
         .join(" · ")}${parsed.length > 3 ? ` · +${parsed.length - 3} more` : ""}`,
     )
   ),
+  supportsEdit: true,
+  EditDrawer: ProposalEventEditDrawer,
 };
 
 // ── add_chore ───────────────────────────────────────────────────────────

@@ -113,6 +113,11 @@ describe("add_event handler", () => {
       ]),
     ).toBe("Add 2 events");
   });
+
+  it("declares edit support", () => {
+    expect(handler.supportsEdit).toBe(true);
+    expect(handler.EditDrawer).toBeDefined();
+  });
 });
 
 describe("add_chore handler", () => {
