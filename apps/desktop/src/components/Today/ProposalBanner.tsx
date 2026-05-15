@@ -1,37 +1,11 @@
 import { useEffect } from "react";
-import { Check, X } from "lucide-react";
 import { useTodayStore } from "../../lib/today/state";
 import {
-  approveProposal,
-  rejectProposal,
   listProposals,
+  listTasks,
   type Proposal,
 } from "../../lib/today/ipc";
-
-interface DiffSummary {
-  title: string;
-  due_date?: string;
-}
-
-function summarise(proposal: Proposal): string {
-  if (proposal.kind === "add_task") {
-    try {
-      const parsed = JSON.parse(proposal.diff) as DiffSummary;
-      const dateSuffix = parsed.due_date ? ` (due ${parsed.due_date})` : "";
-      return `Add task: ${parsed.title}${dateSuffix}`;
-    } catch {
-      return "Add task";
-    }
-  }
-  return proposal.kind;
-}
-
-function rationaleLine(proposal: Proposal): string {
-  const r = proposal.rationale.trim();
-  if (r.length === 0) return "Manor proposed this from your message";
-  const truncated = r.length > 120 ? `${r.slice(0, 117)}...` : r;
-  return `Manor: "${truncated}"`;
-}
+import { ProposalCard } from "../Proposal/ProposalCard";
 
 export default function ProposalBanner() {
   const pending = useTodayStore((s) => s.pendingProposals);
@@ -45,109 +19,29 @@ export default function ProposalBanner() {
 
   if (pending.length === 0) return null;
 
-  const handleApprove = async (id: number) => {
-    removeProposal(id);
+  const handleApplied = (p: Proposal) => async () => {
+    removeProposal(p.id);
     try {
-      const refreshedTasks = await approveProposal(id);
-      setTasks(refreshedTasks);
+      const refreshed = await listTasks();
+      setTasks(refreshed);
     } catch {
       void listProposals("pending").then(setPendingProposals);
     }
   };
 
-  const handleReject = async (id: number) => {
-    removeProposal(id);
-    try {
-      await rejectProposal(id);
-    } catch {
-      void listProposals("pending").then(setPendingProposals);
-    }
+  const handleRejected = (p: Proposal) => () => {
+    removeProposal(p.id);
   };
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
       {pending.map((p) => (
-        <div
+        <ProposalCard
           key={p.id}
-          style={{
-            display: "flex",
-            alignItems: "center",
-            gap: 10,
-            background: "var(--hairline)",
-            border: "1px solid var(--hairline-strong)",
-            borderRadius: "var(--radius-md)",
-            padding: "10px 14px",
-            animation: "bannerIn 200ms ease-out",
-          }}
-        >
-          <span
-            style={{
-              background: "var(--ink)",
-              color: "var(--action-fg)",
-              fontSize: 10,
-              fontWeight: 600,
-              padding: "2px 8px",
-              borderRadius: "var(--radius-md)",
-              flexShrink: 0,
-            }}
-          >
-            PROPOSAL
-          </span>
-          <div style={{ flex: 1, minWidth: 0 }}>
-            <div style={{ fontWeight: 600, fontSize: "var(--text-sm)", color: "var(--ink)" }}>
-              {summarise(p)}
-            </div>
-            <div
-              style={{
-                fontSize: 11,
-                color: "var(--ink-soft)",
-                whiteSpace: "nowrap",
-                overflow: "hidden",
-                textOverflow: "ellipsis",
-              }}
-            >
-              {rationaleLine(p)}
-            </div>
-          </div>
-          <button
-            onClick={() => void handleApprove(p.id)}
-            aria-label="approve"
-            style={{
-              padding: "4px 10px",
-              borderRadius: "var(--radius-md)",
-              fontSize: "var(--text-xs)",
-              fontWeight: 600,
-              border: "none",
-              background: "var(--ink)",
-              color: "var(--action-fg)",
-              cursor: "pointer",
-              display: "inline-flex",
-              alignItems: "center",
-              justifyContent: "center",
-            }}
-          >
-            <Check size={12} strokeWidth={2.2} />
-          </button>
-          <button
-            onClick={() => void handleReject(p.id)}
-            aria-label="reject"
-            style={{
-              padding: "4px 10px",
-              borderRadius: "var(--radius-md)",
-              fontSize: "var(--text-xs)",
-              fontWeight: 600,
-              border: "none",
-              background: "var(--surface)",
-              color: "var(--ink-soft)",
-              cursor: "pointer",
-              display: "inline-flex",
-              alignItems: "center",
-              justifyContent: "center",
-            }}
-          >
-            <X size={12} strokeWidth={2.2} />
-          </button>
-        </div>
+          proposal={p}
+          onApplied={() => void handleApplied(p)()}
+          onRejected={handleRejected(p)}
+        />
       ))}
     </div>
   );

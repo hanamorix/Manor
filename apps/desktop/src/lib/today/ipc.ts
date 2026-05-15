@@ -66,8 +66,65 @@ export async function listProposals(status?: string): Promise<Proposal[]> {
   return invoke<Proposal[]>("list_proposals", { status: status ?? null });
 }
 
-export async function approveProposal(id: number): Promise<Task[]> {
-  return invoke<Task[]>("approve_proposal", { id });
+/// Mirror of `manor_core::assistant::proposal::Status` with snake_case rename.
+export type ProposalStatus =
+  | "pending"
+  | "approved"
+  | "rejected"
+  | "applied"
+  | "partially_applied";
+
+/// Mirror of `manor_core::assistant::Applied`. Returned by `approveProposal`
+/// and `approveProposalWithOverride` on success.
+export interface Applied {
+  proposal_id: number;
+  status: ProposalStatus;
+  items_applied: number;
+  items_failed: number;
+  errors: ApplyError[];
+}
+
+/// Mirror of `manor_core::assistant::ApplyError`. Adjacently-tagged union —
+/// pattern-match on `err.type` and `err.value` is narrowed to the right
+/// payload. Spec §4.4.
+export type ApplyError =
+  | { type: "StaleReference"; value: { entity: string; id: string } }
+  | { type: "InvalidArg"; value: { field: string; reason: string } }
+  | { type: "Conflict"; value: string }
+  | { type: "Network"; value: string }
+  | { type: "UnknownKind"; value: string }
+  | { type: "Internal"; value: string };
+
+/// Type guard so callers can `if (isApplyError(e))` on the value tauri's
+/// `invoke` rejected with. Tauri serialises `Result::Err` of a `Serialize`
+/// type as the rejection payload — which arrives as `unknown` in the
+/// Promise's catch handler.
+export function isApplyError(value: unknown): value is ApplyError {
+  if (typeof value !== "object" || value === null) return false;
+  const v = value as { type?: unknown; value?: unknown };
+  if (typeof v.type !== "string") return false;
+  return (
+    v.type === "StaleReference" ||
+    v.type === "InvalidArg" ||
+    v.type === "Conflict" ||
+    v.type === "Network" ||
+    v.type === "UnknownKind" ||
+    v.type === "Internal"
+  );
+}
+
+export async function approveProposal(id: number): Promise<Applied> {
+  return invoke<Applied>("approve_proposal", { id });
+}
+
+export async function approveProposalWithOverride(
+  id: number,
+  editedDiffJson: string,
+): Promise<Applied> {
+  return invoke<Applied>("approve_proposal_with_override", {
+    id,
+    editedDiffJson,
+  });
 }
 
 export async function rejectProposal(id: number): Promise<void> {

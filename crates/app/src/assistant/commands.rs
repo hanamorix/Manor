@@ -3,7 +3,7 @@
 use crate::assistant::ollama::{
     resolve_model, ChatMessage, ChatRole, OllamaClient, StreamChunk, DEFAULT_ENDPOINT,
 };
-use crate::assistant::prompts::SYSTEM_PROMPT;
+use crate::assistant::prompts::build_system_prompt;
 use crate::assistant::tools;
 use crate::sync::engine::{SyncResult, SyncState};
 use crate::sync::keychain;
@@ -15,10 +15,18 @@ use manor_core::assistant::{
     event::{self, Event},
     message,
     message::Role,
-    proposal::{self, AddTaskArgs, NewProposal, Proposal},
+    proposal::{
+        self, AddChoreArgs, AddContractArgs, AddEventArgs, AddEventItem, AddLedgerTransactionArgs,
+        AddRecipeQuickArgs, AddRecurringBlockArgs, AddRecurringPaymentArgs, AddTaskArgs,
+        AddTimeBlockArgs, AddToShoppingListArgs, CompleteChoreArgs, CompleteTaskArgs, NewProposal,
+        PlanMealArgs, Proposal, SetBudgetArgs,
+    },
+    proposal_registry,
     task::{self, Task},
+    Applied, ApplyError,
 };
-use rusqlite::Connection;
+use rusqlite::{params, Connection, OptionalExtension};
+use std::collections::BTreeSet;
 use std::path::PathBuf;
 use std::sync::{Arc, Mutex};
 use tauri::ipc::Channel;
@@ -115,15 +123,18 @@ pub async fn send_message(
         .send(StreamChunk::Started(assistant_row_id))
         .map_err(|e| e.to_string())?;
 
-    // 3. Build chat-message history (system prompt + today context + recent turns).
-    let today_block = {
+    // 3. Build chat-message history (system prompt + dynamic per-room context + recent turns).
+    //
+    // The classifier reads the *user's latest message* (not full history) — multi-room
+    // conversations re-classify each turn so context tracks the user's focus.
+    let context_block = {
+        let slices = crate::assistant::context::classify(&content);
         let conn = state.0.lock().map_err(|e| e.to_string())?;
-        crate::assistant::today::compose_today_context(Local::now(), &conn)
-            .map_err(|e| e.to_string())?
+        crate::assistant::context::render(Local::now(), &conn, slices).map_err(|e| e.to_string())?
     };
     let mut chat_msgs: Vec<ChatMessage> = vec![ChatMessage {
         role: ChatRole::System,
-        content: format!("{SYSTEM_PROMPT}\n\n{today_block}"),
+        content: build_system_prompt(&context_block),
     }];
     for m in history {
         if m.content.is_empty() {
@@ -218,6 +229,284 @@ pub async fn send_message(
                             rationale: &rationale,
                             diff_json: &diff_json,
                             skill: "tasks",
+                        },
+                    )
+                    .map_err(|e| e.to_string())?
+                };
+                on_event
+                    .send(StreamChunk::Proposal(proposal_id))
+                    .map_err(|e| e.to_string())?;
+            }
+            "add_chore" => {
+                let args: AddChoreArgs = serde_json::from_value(tool_call.function.arguments)
+                    .map_err(|e| format!("bad add_chore args: {e}"))?;
+                let diff_json = serde_json::to_string(&args).map_err(|e| e.to_string())?;
+                let proposal_id = {
+                    let conn = state.0.lock().map_err(|e| e.to_string())?;
+                    proposal::insert(
+                        &conn,
+                        NewProposal {
+                            kind: "add_chore",
+                            rationale: &rationale,
+                            diff_json: &diff_json,
+                            skill: "rhythm",
+                        },
+                    )
+                    .map_err(|e| e.to_string())?
+                };
+                on_event
+                    .send(StreamChunk::Proposal(proposal_id))
+                    .map_err(|e| e.to_string())?;
+            }
+            "complete_chore" => {
+                let args: CompleteChoreArgs = serde_json::from_value(tool_call.function.arguments)
+                    .map_err(|e| format!("bad complete_chore args: {e}"))?;
+                let diff_json = serde_json::to_string(&args).map_err(|e| e.to_string())?;
+                let proposal_id = {
+                    let conn = state.0.lock().map_err(|e| e.to_string())?;
+                    proposal::insert(
+                        &conn,
+                        NewProposal {
+                            kind: "complete_chore",
+                            rationale: &rationale,
+                            diff_json: &diff_json,
+                            skill: "rhythm",
+                        },
+                    )
+                    .map_err(|e| e.to_string())?
+                };
+                on_event
+                    .send(StreamChunk::Proposal(proposal_id))
+                    .map_err(|e| e.to_string())?;
+            }
+            "complete_task" => {
+                let args: CompleteTaskArgs = serde_json::from_value(tool_call.function.arguments)
+                    .map_err(|e| format!("bad complete_task args: {e}"))?;
+                let diff_json = serde_json::to_string(&args).map_err(|e| e.to_string())?;
+                let proposal_id = {
+                    let conn = state.0.lock().map_err(|e| e.to_string())?;
+                    proposal::insert(
+                        &conn,
+                        NewProposal {
+                            kind: "complete_task",
+                            rationale: &rationale,
+                            diff_json: &diff_json,
+                            skill: "tasks",
+                        },
+                    )
+                    .map_err(|e| e.to_string())?
+                };
+                on_event
+                    .send(StreamChunk::Proposal(proposal_id))
+                    .map_err(|e| e.to_string())?;
+            }
+            "add_event" => {
+                let args: AddEventArgs = serde_json::from_value(tool_call.function.arguments)
+                    .map_err(|e| format!("bad add_event args: {e}"))?;
+                let diff_json = serde_json::to_string(&args).map_err(|e| e.to_string())?;
+                let proposal_id = {
+                    let conn = state.0.lock().map_err(|e| e.to_string())?;
+                    proposal::insert(
+                        &conn,
+                        NewProposal {
+                            kind: "add_event",
+                            rationale: &rationale,
+                            diff_json: &diff_json,
+                            skill: "today",
+                        },
+                    )
+                    .map_err(|e| e.to_string())?
+                };
+                on_event
+                    .send(StreamChunk::Proposal(proposal_id))
+                    .map_err(|e| e.to_string())?;
+            }
+            "add_transaction" => {
+                let args: AddLedgerTransactionArgs =
+                    serde_json::from_value(tool_call.function.arguments)
+                        .map_err(|e| format!("bad add_transaction args: {e}"))?;
+                let diff_json = serde_json::to_string(&args).map_err(|e| e.to_string())?;
+                let proposal_id = {
+                    let conn = state.0.lock().map_err(|e| e.to_string())?;
+                    proposal::insert(
+                        &conn,
+                        NewProposal {
+                            kind: "add_transaction",
+                            rationale: &rationale,
+                            diff_json: &diff_json,
+                            skill: "ledger",
+                        },
+                    )
+                    .map_err(|e| e.to_string())?
+                };
+                on_event
+                    .send(StreamChunk::Proposal(proposal_id))
+                    .map_err(|e| e.to_string())?;
+            }
+            "set_budget" => {
+                let args: SetBudgetArgs = serde_json::from_value(tool_call.function.arguments)
+                    .map_err(|e| format!("bad set_budget args: {e}"))?;
+                let diff_json = serde_json::to_string(&args).map_err(|e| e.to_string())?;
+                let proposal_id = {
+                    let conn = state.0.lock().map_err(|e| e.to_string())?;
+                    proposal::insert(
+                        &conn,
+                        NewProposal {
+                            kind: "set_budget",
+                            rationale: &rationale,
+                            diff_json: &diff_json,
+                            skill: "ledger",
+                        },
+                    )
+                    .map_err(|e| e.to_string())?
+                };
+                on_event
+                    .send(StreamChunk::Proposal(proposal_id))
+                    .map_err(|e| e.to_string())?;
+            }
+            "add_recurring_payment" => {
+                let args: AddRecurringPaymentArgs =
+                    serde_json::from_value(tool_call.function.arguments)
+                        .map_err(|e| format!("bad add_recurring_payment args: {e}"))?;
+                let diff_json = serde_json::to_string(&args).map_err(|e| e.to_string())?;
+                let proposal_id = {
+                    let conn = state.0.lock().map_err(|e| e.to_string())?;
+                    proposal::insert(
+                        &conn,
+                        NewProposal {
+                            kind: "add_recurring_payment",
+                            rationale: &rationale,
+                            diff_json: &diff_json,
+                            skill: "ledger",
+                        },
+                    )
+                    .map_err(|e| e.to_string())?
+                };
+                on_event
+                    .send(StreamChunk::Proposal(proposal_id))
+                    .map_err(|e| e.to_string())?;
+            }
+            "add_contract" => {
+                let args: AddContractArgs = serde_json::from_value(tool_call.function.arguments)
+                    .map_err(|e| format!("bad add_contract args: {e}"))?;
+                let diff_json = serde_json::to_string(&args).map_err(|e| e.to_string())?;
+                let proposal_id = {
+                    let conn = state.0.lock().map_err(|e| e.to_string())?;
+                    proposal::insert(
+                        &conn,
+                        NewProposal {
+                            kind: "add_contract",
+                            rationale: &rationale,
+                            diff_json: &diff_json,
+                            skill: "ledger",
+                        },
+                    )
+                    .map_err(|e| e.to_string())?
+                };
+                on_event
+                    .send(StreamChunk::Proposal(proposal_id))
+                    .map_err(|e| e.to_string())?;
+            }
+            "add_to_shopping_list" => {
+                let args: AddToShoppingListArgs =
+                    serde_json::from_value(tool_call.function.arguments)
+                        .map_err(|e| format!("bad add_to_shopping_list args: {e}"))?;
+                let diff_json = serde_json::to_string(&args).map_err(|e| e.to_string())?;
+                let proposal_id = {
+                    let conn = state.0.lock().map_err(|e| e.to_string())?;
+                    proposal::insert(
+                        &conn,
+                        NewProposal {
+                            kind: "add_to_shopping_list",
+                            rationale: &rationale,
+                            diff_json: &diff_json,
+                            skill: "hearth",
+                        },
+                    )
+                    .map_err(|e| e.to_string())?
+                };
+                on_event
+                    .send(StreamChunk::Proposal(proposal_id))
+                    .map_err(|e| e.to_string())?;
+            }
+            "add_recipe_quick" => {
+                let args: AddRecipeQuickArgs = serde_json::from_value(tool_call.function.arguments)
+                    .map_err(|e| format!("bad add_recipe_quick args: {e}"))?;
+                let diff_json = serde_json::to_string(&args).map_err(|e| e.to_string())?;
+                let proposal_id = {
+                    let conn = state.0.lock().map_err(|e| e.to_string())?;
+                    proposal::insert(
+                        &conn,
+                        NewProposal {
+                            kind: "add_recipe_quick",
+                            rationale: &rationale,
+                            diff_json: &diff_json,
+                            skill: "hearth",
+                        },
+                    )
+                    .map_err(|e| e.to_string())?
+                };
+                on_event
+                    .send(StreamChunk::Proposal(proposal_id))
+                    .map_err(|e| e.to_string())?;
+            }
+            "plan_meal" => {
+                let args: PlanMealArgs = serde_json::from_value(tool_call.function.arguments)
+                    .map_err(|e| format!("bad plan_meal args: {e}"))?;
+                let diff_json = serde_json::to_string(&args).map_err(|e| e.to_string())?;
+                let proposal_id = {
+                    let conn = state.0.lock().map_err(|e| e.to_string())?;
+                    proposal::insert(
+                        &conn,
+                        NewProposal {
+                            kind: "plan_meal",
+                            rationale: &rationale,
+                            diff_json: &diff_json,
+                            skill: "hearth",
+                        },
+                    )
+                    .map_err(|e| e.to_string())?
+                };
+                on_event
+                    .send(StreamChunk::Proposal(proposal_id))
+                    .map_err(|e| e.to_string())?;
+            }
+            "add_time_block" => {
+                let args: AddTimeBlockArgs =
+                    serde_json::from_value(tool_call.function.arguments)
+                        .map_err(|e| format!("bad add_time_block args: {e}"))?;
+                let diff_json = serde_json::to_string(&args).map_err(|e| e.to_string())?;
+                let proposal_id = {
+                    let conn = state.0.lock().map_err(|e| e.to_string())?;
+                    proposal::insert(
+                        &conn,
+                        NewProposal {
+                            kind: "add_time_block",
+                            rationale: &rationale,
+                            diff_json: &diff_json,
+                            skill: "rhythm",
+                        },
+                    )
+                    .map_err(|e| e.to_string())?
+                };
+                on_event
+                    .send(StreamChunk::Proposal(proposal_id))
+                    .map_err(|e| e.to_string())?;
+            }
+            "add_recurring_block" => {
+                let args: AddRecurringBlockArgs =
+                    serde_json::from_value(tool_call.function.arguments)
+                        .map_err(|e| format!("bad add_recurring_block args: {e}"))?;
+                let diff_json = serde_json::to_string(&args).map_err(|e| e.to_string())?;
+                let proposal_id = {
+                    let conn = state.0.lock().map_err(|e| e.to_string())?;
+                    proposal::insert(
+                        &conn,
+                        NewProposal {
+                            kind: "add_recurring_block",
+                            rationale: &rationale,
+                            diff_json: &diff_json,
+                            skill: "rhythm",
                         },
                     )
                     .map_err(|e| e.to_string())?
@@ -336,9 +625,340 @@ pub fn list_proposals(
 }
 
 #[tauri::command]
-pub fn approve_proposal(state: State<'_, Db>, id: i64) -> Result<Vec<Task>, String> {
-    let mut conn = state.0.lock().map_err(|e| e.to_string())?;
-    proposal::approve_add_task(&mut conn, id, &today_local_iso()).map_err(|e| e.to_string())
+pub async fn approve_proposal(
+    state: State<'_, Db>,
+    sync_state: State<'_, Arc<SyncState>>,
+    id: i64,
+) -> Result<Applied, ApplyError> {
+    let kind = {
+        let conn = state
+            .0
+            .lock()
+            .map_err(|e| ApplyError::Internal(format!("db lock: {e}")))?;
+        proposal_registry::read_kind(&conn, id)?
+    };
+
+    if kind == "add_event" {
+        return approve_add_event_proposal(state.clone_arc(), sync_state.inner().clone(), id).await;
+    }
+
+    let mut conn = state
+        .0
+        .lock()
+        .map_err(|e| ApplyError::Internal(format!("db lock: {e}")))?;
+    proposal_registry::approve(&mut conn, id)
+}
+
+#[tauri::command]
+pub async fn approve_proposal_with_override(
+    state: State<'_, Db>,
+    sync_state: State<'_, Arc<SyncState>>,
+    id: i64,
+    edited_diff_json: String,
+) -> Result<Applied, ApplyError> {
+    let kind = {
+        let conn = state
+            .0
+            .lock()
+            .map_err(|e| ApplyError::Internal(format!("db lock: {e}")))?;
+        proposal_registry::read_kind(&conn, id)?
+    };
+
+    if kind == "add_event" {
+        {
+            let conn = state
+                .0
+                .lock()
+                .map_err(|e| ApplyError::Internal(format!("db lock: {e}")))?;
+            proposal_registry::update_diff(&conn, id, &edited_diff_json)?;
+        }
+        return approve_add_event_proposal(state.clone_arc(), sync_state.inner().clone(), id).await;
+    }
+
+    let mut conn = state
+        .0
+        .lock()
+        .map_err(|e| ApplyError::Internal(format!("db lock: {e}")))?;
+    proposal_registry::approve_with_override(&mut conn, id, &edited_diff_json)
+}
+
+async fn approve_add_event_proposal(
+    db: Arc<Mutex<Connection>>,
+    sync_state: Arc<SyncState>,
+    proposal_id: i64,
+) -> Result<Applied, ApplyError> {
+    let handle = tokio::runtime::Handle::current();
+    tauri::async_runtime::spawn_blocking(move || {
+        let items = load_add_event_items(&db, proposal_id)?;
+        if items.is_empty() {
+            return Err(ApplyError::InvalidArg {
+                field: "items".into(),
+                reason: "at least one event is required".into(),
+            });
+        }
+
+        let mut applied = 0usize;
+        let mut errors = Vec::<ApplyError>::new();
+        let mut touched_accounts = BTreeSet::<i64>::new();
+
+        for (idx, item) in items.into_iter().enumerate() {
+            match put_event_item(&db, &handle, item) {
+                Ok(account_id) => {
+                    applied += 1;
+                    touched_accounts.insert(account_id);
+                }
+                Err(err) => errors.push(indexed_event_error(idx, err)),
+            }
+        }
+
+        for account_id in touched_accounts {
+            let Ok(password) = keychain::get_password(account_id) else {
+                continue;
+            };
+            let mut conn = db
+                .lock()
+                .map_err(|e| ApplyError::Internal(format!("db lock: {e}")))?;
+            let _ = handle.block_on(crate::sync::engine::sync_account(
+                &mut conn,
+                &sync_state,
+                account_id,
+                &password,
+                chrono_tz::UTC,
+            ));
+        }
+
+        let failed = errors.len();
+        let status = match (applied, failed) {
+            (0, _) => proposal::Status::Rejected,
+            (_, 0) => proposal::Status::Applied,
+            _ => proposal::Status::PartiallyApplied,
+        };
+
+        {
+            let conn = db
+                .lock()
+                .map_err(|e| ApplyError::Internal(format!("db lock: {e}")))?;
+            persist_event_proposal_outcome(&conn, proposal_id, status, &errors)?;
+        }
+
+        Ok(Applied {
+            proposal_id,
+            status,
+            items_applied: applied,
+            items_failed: failed,
+            errors,
+        })
+    })
+    .await
+    .map_err(|e| ApplyError::Internal(format!("event approval task failed: {e}")))?
+}
+
+fn load_add_event_items(
+    db: &Arc<Mutex<Connection>>,
+    proposal_id: i64,
+) -> Result<Vec<AddEventItem>, ApplyError> {
+    let conn = db
+        .lock()
+        .map_err(|e| ApplyError::Internal(format!("db lock: {e}")))?;
+    let row: Option<(String, String, String)> = conn
+        .query_row(
+            "SELECT kind, status, diff FROM proposal WHERE id = ?1",
+            params![proposal_id],
+            |r| Ok((r.get(0)?, r.get(1)?, r.get(2)?)),
+        )
+        .optional()
+        .map_err(|e| ApplyError::Internal(format!("proposal lookup failed: {e}")))?;
+    let (kind, status, diff) =
+        row.ok_or_else(|| ApplyError::Internal(format!("proposal {proposal_id} not found")))?;
+    if status != proposal::Status::Pending.as_str() {
+        return Err(ApplyError::Conflict("proposal not pending".into()));
+    }
+    if kind != "add_event" {
+        return Err(ApplyError::UnknownKind(kind));
+    }
+    let args: AddEventArgs = serde_json::from_str(&diff).map_err(|e| ApplyError::InvalidArg {
+        field: "diff".into(),
+        reason: e.to_string(),
+    })?;
+    Ok(args.into_items())
+}
+
+fn put_event_item(
+    db: &Arc<Mutex<Connection>>,
+    handle: &tokio::runtime::Handle,
+    item: AddEventItem,
+) -> Result<i64, ApplyError> {
+    validate_event_item(&item)?;
+    let (account, calendar_url) = {
+        let conn = db
+            .lock()
+            .map_err(|e| ApplyError::Internal(format!("db lock: {e}")))?;
+        resolve_event_target(&conn, &item)?
+    };
+
+    let password = keychain::get_password(account.id)
+        .map_err(|e| ApplyError::Internal(format!("keychain: {e}")))?;
+    let uid = new_uid();
+    let ical = crate::sync::ical_write::generate_vcalendar(
+        &uid,
+        item.title.trim(),
+        item.start_at,
+        item.end_at,
+        item.description.as_deref(),
+        item.location.as_deref(),
+        item.all_day,
+    );
+    let url = format!("{}/{}.ics", calendar_url.trim_end_matches('/'), uid);
+    let client = crate::sync::caldav::CalDavClient::new(&account.username, &password);
+    handle
+        .block_on(client.put_event(&url, &ical, None))
+        .map_err(|e| ApplyError::Network(e.to_string()))?;
+    Ok(account.id)
+}
+
+fn validate_event_item(item: &AddEventItem) -> Result<(), ApplyError> {
+    if item.title.trim().is_empty() {
+        return Err(ApplyError::InvalidArg {
+            field: "title".into(),
+            reason: "title cannot be empty".into(),
+        });
+    }
+    if item.start_at >= item.end_at {
+        return Err(ApplyError::InvalidArg {
+            field: "end_at".into(),
+            reason: "end_at must be after start_at".into(),
+        });
+    }
+    Ok(())
+}
+
+fn resolve_event_target(
+    conn: &Connection,
+    item: &AddEventItem,
+) -> Result<(CalendarAccount, String), ApplyError> {
+    if let Some(account_id) = item.account_id {
+        let account = calendar_account::get(conn, account_id)
+            .map_err(|e| ApplyError::Internal(format!("calendar account lookup failed: {e}")))?
+            .ok_or_else(|| ApplyError::StaleReference {
+                entity: "calendar_account".into(),
+                id: account_id.to_string(),
+            })?;
+        let calendar_url = item
+            .calendar_url
+            .as_deref()
+            .map(str::trim)
+            .filter(|url| !url.is_empty())
+            .map(ToOwned::to_owned)
+            .or_else(|| account.default_calendar_url.clone())
+            .ok_or_else(|| ApplyError::InvalidArg {
+                field: "calendar_url".into(),
+                reason: "calendar_url is required when the account has no default calendar".into(),
+            })?;
+        return Ok((account, calendar_url));
+    }
+
+    if let Some(calendar_url) = item
+        .calendar_url
+        .as_deref()
+        .map(str::trim)
+        .filter(|url| !url.is_empty())
+    {
+        if let Some(account) = find_account_for_calendar_url(conn, calendar_url)? {
+            return Ok((account, calendar_url.to_string()));
+        }
+        return Err(ApplyError::StaleReference {
+            entity: "calendar".into(),
+            id: calendar_url.to_string(),
+        });
+    }
+
+    let accounts = calendar_account::list(conn)
+        .map_err(|e| ApplyError::Internal(format!("calendar account list failed: {e}")))?;
+    let with_default: Vec<CalendarAccount> = accounts
+        .into_iter()
+        .filter(|account| account.default_calendar_url.is_some())
+        .collect();
+
+    match with_default.as_slice() {
+        [account] => Ok((
+            account.clone(),
+            account.default_calendar_url.clone().unwrap_or_default(),
+        )),
+        [] => Err(ApplyError::InvalidArg {
+            field: "calendar_url".into(),
+            reason: "no default calendar is configured".into(),
+        }),
+        _ => Err(ApplyError::Conflict(
+            "multiple calendar accounts have defaults; specify account_id".into(),
+        )),
+    }
+}
+
+fn find_account_for_calendar_url(
+    conn: &Connection,
+    calendar_url: &str,
+) -> Result<Option<CalendarAccount>, ApplyError> {
+    let id: Option<i64> = conn
+        .query_row(
+            "SELECT ca.id
+             FROM calendar_account ca
+             LEFT JOIN calendar c ON c.calendar_account_id = ca.id
+             WHERE ca.default_calendar_url = ?1 OR c.url = ?1
+             ORDER BY ca.id
+             LIMIT 1",
+            [calendar_url],
+            |row| row.get(0),
+        )
+        .optional()
+        .map_err(|e| ApplyError::Internal(format!("calendar lookup failed: {e}")))?;
+    id.map(|account_id| {
+        calendar_account::get(conn, account_id)
+            .map_err(|e| ApplyError::Internal(format!("calendar account lookup failed: {e}")))?
+            .ok_or_else(|| ApplyError::StaleReference {
+                entity: "calendar_account".into(),
+                id: account_id.to_string(),
+            })
+    })
+    .transpose()
+}
+
+fn persist_event_proposal_outcome(
+    conn: &Connection,
+    proposal_id: i64,
+    status: proposal::Status,
+    errors: &[ApplyError],
+) -> Result<(), ApplyError> {
+    let now = chrono::Utc::now().timestamp();
+    let applied_at = if matches!(status, proposal::Status::Rejected) {
+        None
+    } else {
+        Some(now)
+    };
+    let errors_json = if errors.is_empty() {
+        None
+    } else {
+        Some(
+            serde_json::to_string(errors)
+                .map_err(|e| ApplyError::Internal(format!("apply errors json: {e}")))?,
+        )
+    };
+
+    conn.execute(
+        "UPDATE proposal SET status = ?1, applied_at = ?2, apply_errors_json = ?3 WHERE id = ?4",
+        params![status.as_str(), applied_at, errors_json, proposal_id],
+    )
+    .map_err(|e| ApplyError::Internal(format!("proposal update failed: {e}")))?;
+    Ok(())
+}
+
+fn indexed_event_error(index: usize, err: ApplyError) -> ApplyError {
+    match err {
+        ApplyError::InvalidArg { field, reason } => ApplyError::InvalidArg {
+            field: format!("items[{index}].{field}"),
+            reason,
+        },
+        other => other,
+    }
 }
 
 #[tauri::command]
@@ -803,5 +1423,208 @@ mod tests_send_message {
     fn cleanup_skipped_when_no_error() {
         let events = vec![StreamChunk::Done];
         assert!(!stream_ended_with_unusable_error(&[], &events));
+    }
+}
+
+#[cfg(test)]
+mod tests_add_event_proposal {
+    use super::*;
+    use tempfile::tempdir;
+
+    fn fresh_db() -> (tempfile::TempDir, Connection) {
+        let dir = tempdir().unwrap();
+        let conn = db::init(&dir.path().join("t.db")).unwrap();
+        (dir, conn)
+    }
+
+    #[test]
+    fn resolve_event_target_uses_single_default_calendar() {
+        let (_d, conn) = fresh_db();
+        let account_id =
+            calendar_account::insert(&conn, "iCloud", "https://cal.example", "hana").unwrap();
+        calendar_account::set_default_calendar(&conn, account_id, "https://cal.example/home/")
+            .unwrap();
+        let item = AddEventItem {
+            account_id: None,
+            calendar_url: None,
+            title: "Dentist".into(),
+            start_at: 1_778_842_800,
+            end_at: 1_778_846_400,
+            description: None,
+            location: None,
+            all_day: false,
+        };
+
+        let (account, url) = resolve_event_target(&conn, &item).unwrap();
+        assert_eq!(account.id, account_id);
+        assert_eq!(url, "https://cal.example/home/");
+    }
+
+    #[test]
+    fn resolve_event_target_rejects_ambiguous_defaults() {
+        let (_d, conn) = fresh_db();
+        let a = calendar_account::insert(&conn, "A", "https://a.example", "a").unwrap();
+        let b = calendar_account::insert(&conn, "B", "https://b.example", "b").unwrap();
+        calendar_account::set_default_calendar(&conn, a, "https://a.example/home/").unwrap();
+        calendar_account::set_default_calendar(&conn, b, "https://b.example/home/").unwrap();
+        let item = AddEventItem {
+            account_id: None,
+            calendar_url: None,
+            title: "Dentist".into(),
+            start_at: 1_778_842_800,
+            end_at: 1_778_846_400,
+            description: None,
+            location: None,
+            all_day: false,
+        };
+
+        let err = resolve_event_target(&conn, &item).unwrap_err();
+        assert!(matches!(err, ApplyError::Conflict(_)));
+    }
+
+    #[test]
+    fn add_event_args_accepts_bundle() {
+        let diff = serde_json::json!([
+            {
+                "title": "Dentist",
+                "start_at": 1_778_842_800i64,
+                "end_at": 1_778_846_400i64
+            },
+            {
+                "title": "Lunch",
+                "start_at": 1_778_850_000i64,
+                "end_at": 1_778_853_600i64
+            }
+        ])
+        .to_string();
+
+        let args: AddEventArgs = serde_json::from_str(&diff).unwrap();
+        assert_eq!(args.into_items().len(), 2);
+    }
+
+    #[test]
+    fn validate_event_item_rejects_empty_title_and_bad_range() {
+        let mut item = AddEventItem {
+            account_id: None,
+            calendar_url: None,
+            title: "".into(),
+            start_at: 10,
+            end_at: 20,
+            description: None,
+            location: None,
+            all_day: false,
+        };
+        assert!(matches!(
+            validate_event_item(&item),
+            Err(ApplyError::InvalidArg { field, .. }) if field == "title"
+        ));
+
+        item.title = "Dentist".into();
+        item.end_at = 10;
+        assert!(matches!(
+            validate_event_item(&item),
+            Err(ApplyError::InvalidArg { field, .. }) if field == "end_at"
+        ));
+    }
+}
+
+/// Tests for the Tauri command surface exposed in 1.F. We exercise the same
+/// `proposal_registry::approve(_with_override)` entry points the commands
+/// call, plus assert the wire shape of `ApplyError` (the contract the
+/// frontend pattern-matches against).
+#[cfg(test)]
+mod tests_approve_proposal_command {
+    use super::*;
+    use manor_core::assistant::proposal::{insert, NewProposal, Status};
+    use tempfile::tempdir;
+
+    fn fresh_db() -> (tempfile::TempDir, Connection) {
+        let dir = tempdir().unwrap();
+        let conn = db::init(&dir.path().join("t.db")).unwrap();
+        (dir, conn)
+    }
+
+    #[test]
+    fn approve_returns_applied_for_add_task() {
+        let (_d, mut conn) = fresh_db();
+        let diff = serde_json::json!({ "title": "Buy milk" }).to_string();
+        let pid = insert(
+            &conn,
+            NewProposal {
+                kind: "add_task",
+                rationale: "command-test",
+                diff_json: &diff,
+                skill: "tasks",
+            },
+        )
+        .unwrap();
+
+        let applied = proposal_registry::approve(&mut conn, pid).unwrap();
+        assert_eq!(applied.proposal_id, pid);
+        assert_eq!(applied.status, Status::Applied);
+        assert_eq!(applied.items_applied, 1);
+        assert_eq!(applied.items_failed, 0);
+        assert!(applied.errors.is_empty());
+
+        // Wire-shape: serialise as the frontend will receive it.
+        let json: serde_json::Value =
+            serde_json::from_str(&serde_json::to_string(&applied).unwrap()).unwrap();
+        assert_eq!(json["proposal_id"], pid);
+        assert_eq!(json["status"], "applied");
+        assert_eq!(json["items_applied"], 1);
+        assert_eq!(json["items_failed"], 0);
+        assert!(json["errors"].as_array().unwrap().is_empty());
+    }
+
+    #[test]
+    fn approve_unknown_kind_serialises_to_typed_apply_error() {
+        let (_d, mut conn) = fresh_db();
+        let pid = insert(
+            &conn,
+            NewProposal {
+                kind: "weird_kind",
+                rationale: "command-test",
+                diff_json: "{}",
+                skill: "test",
+            },
+        )
+        .unwrap();
+
+        let err = proposal_registry::approve(&mut conn, pid).unwrap_err();
+
+        // Frontend-facing JSON shape: `{ "type": "UnknownKind", "value": "weird_kind" }`.
+        let json: serde_json::Value =
+            serde_json::from_str(&serde_json::to_string(&err).unwrap()).unwrap();
+        assert_eq!(json["type"], "UnknownKind");
+        assert_eq!(json["value"], "weird_kind");
+    }
+
+    #[test]
+    fn approve_with_override_persists_edited_diff() {
+        let (_d, mut conn) = fresh_db();
+        let original = serde_json::json!({ "title": "original" }).to_string();
+        let pid = insert(
+            &conn,
+            NewProposal {
+                kind: "add_task",
+                rationale: "command-test",
+                diff_json: &original,
+                skill: "tasks",
+            },
+        )
+        .unwrap();
+
+        let edited = serde_json::json!({ "title": "edited via drawer" }).to_string();
+        let applied = proposal_registry::approve_with_override(&mut conn, pid, &edited).unwrap();
+        assert_eq!(applied.status, Status::Applied);
+
+        let title: String = conn
+            .query_row(
+                "SELECT title FROM task WHERE proposal_id = ?1",
+                [pid],
+                |r| r.get(0),
+            )
+            .unwrap();
+        assert_eq!(title, "edited via drawer");
     }
 }

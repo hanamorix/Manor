@@ -215,6 +215,7 @@ pub fn register(builder: Builder<Wry>) -> Builder<Wry> {
             assistant::commands::delete_task,
             assistant::commands::list_proposals,
             assistant::commands::approve_proposal,
+            assistant::commands::approve_proposal_with_override,
             assistant::commands::reject_proposal,
             assistant::commands::list_calendar_accounts,
             assistant::commands::add_calendar_account,

@@ -144,6 +144,7 @@ pub(crate) fn run_pipeline_persist(
             notes: sched.notes,
             source_attachment_uuid: attachment_uuid.clone(),
             tier: tier.as_str().to_string(),
+            last_done_date: None,
         };
         let diff_json = serde_json::to_string(&args)?;
         let pid = proposal::insert(
@@ -208,6 +209,7 @@ mod tests {
             notes: String::new(),
             source_attachment_uuid: source_attachment_uuid.into(),
             tier: "ollama".into(),
+            last_done_date: None,
         };
         let diff_json = serde_json::to_string(&args).unwrap();
         proposal::insert(

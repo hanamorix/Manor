@@ -9,7 +9,19 @@ use rusqlite::Connection;
 ///
 /// Pure function: all inputs arrive as parameters; no global state reads.
 /// The caller passes `Local::now()` so tests can inject a fixed instant.
+///
+/// Phase 1.K wraps this through [`super::context::render`] for the
+/// composable per-room path; this entry point stays for callers that want
+/// just the today slice (and for the existing test fixtures, which exercise
+/// the slice contents byte-for-byte).
 pub fn compose_today_context(now: DateTime<Local>, conn: &Connection) -> Result<String> {
+    super::context::render(now, conn, super::context::ContextSlices::today_only())
+}
+
+/// The raw today-block body. Called from [`super::context::render`] when the
+/// `today` slice is set. Exposed `pub(super)` so the context dispatcher can
+/// invoke it without going through the wrapper above.
+pub(super) fn compose_today_block(now: DateTime<Local>, conn: &Connection) -> Result<String> {
     // Day boundaries in local time → UTC epoch seconds for the event query.
     let today_str = now.date_naive().format("%Y-%m-%d").to_string();
     let day_start_local = now
