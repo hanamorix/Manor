@@ -4,6 +4,7 @@ import {
   getProposalHandler,
   type AddTaskParsed,
   type AddEventParsed,
+  type AddTransactionParsed,
   type CompleteTaskParsed,
   type AddChoreParsed,
   type AddTimeBlockParsed,
@@ -20,6 +21,7 @@ describe("PROPOSAL_KIND_HANDLERS", () => {
       "add_recurring_block",
       "add_task",
       "add_time_block",
+      "add_transaction",
       "complete_chore",
       "complete_task",
     ]);
@@ -117,6 +119,33 @@ describe("add_event handler", () => {
   it("declares edit support", () => {
     expect(handler.supportsEdit).toBe(true);
     expect(handler.EditDrawer).toBeDefined();
+  });
+});
+
+describe("add_transaction handler", () => {
+  const handler = PROPOSAL_KIND_HANDLERS.add_transaction;
+
+  it("parses transaction diffs", () => {
+    const parsed = handler.parse(
+      JSON.stringify({
+        amount_pence: -1240,
+        description: "Tesco Express",
+        merchant: "Tesco",
+        category_name: "Groceries",
+      }),
+    ) as AddTransactionParsed;
+    expect(parsed.amount_pence).toBe(-1240);
+    expect(parsed.category_name).toBe("Groceries");
+  });
+
+  it("summarises signed money and description", () => {
+    expect(
+      handler.summarise({
+        amount_pence: -1240,
+        currency: "GBP",
+        description: "Tesco Express",
+      }),
+    ).toBe("Add transaction: -GBP 12.40 · Tesco Express");
   });
 });
 

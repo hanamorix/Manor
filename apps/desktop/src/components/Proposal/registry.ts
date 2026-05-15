@@ -120,6 +120,42 @@ const addEventHandler: ProposalCardHandler<AddEventParsed[]> = {
   EditDrawer: ProposalEventEditDrawer,
 };
 
+// ── add_transaction ────────────────────────────────────────────────────
+
+export interface AddTransactionParsed {
+  amount_pence: number;
+  currency?: string;
+  description: string;
+  merchant?: string | null;
+  category_id?: number | null;
+  category_name?: string | null;
+  date?: number | null;
+  note?: string | null;
+}
+
+function formatMoney(pence: number, currency = "GBP"): string {
+  const sign = pence < 0 ? "-" : "";
+  const amount = Math.abs(pence) / 100;
+  return `${sign}${currency} ${amount.toFixed(2)}`;
+}
+
+const addTransactionHandler: ProposalCardHandler<AddTransactionParsed> = {
+  parse: (diffJson) => JSON.parse(diffJson) as AddTransactionParsed,
+  summarise: (parsed) =>
+    `Add transaction: ${formatMoney(parsed.amount_pence, parsed.currency)} · ${parsed.description}`,
+  CardBody: ({ parsed }) =>
+    createElement(
+      "div",
+      { style: { marginTop: 4, fontSize: 11, color: "var(--ink-soft)" } },
+      [
+        parsed.merchant,
+        parsed.category_name ?? (parsed.category_id ? `Category #${parsed.category_id}` : null),
+      ]
+        .filter(Boolean)
+        .join(" · "),
+    ),
+};
+
 // ── add_chore ───────────────────────────────────────────────────────────
 
 export interface AddChoreParsed {
@@ -238,6 +274,7 @@ export const PROPOSAL_KIND_HANDLERS: Record<string, ProposalCardHandler<any>> =
     add_task: addTaskHandler,
     complete_task: completeTaskHandler,
     add_event: addEventHandler,
+    add_transaction: addTransactionHandler,
     add_chore: addChoreHandler,
     complete_chore: completeChoreHandler,
     add_time_block: addTimeBlockHandler,

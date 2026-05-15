@@ -213,6 +213,29 @@ impl AddEventArgs {
     }
 }
 
+fn default_currency() -> String {
+    "GBP".to_string()
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+pub struct AddLedgerTransactionArgs {
+    #[serde(deserialize_with = "tolerant::amount_pence")]
+    pub amount_pence: i64,
+    #[serde(default = "default_currency")]
+    pub currency: String,
+    pub description: String,
+    #[serde(default)]
+    pub merchant: Option<String>,
+    #[serde(default, alias = "categoryId")]
+    pub category_id: Option<i64>,
+    #[serde(default, alias = "categoryName")]
+    pub category_name: Option<String>,
+    #[serde(default)]
+    pub date: Option<i64>,
+    #[serde(default)]
+    pub note: Option<String>,
+}
+
 /// Insert a new proposal. Returns the new row id.
 pub fn insert(conn: &Connection, new: NewProposal<'_>) -> Result<i64> {
     let now = Utc::now().timestamp();

@@ -12,6 +12,7 @@
 //! that into `approve_with_override`.
 
 pub mod add_chore;
+pub mod add_ledger_transaction;
 pub mod add_maintenance_schedule;
 pub mod add_recurring_block;
 pub mod add_task;

@@ -117,6 +117,56 @@ pub fn add_event_tool() -> serde_json::Value {
     })
 }
 
+pub fn add_transaction_tool() -> serde_json::Value {
+    json!({
+        "type": "function",
+        "function": {
+            "name": "add_transaction",
+            "description": "Propose recording a manual Ledger transaction. \
+                            Use negative amounts for spending and positive amounts for income. \
+                            Amounts are integer pence, or strings like -£12.40.",
+            "parameters": {
+                "type": "object",
+                "required": ["amount_pence", "description"],
+                "properties": {
+                    "amount_pence": {
+                        "description": "Signed amount. Spending is negative; income is positive. Accepts pence integer or string like -£12.40.",
+                        "oneOf": [{ "type": "integer" }, { "type": "number" }, { "type": "string" }]
+                    },
+                    "currency": {
+                        "type": "string",
+                        "description": "Currency code. Defaults to GBP."
+                    },
+                    "description": {
+                        "type": "string",
+                        "description": "Transaction description, e.g. Tesco Express."
+                    },
+                    "merchant": {
+                        "type": "string",
+                        "description": "Optional merchant name."
+                    },
+                    "category_id": {
+                        "type": "integer",
+                        "description": "Optional existing Ledger category id."
+                    },
+                    "category_name": {
+                        "type": "string",
+                        "description": "Optional exact existing Ledger category name."
+                    },
+                    "date": {
+                        "type": "integer",
+                        "description": "Optional Unix timestamp in seconds. Omit for now."
+                    },
+                    "note": {
+                        "type": "string",
+                        "description": "Optional note."
+                    }
+                }
+            }
+        }
+    })
+}
+
 pub fn add_chore_tool() -> serde_json::Value {
     json!({
         "type": "function",
@@ -285,6 +335,7 @@ pub fn all_tools() -> Vec<serde_json::Value> {
         add_task_tool(),
         complete_task_tool(),
         add_event_tool(),
+        add_transaction_tool(),
         add_chore_tool(),
         complete_chore_tool(),
         add_time_block_tool(),
