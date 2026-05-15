@@ -196,6 +196,52 @@ pub fn set_budget_tool() -> serde_json::Value {
     })
 }
 
+pub fn add_recurring_payment_tool() -> serde_json::Value {
+    json!({
+        "type": "function",
+        "function": {
+            "name": "add_recurring_payment",
+            "description": "Propose adding a recurring Ledger payment such as a bill or subscription. \
+                            Amounts are positive integer pence, or strings like £12.99. \
+                            The generated monthly transaction will be a debit.",
+            "parameters": {
+                "type": "object",
+                "required": ["description", "amount_pence", "day_of_month"],
+                "properties": {
+                    "description": {
+                        "type": "string",
+                        "description": "Payment description, e.g. Netflix or Council Tax."
+                    },
+                    "amount_pence": {
+                        "description": "Positive recurring amount. Accepts pence integer or string like £12.99.",
+                        "oneOf": [{ "type": "integer" }, { "type": "number" }, { "type": "string" }]
+                    },
+                    "currency": {
+                        "type": "string",
+                        "description": "Currency code. Defaults to GBP."
+                    },
+                    "category_id": {
+                        "type": "integer",
+                        "description": "Optional existing Ledger category id."
+                    },
+                    "category_name": {
+                        "type": "string",
+                        "description": "Optional exact existing Ledger category name."
+                    },
+                    "day_of_month": {
+                        "type": "integer",
+                        "description": "Payment day of month, 1 through 28."
+                    },
+                    "note": {
+                        "type": "string",
+                        "description": "Optional note."
+                    }
+                }
+            }
+        }
+    })
+}
+
 pub fn add_chore_tool() -> serde_json::Value {
     json!({
         "type": "function",
@@ -366,6 +412,7 @@ pub fn all_tools() -> Vec<serde_json::Value> {
         add_event_tool(),
         add_transaction_tool(),
         set_budget_tool(),
+        add_recurring_payment_tool(),
         add_chore_tool(),
         complete_chore_tool(),
         add_time_block_tool(),

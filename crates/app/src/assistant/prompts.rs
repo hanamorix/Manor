@@ -54,11 +54,11 @@ pub const PROMPT_TOOLS: &str = concat!(
     "- add_event — add one or more CalDAV calendar events.\n",
     "- add_transaction — record a manual Ledger transaction in signed pence.\n",
     "- set_budget — set a monthly Ledger budget for an existing category.\n",
+    "- add_recurring_payment — add a Ledger recurring bill or subscription.\n",
     "- add_chore — add one or more recurring household chores, with optional rotation.\n",
     "- complete_chore — mark an existing recurring household chore complete.\n",
     "- add_time_block — add a one-off focus, admin, errand, or DND block.\n",
     "- add_recurring_block — add a repeating focus, admin, errand, or DND block.\n",
-    // TODO Phase 4: add_recurring_payment — bills / subscriptions.
     // TODO Phase 4: add_contract — long-form supplier contract.
     // TODO Phase 5: add_recipe_quick — capture a recipe by name + steps.
     // TODO Phase 5: plan_meal — slot a recipe into a date.
@@ -157,6 +157,7 @@ mod tests {
         assert!(p.contains("\n- add_event"), "got: {p}");
         assert!(p.contains("\n- add_transaction"), "got: {p}");
         assert!(p.contains("\n- set_budget"), "got: {p}");
+        assert!(p.contains("\n- add_recurring_payment"), "got: {p}");
         assert!(p.contains("\n- add_chore"), "got: {p}");
         assert!(p.contains("\n- complete_chore"), "got: {p}");
         assert!(p.contains("\n- add_time_block"), "got: {p}");

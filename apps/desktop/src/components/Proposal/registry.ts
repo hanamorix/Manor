@@ -170,6 +170,36 @@ const setBudgetHandler: ProposalCardHandler<SetBudgetParsed> = {
     `Set budget: ${parsed.category_name ?? `Category #${parsed.category_id ?? "unknown"}`} · ${formatMoney(parsed.amount_pence)}`,
 };
 
+// ── add_recurring_payment ──────────────────────────────────────────────
+
+export interface AddRecurringPaymentParsed {
+  description: string;
+  amount_pence: number;
+  currency?: string;
+  category_id?: number | null;
+  category_name?: string | null;
+  day_of_month: number;
+  note?: string | null;
+}
+
+const addRecurringPaymentHandler: ProposalCardHandler<AddRecurringPaymentParsed> =
+  {
+    parse: (diffJson) => JSON.parse(diffJson) as AddRecurringPaymentParsed,
+    summarise: (parsed) =>
+      `Add recurring payment: ${parsed.description} · ${formatMoney(parsed.amount_pence, parsed.currency)} on day ${parsed.day_of_month}`,
+    CardBody: ({ parsed }) =>
+      createElement(
+        "div",
+        { style: { marginTop: 4, fontSize: 11, color: "var(--ink-soft)" } },
+        [
+          parsed.category_name ?? (parsed.category_id ? `Category #${parsed.category_id}` : null),
+          parsed.note,
+        ]
+          .filter(Boolean)
+          .join(" · "),
+      ),
+  };
+
 // ── add_chore ───────────────────────────────────────────────────────────
 
 export interface AddChoreParsed {
@@ -290,6 +320,7 @@ export const PROPOSAL_KIND_HANDLERS: Record<string, ProposalCardHandler<any>> =
     add_event: addEventHandler,
     add_transaction: addTransactionHandler,
     set_budget: setBudgetHandler,
+    add_recurring_payment: addRecurringPaymentHandler,
     add_chore: addChoreHandler,
     complete_chore: completeChoreHandler,
     add_time_block: addTimeBlockHandler,

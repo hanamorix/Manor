@@ -6,6 +6,7 @@ import {
   type AddEventParsed,
   type AddTransactionParsed,
   type SetBudgetParsed,
+  type AddRecurringPaymentParsed,
   type CompleteTaskParsed,
   type AddChoreParsed,
   type AddTimeBlockParsed,
@@ -20,6 +21,7 @@ describe("PROPOSAL_KIND_HANDLERS", () => {
       "add_event",
       "add_maintenance_schedule",
       "add_recurring_block",
+      "add_recurring_payment",
       "add_task",
       "add_time_block",
       "add_transaction",
@@ -166,6 +168,34 @@ describe("set_budget handler", () => {
     expect(
       handler.summarise({ category_name: "Groceries", amount_pence: 40000 }),
     ).toBe("Set budget: Groceries · GBP 400.00");
+  });
+});
+
+describe("add_recurring_payment handler", () => {
+  const handler = PROPOSAL_KIND_HANDLERS.add_recurring_payment;
+
+  it("parses recurring payment diffs", () => {
+    const parsed = handler.parse(
+      JSON.stringify({
+        description: "Netflix",
+        amount_pence: 1299,
+        category_name: "Subscriptions",
+        day_of_month: 15,
+      }),
+    ) as AddRecurringPaymentParsed;
+    expect(parsed.description).toBe("Netflix");
+    expect(parsed.day_of_month).toBe(15);
+  });
+
+  it("summarises amount and payment day", () => {
+    expect(
+      handler.summarise({
+        description: "Netflix",
+        amount_pence: 1299,
+        currency: "GBP",
+        day_of_month: 15,
+      }),
+    ).toBe("Add recurring payment: Netflix · GBP 12.99 on day 15");
   });
 });
 
